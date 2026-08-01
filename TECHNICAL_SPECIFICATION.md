@@ -21,7 +21,7 @@ Dokumen ini menetapkan standar implementasi frontend Next.js dan Go API. Backend
 | State frontend | Server Components default; state lokal React/Context; tanpa Redux/Zustand MVP |
 | Form | HTML native dan state lokal; `react-hook-form` hanya bila formulir kompleks terbukti sulit dikelola |
 | Cache/session | PostgreSQL untuk sesi/refresh token; tanpa Redis MVP |
-| File | Amazon S3 private bucket dengan pre-signed URL |
+| File | Cloudflare R2 private bucket melalui API S3-compatible |
 | Log | `log/slog` JSON ke `stdout`, diteruskan ke CloudWatch |
 | API | REST JSON `/api/v1`, cursor pagination, format respons/error seragam |
 
@@ -84,7 +84,7 @@ services/api/
 │   │   ├── file/                    # Metadata file dan signed URL
 │   │   └── audit/                   # Audit log
 │   └── infrastructure/
-│       ├── s3/                      # AWS S3 client
+│       ├── s3/                      # Cloudflare R2 via AWS SDK S3-compatible
 │       ├── email/                   # Resend client
 │       └── whatsapp/                # SaungWA client
 ├── migrations/                      # SQL up/down migration
@@ -108,7 +108,7 @@ internal/modules/finance/
 | Handler | Parse request, validasi struktur dasar, panggil service, tulis JSON | Query DB, aturan bisnis |
 | Service | Otorisasi bisnis, transaksi, state transition, audit, orchestration | Parsing HTTP |
 | Repository | Query parameterized, scan data, lock row bila perlu | Aturan bisnis |
-| Infrastructure | S3, Resend, SaungWA, external API | Menentukan hak akses |
+| Infrastructure | Cloudflare R2, Resend, SaungWA, external API | Menentukan hak akses |
 | Middleware | Request ID, recover, CORS, auth, logging | Aturan modul bisnis |
 
 ## 3.3 Aturan Go
@@ -435,8 +435,8 @@ LIMIT $4;
 2. Frontend memvalidasi tipe, ekstensi, ukuran, dan jumlah file untuk UX.
 3. Frontend meminta `POST /files/presign-upload`.
 4. Backend memeriksa authentication, permission, ownership `entity_id`, `entity_type`, purpose, MIME allowlist, dan ukuran.
-5. Backend membuat record upload sementara dan pre-signed `PUT` URL S3 berumur maksimal 5 menit.
-6. Browser mengunggah langsung ke S3.
+5. Backend membuat record upload sementara dan pre-signed `PUT` URL S3-compatible untuk R2 berumur maksimal 5 menit.
+6. Browser mengunggah langsung ke Cloudflare R2.
 7. Frontend memanggil `POST /files/confirm-upload`.
 8. Backend menjalankan `HeadObject`, memverifikasi file ada, ukuran, metadata, lalu menandai record siap dipakai.
 9. Endpoint bisnis hanya menerima `file_id` yang ready, dimiliki organisasi sama, dan sesuai purpose.
@@ -446,12 +446,12 @@ LIMIT $4;
 1. Browser meminta download ke API.
 2. Backend memeriksa permission dan scope objek.
 3. Backend menerbitkan pre-signed `GET` URL pendek.
-4. Browser mengunduh langsung dari S3.
+4. Browser mengunduh langsung dari Cloudflare R2.
 
 ## 11.3 Aturan
 
 - File biner tidak pernah melewati Go API.
-- S3 bucket private; public ACL dimatikan.
+- Bucket Cloudflare R2 dibuat private; public bucket/domain tidak digunakan untuk file privat.
 - `storage_key` dibuat server-side, tidak dari `original_name`.
 - Validasi MIME client tidak cukup; backend memvalidasi deklarasi dan metadata. Malware scan ditunda sesuai `SCOPE.md`.
 - File belum dikonfirmasi dibersihkan oleh lifecycle rule/job terkontrol.
@@ -527,7 +527,7 @@ Pengiriman email melalui Resend dan notifikasi WhatsApp melalui SaungWA terjadi 
 - [ ] Error API mengikuti format standar tanpa detail internal.
 - [ ] Application log JSON serta audit log terpisah dan tersanitasi.
 - [ ] Endpoint daftar memakai cursor/keyset pagination.
-- [ ] Upload/download memakai S3 signed URL dan pemeriksaan permission.
+- [ ] Upload/download memakai Cloudflare R2 signed URL S3-compatible dan pemeriksaan permission.
 - [ ] Payment, kas, dan pembuatan massal dilindungi idempotency.
 - [ ] Migration dijalankan terpisah, teruji di staging, dan kompatibel lintas rilis.
 - [ ] Unit, integration, authorization, serta E2E test meliputi alur utama.

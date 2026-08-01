@@ -460,7 +460,7 @@ erDiagram
 |---|---|---|---|
 | `id` | UUID | PK | |
 | `organization_id` | UUID | FK, NOT NULL | |
-| `storage_key` | TEXT | NOT NULL, UNIQUE | Key privat Amazon S3 |
+| `storage_key` | TEXT | NOT NULL, UNIQUE | Key privat Cloudflare R2 |
 | `original_name` | VARCHAR(255) | NOT NULL | |
 | `mime_type` | VARCHAR(100) | NOT NULL | |
 | `size_bytes` | BIGINT | NOT NULL CHECK (`size_bytes > 0`) | |
@@ -590,5 +590,5 @@ Gunakan `pg_trgm` dan GIN index untuk pencarian nama warga yang toleran typo han
 - Enkripsi aplikasi memakai envelope encryption dengan key material dari secret manager/KMS; jangan memakai enkripsi deterministik sebagai pengganti blind index.
 - Akses nilai sensitif lengkap membutuhkan permission khusus, alasan akses, serta audit log.
 - Database produksi berada pada private subnet, dienkripsi at-rest, dan dibackup sesuai kebijakan `PRD.md`.
-- Dokumen memakai S3 private bucket, versioning, checksum, dan signed URL dengan masa berlaku singkat.
+- Dokumen memakai Cloudflare R2 private bucket, versioning, checksum, dan signed URL S3-compatible dengan masa berlaku singkat.
 - Kebijakan retensi dan penghapusan soft-delete harus diputuskan sebelum production migration.

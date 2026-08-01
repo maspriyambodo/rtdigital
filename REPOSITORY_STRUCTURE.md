@@ -123,7 +123,7 @@ services/api/
 │   └── infrastructure/
 │       ├── email/                   # Resend client
 │       ├── whatsapp/                # SaungWA client
-│       └── s3/                      # Amazon S3
+│       └── r2/                      # Cloudflare R2 S3-compatible client
 ├── migrations/
 │   ├── 000001_init.up.sql
 │   └── 000001_init.down.sql
@@ -148,7 +148,7 @@ Klien eksternal:
 
 - `email/` menggunakan [Resend](https://resend.com) untuk email transaksional MVP.
 - `whatsapp/` menggunakan [SaungWA](https://saungwa.com/) untuk notifikasi WhatsApp pada MVP.
-- `s3/` menggunakan AWS SDK Go untuk pre-signed URL dan `HeadObject`.
+- `r2/` menggunakan AWS SDK Go melalui API S3-compatible untuk pre-signed URL dan `HeadObject` ke Cloudflare R2 atau MinIO lokal.
 
 Aturan:
 
@@ -192,7 +192,7 @@ infrastructure/
 ├── aws/
 │   ├── ecs/
 │   ├── rds/
-│   ├── s3/
+│   ├── r2/
 │   └── README.md
 └── cloudflare/
     ├── wrangler.jsonc
@@ -221,7 +221,7 @@ mailpit   SMTP testing lokal untuk simulasi email sebelum integrasi Resend
 Opsional:
 
 ```text
-minio     Emulator S3 lokal, hanya saat menguji upload/download
+minio     Emulator S3-compatible lokal untuk Cloudflare R2, hanya saat menguji upload/download
 ```
 
 Prinsip:

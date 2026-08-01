@@ -24,8 +24,11 @@ Dokumen ini menetapkan konfigurasi runtime. Jangan commit `.env`, API key, passw
 | `JWT_SECRET` | Go API | Ya | Kunci signing access token JWT. Minimum 32 byte acak. | Nilai acak development | Secret acak dari Secrets Manager |
 | `APP_URL` | Go API | Ya | URL publik frontend untuk CORS dan tautan email. | `http://localhost:3000` | `https://app.domain-rt.id` |
 | `API_URL` | Go API | Ya | URL publik API, termasuk prefix `/api/v1`. | `http://localhost:8080/api/v1` | `https://api.domain-rt.id/api/v1` |
-| `AWS_REGION` | Go API | Ya | Region AWS untuk S3 dan layanan AWS lain. | `us-east-1` | `ap-southeast-3` |
-| `AWS_S3_BUCKET` | Go API | Ya | Bucket privat lampiran dan dokumen. | `rtdigital-local` | `rtdigital-prod-documents` |
+| `R2_ACCOUNT_ID` | Go API | Staging/production | Cloudflare Account ID untuk endpoint R2. | Kosong | `<cloudflare_account_id>` |
+| `R2_ACCESS_KEY_ID` | Go API | Ya | Access Key ID API token R2; kredensial MinIO di lokal. | `minioadmin` | Secret dari Cloudflare |
+| `R2_SECRET_ACCESS_KEY` | Go API | Ya | Secret Access Key API token R2; password MinIO di lokal. | `minioadmin` | Secret dari Cloudflare |
+| `R2_BUCKET` | Go API | Ya | Bucket privat lampiran dan dokumen. | `rtdigital-local` | `rtdigital-prod-documents` |
+| `R2_ENDPOINT` | Go API | Ya | Endpoint S3-compatible R2 atau MinIO. | `http://minio:9000` | `https://<account_id>.r2.cloudflarestorage.com` |
 
 ## 3. Backend: Go API
 
@@ -39,12 +42,12 @@ Dokumen ini menetapkan konfigurasi runtime. Jangan commit `.env`, API key, passw
 | `APP_URL` | Ya | `http://localhost:3000` | Origin frontend tanpa trailing slash. |
 | `API_URL` | Ya | `http://localhost:8080/api/v1` | URL API publik dengan prefix versi. |
 | `REDIS_URL` | Tidak | `redis://redis:6379/0` | Redis lokal tersedia; bukan dependency session wajib MVP. |
-| `AWS_REGION` | Ya | `us-east-1` | Region SDK AWS atau region kompatibel MinIO. |
-| `AWS_S3_BUCKET` | Ya | `rtdigital-local` | Nama bucket target. |
-| `S3_ENDPOINT` | Tidak | `http://minio:9000` | Endpoint MinIO lokal; kosongkan untuk AWS S3. |
-| `S3_USE_PATH_STYLE` | Tidak | `true` | `true` untuk MinIO; `false` untuk AWS S3. |
-| `AWS_ACCESS_KEY_ID` | Lokal saja | `minioadmin` | Kredensial MinIO. ECS production memakai IAM Task Role. |
-| `AWS_SECRET_ACCESS_KEY` | Lokal saja | `minioadmin` | Kredensial MinIO. ECS production memakai IAM Task Role. |
+| `R2_ACCOUNT_ID` | Staging/production | Kosong | Cloudflare Account ID pembentuk endpoint R2. |
+| `R2_ACCESS_KEY_ID` | Ya | `minioadmin` | R2 Access Key ID atau kredensial MinIO lokal. |
+| `R2_SECRET_ACCESS_KEY` | Ya | `minioadmin` | R2 Secret Access Key atau password MinIO lokal. |
+| `R2_BUCKET` | Ya | `rtdigital-local` | Nama bucket target. |
+| `R2_ENDPOINT` | Ya | `http://minio:9000` | Endpoint S3-compatible MinIO lokal atau R2. |
+| `R2_USE_PATH_STYLE` | Tidak | `true` | `true` untuk MinIO lokal; `false` untuk R2 production. |
 | `SMTP_HOST` | Lokal saja | `mailpit` | Host Mailpit untuk pengujian email. |
 | `SMTP_PORT` | Lokal saja | `1025` | Port SMTP Mailpit. |
 | `RESEND_API_KEY` | Staging/production | Kosong | API key Resend. Jangan gunakan Mailpit untuk pengiriman nyata. |
@@ -82,13 +85,13 @@ REDIS_URL=redis://redis:6379/0
 # Security: generate a unique value, e.g. `openssl rand -base64 48`
 JWT_SECRET=replace_with_a_local_random_secret_at_least_32_bytes
 
-# Object storage: MinIO local only
-AWS_REGION=us-east-1
-AWS_S3_BUCKET=rtdigital-local
-AWS_ACCESS_KEY_ID=minioadmin
-AWS_SECRET_ACCESS_KEY=minioadmin
-S3_ENDPOINT=http://minio:9000
-S3_USE_PATH_STYLE=true
+# Object storage: Cloudflare R2 production; MinIO local
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=minioadmin
+R2_SECRET_ACCESS_KEY=minioadmin
+R2_BUCKET=rtdigital-local
+R2_ENDPOINT=http://minio:9000
+R2_USE_PATH_STYLE=true
 
 # Local email testing
 SMTP_HOST=mailpit
@@ -107,18 +110,19 @@ SAUNGWA_ENDPOINT=
 |---|---|---|---|
 | PostgreSQL | Container Compose | RDS staging | RDS private subnet |
 | Redis | Container Compose | Sesuai kebutuhan | Sesuai kebutuhan |
-| File | MinIO | S3 bucket staging | S3 bucket production |
+| File | MinIO | Cloudflare R2 staging | Cloudflare R2 production |
 | Email | Mailpit | Resend | Resend |
 | WhatsApp | Adapter mock/no-op | SaungWA test environment bila tersedia | SaungWA production |
 | Secret backend | `.env` lokal | AWS Secrets Manager | AWS Secrets Manager |
-| AWS credential | MinIO credential lokal | IAM Task Role | IAM Task Role |
+| R2 credential | MinIO credential lokal | R2 API token secret | R2 API token secret |
 
 ## 7. Checklist Sebelum Deploy
 
 - [ ] `DATABASE_URL` memakai koneksi TLS di staging/production.
 - [ ] `JWT_SECRET` unik, acak, minimal 32 byte, dan tidak tercatat pada log.
 - [ ] `APP_URL`, `API_URL`, serta URL `NEXT_PUBLIC_*` memakai domain environment yang benar.
-- [ ] `AWS_S3_BUCKET` privat dan berbeda untuk staging/production.
-- [ ] ECS Task Role memiliki least-privilege access ke bucket dan CloudWatch.
+- [ ] `R2_BUCKET` privat dan berbeda untuk staging/production.
+- [ ] API token R2 hanya memiliki izin bucket yang diperlukan.
+- [ ] ECS Task Role memiliki izin CloudWatch Logs dan AWS Secrets Manager untuk membaca secret R2.
 - [ ] `RESEND_FROM_EMAIL` telah diverifikasi.
 - [ ] Credential Resend dan SaungWA tersimpan sebagai secret, bukan source code.

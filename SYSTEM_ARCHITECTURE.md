@@ -51,7 +51,7 @@ flowchart TD
             end
         end
 
-        S3[(Amazon S3 Private Bucket<br/>Dokumen dan Lampiran)]
+        R2[(Cloudflare R2 Private Bucket<br/>Dokumen dan Lampiran)]
         RESEND[Resend<br/>Email Transaksional]
         SAUNGWA[SaungWA<br/>Notifikasi WhatsApp]
         SM[AWS Secrets Manager]
@@ -62,14 +62,14 @@ flowchart TD
     ALB --> ECS
     ECS --> RDS
     ECS -.opsional.-> Redis
-    ECS --> S3
+    ECS --> R2
     ECS --> RESEND
     ECS --> SAUNGWA
     ECS --> SM
     ECS --> CW
     ECR --> ECS
 
-    User -.unggah/download<br/>URL bertanda tangan.-> S3
+    User -.unggah/download<br/>URL bertanda tangan.-> R2
 ```
 
 ---
@@ -121,7 +121,7 @@ flowchart TD
 - Otorisasi RBAC serta pembatasan data berdasarkan organisasi, kepemilikan keluarga, dan penugasan.
 - Validasi input dan aturan bisnis.
 - Transaksi PostgreSQL untuk pembayaran, kas, surat, aduan, dan audit log.
-- Penerbitan URL unggah/download bertanda tangan untuk S3.
+- Penerbitan URL unggah/download bertanda tangan untuk Cloudflare R2 melalui API S3-compatible.
 - Pengiriman notifikasi dalam aplikasi serta email transaksional.
 - Structured logging JSON dan penerusan `X-Request-ID`.
 
@@ -130,7 +130,7 @@ flowchart TD
 - ALB berada di public subnet.
 - ECS Fargate berada di private subnet.
 - Hanya ALB dapat mengirim traffic masuk ke ECS.
-- API hanya dapat terhubung ke RDS, S3, Resend, SaungWA, Secrets Manager, serta CloudWatch sesuai IAM dan security group.
+- API hanya dapat terhubung ke RDS, Cloudflare R2 melalui endpoint HTTPS S3-compatible, Resend, SaungWA, Secrets Manager, serta CloudWatch sesuai IAM dan aturan egress.
 - Bila pembatasan akses memungkinkan, ALB menerima traffic hanya dari Cloudflare. Jangan mengandalkan header Cloudflare sebagai autentikasi.
 
 ## 3.3 PostgreSQL di Amazon RDS
@@ -147,9 +147,9 @@ flowchart TD
 
 PostgreSQL menyimpan refresh token hash dan status pencabutan token pada MVP. Tidak ada ketergantungan Redis untuk session awal.
 
-## 3.4 Object Storage: Amazon S3
+## 3.4 Object Storage: Cloudflare R2
 
-S3 menyimpan file besar atau biner:
+Cloudflare R2 diakses melalui API S3-compatible untuk menyimpan file besar atau biner:
 
 - Bukti transfer.
 - Lampiran surat.
@@ -162,8 +162,8 @@ S3 menyimpan file besar atau biner:
 
 1. Frontend meminta URL unggah kepada Go API.
 2. API memeriksa autentikasi, permission, kepemilikan objek, jenis file, ukuran file, dan batas unggahan organisasi.
-3. API membuat pre-signed upload URL dengan masa berlaku pendek.
-4. Browser mengunggah langsung ke S3.
+3. API membuat pre-signed upload URL S3-compatible dengan masa berlaku pendek.
+4. Browser mengunggah langsung ke R2.
 5. Frontend memberi tahu API setelah unggah selesai.
 6. API memvalidasi metadata/checksum bila tersedia lalu menyimpan `file_objects` dan relasinya.
 
@@ -172,13 +172,13 @@ S3 menyimpan file besar atau biner:
 1. Browser meminta file melalui Go API.
 2. API memeriksa permission dan scope data.
 3. API menerbitkan pre-signed download URL berumur pendek.
-4. Browser mengunduh langsung dari S3.
+4. Browser mengunduh langsung dari R2.
 
 **Aturan:**
 
 - Bucket selalu private.
 - Tidak ada URL publik permanen.
-- S3 Versioning aktif untuk dokumen penting.
+- Retensi dan pemulihan objek R2 mengikuti fitur bucket yang tersedia serta kebijakan backup yang ditetapkan.
 - CORS bucket hanya mengizinkan origin frontend resmi.
 - Pemindaian malware ditunda pasca-MVP; validasi MIME type, ukuran, dan ekstensi tetap wajib pada MVP.
 
@@ -215,7 +215,7 @@ Jika diperlukan, gunakan Amazon ElastiCache Redis di private subnet. Redis tidak
 1. Warga memilih bukti dari kamera atau galeri.
 2. Frontend meminta URL unggah bertanda tangan.
 3. Go API memvalidasi user, tagihan, tipe file, serta ukuran.
-4. Browser mengunggah file langsung ke S3.
+4. Browser mengunggah file langsung ke R2.
 5. Frontend membuat payment record melalui Go API dengan idempotency key.
 6. API menyimpan pembayaran status `pending`, membuat audit log, serta notifikasi Bendahara.
 7. Bendahara memverifikasi melalui API.
@@ -330,7 +330,7 @@ flowchart LR
 |---|---|---|
 | RDS PostgreSQL | Automated backup harian dan Point-in-Time Recovery | Retensi minimal 7 hari; target 14–30 hari sesuai anggaran |
 | RDS sebelum migration berisiko | Snapshot manual | Wajib sebelum perubahan destruktif |
-| S3 | Versioning untuk dokumen penting | Aktif pada production |
+| Cloudflare R2 | Retensi dan pemulihan objek sesuai kemampuan bucket | Diuji pada production |
 | Konfigurasi/infrastruktur | Infrastructure as Code dan repository version control | Rebuild environment harus terdokumentasi |
 | Secret | Secrets Manager | Rotasi terkontrol; tidak diekspor ke repository |
 
@@ -338,7 +338,7 @@ flowchart LR
 
 - RPO maksimal 24 jam.
 - RTO maksimal 4 jam.
-- Restore RDS dan pemulihan file S3 diuji berkala di staging.
+- Restore RDS dan pemulihan file R2 diuji berkala di staging.
 - Hasil uji restore didokumentasikan dalam runbook.
 
 ---
@@ -362,7 +362,7 @@ flowchart LR
 | ECS | CPU, memory, restart, task sehat | Resource tinggi berkelanjutan atau task unhealthy |
 | Go API | Error rate, latency p95, auth failure, upload failure | Error rate/latency melewati baseline |
 | RDS | CPU, koneksi, storage, IOPS, slow query | Storage rendah, koneksi tinggi, query lambat |
-| S3 | Upload/download failure | Kegagalan akses atau lonjakan error |
+| Cloudflare R2 | Upload/download failure | Kegagalan akses atau lonjakan error |
 | Email (Resend) | Delivery rate, bounce, complaint | Bounce atau complaint di atas ambang kebijakan |
 | WhatsApp (SaungWA) | Delivery dan failure rate | Kegagalan kirim di atas ambang kebijakan |
 
@@ -373,7 +373,7 @@ flowchart LR
 - Health check tidak mengungkap detail internal.
 - Alert dikirim ke pengurus teknis yang ditetapkan.
 - Error tracking frontend eksternal hanya digunakan setelah evaluasi privasi.
-- Runbook menangani: API down, RDS connection failure, gagal migration, upload S3 gagal, alarm error rate, dan pemulihan backup.
+- Runbook menangani: API down, RDS connection failure, gagal migration, upload R2 gagal, alarm error rate, dan pemulihan backup.
 
 ---
 
@@ -384,9 +384,9 @@ flowchart LR
 | Frontend | Next.js App Router di Cloudflare Workers melalui OpenNext |
 | Backend | Go modular monolith di Amazon ECS Fargate |
 | Database | Amazon RDS PostgreSQL di private subnet |
-| File | Amazon S3 private bucket dengan signed URL |
+| File | Cloudflare R2 private bucket melalui API S3-compatible |
 | Cache/session | PostgreSQL dan Cloudflare; tanpa Redis |
 | Container lokal | Docker Compose |
 | CI/CD | GitHub Actions atau CI setara, ECR, ECS, Wrangler |
-| Backup | RDS automated backup/PITR dan S3 Versioning |
+| Backup | RDS automated backup/PITR serta kebijakan retensi dan pemulihan Cloudflare R2 |
 | Monitoring | Cloudflare analytics/WAF, CloudWatch Logs, Metrics, Alarms |

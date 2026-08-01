@@ -25,7 +25,7 @@ Tahap perencanaan dan desain MVP. Repository ini saat ini berisi dokumentasi pro
 | Frontend | Next.js App Router, TypeScript, OpenNext, Cloudflare Workers |
 | Backend | Go modular monolith, REST API |
 | Database | PostgreSQL 18.4, Amazon RDS |
-| File privat | Amazon S3 dengan pre-signed URL |
+| File privat | Cloudflare R2 private bucket melalui API S3-compatible |
 | Email | Resend |
 | WhatsApp | SaungWA |
 | API runtime | Amazon ECS Fargate |

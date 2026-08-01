@@ -101,7 +101,7 @@ MVP mencakup:
 16. Notifikasi dalam aplikasi.
 17. Notifikasi WhatsApp melalui SaungWA (`https://saungwa.com/`) untuk aktivitas penting.
 18. Dashboard dan laporan dasar.
-19. Penyimpanan dokumen dan lampiran.
+19. Penyimpanan dokumen dan lampiran menggunakan Cloudflare R2.
 20. Audit log aktivitas penting.
 21. Pengaturan profil RT.
 22. Dukungan PWA dasar: installable, app manifest, dan halaman utama yang tetap dapat dibuka dari perangkat seluler pada koneksi tidak stabil.
@@ -487,7 +487,7 @@ Peran operasional yang dapat dikonfigurasi, misalnya petugas keamanan atau koord
 
 ## 9.10 Dokumen dan Lampiran
 
-- Penyimpanan file di Amazon S3.
+- Penyimpanan file di Cloudflare R2.
 - Akses menggunakan URL bertanda tangan dengan masa berlaku terbatas.
 - Validasi jenis dan ukuran file.
 - Pemindaian malware sebagai peningkatan produksi yang direkomendasikan.
@@ -666,7 +666,7 @@ Sistem harus dapat meningkatkan kapasitas backend secara horizontal tanpa menyim
 - Header keamanan browser diaktifkan.
 - Secret tidak disimpan di repository atau image container.
 - AWS Secrets Manager atau Parameter Store digunakan untuk rahasia produksi.
-- Enkripsi at-rest untuk RDS, S3, dan backup.
+- Enkripsi at-rest untuk RDS, Cloudflare R2, dan backup.
 - MFA wajib bagi peran pengurus.
 - Dependency dan container image dipindai pada CI.
 - Audit keamanan dilakukan sebelum produksi.
@@ -719,7 +719,7 @@ Sistem harus dapat meningkatkan kapasitas backend secara horizontal tanpa menyim
 - Backup otomatis RDS harian.
 - Point-in-time recovery diaktifkan untuk produksi.
 - Retensi backup awal minimal tujuh hari; target produksi 14–30 hari sesuai anggaran.
-- Versioning S3 untuk dokumen penting.
+- Object versioning untuk dokumen penting bila didukung konfigurasi bucket.
 - Uji pemulihan dilakukan secara berkala.
 - Target awal RPO: maksimal 24 jam.
 - Target awal RTO: maksimal 4 jam.
@@ -763,7 +763,7 @@ AWS Application Load Balancer
    v
 Go API di Amazon ECS Fargate
    |                |
-   |                +--> Amazon S3 (dokumen dan lampiran)
+   |                +--> Cloudflare R2 (dokumen dan lampiran)
    |                +--> Resend (email transaksional)
    |                +--> SaungWA (notifikasi WhatsApp)
    |                +--> CloudWatch (log dan metrik)
@@ -824,7 +824,7 @@ Amazon RDS for PostgreSQL 18.4
 - Amazon ECS Fargate untuk menjalankan container Go.
 - Application Load Balancer untuk HTTPS dan health check.
 - Amazon RDS for PostgreSQL.
-- Amazon S3 untuk file.
+- Cloudflare R2 untuk file dan lampiran.
 - AWS Secrets Manager untuk secret.
 - Amazon CloudWatch untuk log dan alarm.
 - Resend untuk email transaksional.
@@ -1687,7 +1687,7 @@ Jawaban atas pertanyaan ini dapat memperbarui ruang lingkup, aturan bisnis, biay
 3. Gunakan Cloudflare Workers + OpenNext untuk frontend Next.js.
 4. Gunakan Amazon ECS Fargate untuk backend Go.
 5. Gunakan Amazon RDS PostgreSQL 18.4 untuk database produksi.
-6. Gunakan Amazon S3 untuk seluruh dokumen privat.
+6. Gunakan Cloudflare R2 melalui API S3-compatible untuk seluruh dokumen privat.
 7. Mulai dengan pembayaran manual dan verifikasi bendahara.
 8. Gunakan satu organisasi RT pada MVP dengan kolom `organization_id` untuk kesiapan masa depan.
 9. Prioritaskan data warga, iuran, surat, dan pengumuman sebelum fitur tambahan.

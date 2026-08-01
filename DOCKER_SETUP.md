@@ -173,7 +173,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 ## 8. Batasan
 
 - Mailpit menggantikan Resend hanya di lokal.
-- MinIO menggantikan Amazon S3 hanya di lokal.
+- MinIO adalah emulator S3-compatible yang digunakan untuk meniru Cloudflare R2 di lokal.
 - Redis disediakan untuk keseragaman development; arsitektur MVP tidak menjadikannya dependency session wajib.
 - SaungWA tidak diemulasikan. Integrasi WhatsApp lokal memakai adapter/no-op atau sandbox provider saat implementasi tersedia.
 - Secret production tetap menggunakan AWS Secrets Manager; tidak masuk `.env`, Docker image, atau repository.

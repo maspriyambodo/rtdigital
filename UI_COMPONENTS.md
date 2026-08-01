@@ -146,7 +146,7 @@ type DatePickerProps = {
 
 ## 2.6 `FileUploader`
 
-Unggah file privat ke S3 menggunakan pre-signed URL.
+Unggah file privat ke Cloudflare R2 menggunakan pre-signed URL melalui API S3-compatible.
 
 ```ts
 type UploadedFile = {
@@ -183,7 +183,7 @@ type FileUploaderProps = {
 - Validasi MIME type, ekstensi, dan ukuran di client untuk UX; backend tetap memvalidasi kembali.
 - Untuk foto, dukung tombol **Ambil Foto** dengan `capture="environment"` bila browser mendukung.
 - Tampilkan nama file, ukuran, progress, tombol hapus, dan preview gambar bila aman.
-- File biner diunggah browser langsung ke S3; komponen hanya memegang metadata hasil unggah.
+- File biner diunggah browser langsung ke R2 melalui API S3-compatible; komponen hanya memegang metadata hasil unggah.
 - Jangan menyimpan file, URL signed, NIK, atau dokumen di `localStorage`.
 
 ---

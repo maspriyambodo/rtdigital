@@ -251,9 +251,9 @@ Status HTTP minimum:
 
 | Method | Endpoint | Keterangan | Otorisasi |
 |---|---|---|---|
-| `POST` | `/files/presign-upload` | Minta URL upload S3 | Auth + validasi scope |
-| `POST` | `/files/confirm-upload` | Konfirmasi unggah S3 selesai | Auth + pemilik unggahan |
-| `GET` | `/files/{id}/download` | Minta URL download S3 sementara | Auth + scope |
+| `POST` | `/files/presign-upload` | Minta URL upload Cloudflare R2 S3-compatible | Auth + validasi scope |
+| `POST` | `/files/confirm-upload` | Konfirmasi unggah Cloudflare R2 selesai | Auth + pemilik unggahan |
+| `GET` | `/files/{id}/download` | Minta URL download Cloudflare R2 sementara | Auth + scope |
 | `GET` | `/dashboard/admin` | Ringkasan operasional pengurus | Pengurus berwenang |
 | `GET` | `/dashboard/resident` | Ringkasan tagihan, surat, aduan warga | Warga |
 | `GET` | `/audit-logs` | Daftar audit log operasional | `audit.read` |
@@ -355,7 +355,7 @@ Response:
 {
   "data": {
     "file_id": "e6832489-8928-49b5-a8f8-8483a99195e0",
-    "upload_url": "https://bucket.s3.amazonaws.com/...",
+    "upload_url": "https://<account_id>.r2.cloudflarestorage.com/...",
     "upload_headers": {
       "Content-Type": "image/jpeg"
     },
@@ -370,7 +370,7 @@ Response:
 
 1. Gunakan `fetch` native atau wrapper tipis. Jangan tambahkan library HTTP tanpa kebutuhan nyata.
 2. Saat menerima `401`, frontend boleh mencoba satu kali `POST /auth/refresh`; bila gagal, hapus state privat lalu arahkan ke login.
-3. Upload file selalu langsung browser → S3 memakai `upload_url`; file biner tidak melewati Go API.
+3. Upload file selalu langsung browser → Cloudflare R2 memakai `upload_url`; file biner tidak melewati Go API.
 4. Simpan draft formulir panjang secara lokal dengan aman. Jangan menyimpan token, NIK, nomor KK, atau dokumen dalam local storage.
 5. Tampilkan `message` error API kepada pengguna; catat `request_id` untuk bantuan pengurus.
 6. Semua halaman atau response data privat menggunakan kebijakan cache `private, no-store`.
