@@ -6,7 +6,7 @@ services:
     build:
       context: ./apps/web
       dockerfile: ../../infrastructure/docker/web/Dockerfile.dev
-    command: pnpm dev --hostname 0.0.0.0
+    command: sh -c "pnpm install --frozen-lockfile; pnpm dev --hostname 0.0.0.0"
     ports:
       - "3000:3000"
     environment:

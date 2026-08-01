@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Next.js / OpenNext / Cloudflare build output
+apps/web/.next/
+apps/web/.open-next/
+apps/web/out/
+apps/web/build/
+apps/web/.worker-next/
+apps/web/.wrangler/
+apps/web/next-env.d.ts
+
+# Go build and test output
+services/api/api
+services/api/*.test
+services/api/coverage.out
+services/api/coverage.txt
+services/api/coverage.html
+
+# Environment files and secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Logs and coverage
+*.log
+coverage/
+.nyc_output/
+*.lcov
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local Docker overrides
+docker-compose.override.yml

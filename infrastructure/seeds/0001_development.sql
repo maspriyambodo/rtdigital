@@ -1,0 +1,3 @@
+-- Development seed data.
+-- Never execute in staging or production.
+-- Domain seed data is introduced by its respective epic.
