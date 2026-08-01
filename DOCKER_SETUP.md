@@ -5,7 +5,7 @@
 **Cakupan:** Lingkungan pengembangan lokal. Bukan konfigurasi production.  
 **Referensi:** `docker-compose.yml`, `REPOSITORY_STRUCTURE.md`, `TECHNICAL_SPECIFICATION.md`
 
-Docker Compose menjalankan frontend, Go API, serta seluruh dependensi lokal agar development konsisten tanpa memasang PostgreSQL, Redis, Mailpit, atau MinIO langsung pada host.
+Docker Compose menjalankan frontend, Go API, serta seluruh dependensi lokal agar development konsisten tanpa memasang PostgreSQL, Redis, atau MinIO langsung pada host.
 
 ## 1. Prasyarat
 
@@ -13,7 +13,7 @@ Docker Compose menjalankan frontend, Go API, serta seluruh dependensi lokal agar
 - `pnpm` bila menjalankan frontend dari host atau mengelola dependency workspace.
 - Git.
 
-Go, PostgreSQL, Redis, Mailpit, dan MinIO tidak perlu dipasang pada host.
+Go, PostgreSQL, Redis, dan MinIO tidak perlu dipasang pada host.
 
 > `apps/web`, `services/api`, serta Dockerfile development belum di-scaffold pada repository ini. Karena itu `web` dan `api` belum dapat di-build sampai struktur tersebut dibuat sesuai `REPOSITORY_STRUCTURE.md`.
 
@@ -25,8 +25,7 @@ Go, PostgreSQL, Redis, Mailpit, dan MinIO tidak perlu dipasang pada host.
 | `api` | `8080` | Go REST API. |
 | `postgres` | `5432` | PostgreSQL 18.4; database utama. |
 | `redis` | `6379` | Cache/rate limiting/job lokal bila diperlukan. |
-| `mailpit` | `8025`, `1025` | UI email dan SMTP catcher lokal. Menggantikan Resend saat development. |
-| `minio` | `9000`, `9001` | Emulator S3-compatible untuk file privat. |
+| `minio` | `9000`, `9001` | Emulator S3-compatible untuk file privat Cloudflare R2. |
 | `minio-init` | — | Container sementara pembuat bucket `rtdigital-local`, lalu berhenti. |
 
 ## 3. Menjalankan Setelah Scaffolding
@@ -44,7 +43,6 @@ Akses layanan:
 | Frontend | http://localhost:3000 |
 | API | http://localhost:8080 |
 | API health | http://localhost:8080/healthz |
-| Mailpit | http://localhost:8025 |
 | MinIO Console | http://localhost:9001 |
 | PostgreSQL | `localhost:5432` |
 | Redis | `localhost:6379` |
@@ -78,16 +76,6 @@ Host: localhost
 Port: 6379
 URL internal: redis://redis:6379/0
 ```
-
-### Mailpit
-
-```text
-SMTP host internal: mailpit
-SMTP port:          1025
-Web UI:             http://localhost:8025
-```
-
-Mailpit menangkap email lokal. Tidak meneruskan email ke penerima asli.
 
 ### MinIO
 
@@ -153,7 +141,7 @@ docker compose logs -f api
 Untuk HMR lebih cepat, jalankan dependency dan API dalam Docker, lalu Next.js dari host:
 
 ```bash
-docker compose up api postgres redis mailpit minio minio-init
+docker compose up api postgres redis minio minio-init
 ```
 
 Kemudian:
@@ -172,7 +160,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080/api/v1
 
 ## 8. Batasan
 
-- Mailpit menggantikan Resend hanya di lokal.
+- Pengiriman email memakai Resend API; gunakan adapter/no-op lokal bila API key tidak disediakan.
 - MinIO adalah emulator S3-compatible yang digunakan untuk meniru Cloudflare R2 di lokal.
 - Redis disediakan untuk keseragaman development; arsitektur MVP tidak menjadikannya dependency session wajib.
 - SaungWA tidak diemulasikan. Integrasi WhatsApp lokal memakai adapter/no-op atau sandbox provider saat implementasi tersedia.

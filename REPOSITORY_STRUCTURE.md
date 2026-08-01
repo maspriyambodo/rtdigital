@@ -215,7 +215,6 @@ Root `docker-compose.yml` menjalankan dependensi lokal:
 web       Next.js development server
 api       Go API
 postgres  PostgreSQL 18.4
-mailpit   SMTP testing lokal untuk simulasi email sebelum integrasi Resend
 ```
 
 Opsional:
@@ -228,7 +227,7 @@ Prinsip:
 
 - Jalankan dengan `docker compose up`.
 - PostgreSQL memakai volume persisten.
-- `mailpit` tidak digunakan pada production.
+- Pengiriman email menggunakan API Resend.
 - MinIO bukan dependency wajib sebelum fitur file dikerjakan.
 - Hot reload frontend/backend tersedia.
 - Secret lokal hanya berada di `.env`, tidak masuk Git.

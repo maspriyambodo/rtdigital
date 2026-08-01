@@ -48,9 +48,7 @@ Dokumen ini menetapkan konfigurasi runtime. Jangan commit `.env`, API key, passw
 | `R2_BUCKET` | Ya | `rtdigital-local` | Nama bucket target. |
 | `R2_ENDPOINT` | Ya | `http://minio:9000` | Endpoint S3-compatible MinIO lokal atau R2. |
 | `R2_USE_PATH_STYLE` | Tidak | `true` | `true` untuk MinIO lokal; `false` untuk R2 production. |
-| `SMTP_HOST` | Lokal saja | `mailpit` | Host Mailpit untuk pengujian email. |
-| `SMTP_PORT` | Lokal saja | `1025` | Port SMTP Mailpit. |
-| `RESEND_API_KEY` | Staging/production | Kosong | API key Resend. Jangan gunakan Mailpit untuk pengiriman nyata. |
+| `RESEND_API_KEY` | Ya | Kosong | API key Resend untuk environment terkait. |
 | `RESEND_FROM_EMAIL` | Staging/production | Kosong | Alamat/domain pengirim yang sudah diverifikasi Resend. |
 | `SAUNGWA_API_KEY` | Staging/production | Kosong | API key SaungWA. |
 | `SAUNGWA_ENDPOINT` | Tidak | Sesuai dokumentasi SaungWA | Endpoint API SaungWA. Jangan menebak atau hardcode endpoint tanpa verifikasi dokumentasi provider. |
@@ -93,11 +91,8 @@ R2_BUCKET=rtdigital-local
 R2_ENDPOINT=http://minio:9000
 R2_USE_PATH_STYLE=true
 
-# Local email testing
-SMTP_HOST=mailpit
-SMTP_PORT=1025
-
-# External notification providers: leave empty locally unless deliberately tested
+# Notification providers: Resend for email, SaungWA for WhatsApp.
+# Leave empty locally unless deliberately tested.
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=
 SAUNGWA_API_KEY=
@@ -111,7 +106,7 @@ SAUNGWA_ENDPOINT=
 | PostgreSQL | Container Compose | RDS staging | RDS private subnet |
 | Redis | Container Compose | Sesuai kebutuhan | Sesuai kebutuhan |
 | File | MinIO | Cloudflare R2 staging | Cloudflare R2 production |
-| Email | Mailpit | Resend | Resend |
+| Email | Resend development key | Resend staging key | Resend production key |
 | WhatsApp | Adapter mock/no-op | SaungWA test environment bila tersedia | SaungWA production |
 | Secret backend | `.env` lokal | AWS Secrets Manager | AWS Secrets Manager |
 | R2 credential | MinIO credential lokal | R2 API token secret | R2 API token secret |

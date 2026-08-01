@@ -29,8 +29,6 @@ services:
       PORT: "8080"
       DATABASE_URL: postgres://rtdigital:rtdigital_local_only@postgres:5432/rtdigital?sslmode=disable
       REDIS_URL: redis://redis:6379/0
-      SMTP_HOST: mailpit
-      SMTP_PORT: "1025"
       R2_ENDPOINT: http://minio:9000
       R2_BUCKET: rtdigital-local
       R2_ACCESS_KEY_ID: minioadmin
@@ -48,8 +46,6 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
-      mailpit:
-        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
       interval: 10s
@@ -84,14 +80,6 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
-
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-    environment:
-      MP_MAX_MESSAGES: "500"
 
   minio:
     image: minio/minio:latest

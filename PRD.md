@@ -858,7 +858,6 @@ Service minimum:
 web       Next.js development server
 api       Go API
 postgres  PostgreSQL 18.4
-mailpit   SMTP testing lokal, opsional
 ```
 
 Prinsip development:

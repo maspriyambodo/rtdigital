@@ -239,7 +239,6 @@ Docker Compose digunakan agar frontend, API, database, dan email testing dapat d
 web       Next.js development server
 api       Go API dengan hot reload
 postgres  PostgreSQL
-mailpit   SMTP testing lokal
 ```
 
 **Opsional:**
