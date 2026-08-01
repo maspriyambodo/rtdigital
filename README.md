@@ -51,6 +51,7 @@ Tahap perencanaan dan desain MVP. Repository ini saat ini berisi dokumentasi pro
 - [Desain Database](DATABASE_DESIGN.md)
 - [Spesifikasi API](API_SPECIFICATION.md)
 - [Peran dan Hak Akses](USER_ROLES_AND_PERMISSIONS.md)
+- [Panduan Docker](DOCKER_SETUP.md)
 
 ## Pengembangan Lokal
 
