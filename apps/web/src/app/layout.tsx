@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AuthProvider } from "@/lib/auth-context";
 import { OfflineNotice } from "@/components/layout/OfflineNotice";
 import "./globals.css";
 
@@ -33,7 +34,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body>
-        {children}
+        <AuthProvider>{children}</AuthProvider>
         <OfflineNotice />
       </body>
     </html>

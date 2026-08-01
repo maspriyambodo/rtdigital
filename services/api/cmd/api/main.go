@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/config"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
@@ -35,9 +36,36 @@ func main() {
 	}
 	defer pool.Close()
 
+	tokens, err := auth.NewTokenManager(cfg.JWTSecret)
+	if err != nil {
+		logger.Error("failed to initialize token manager", "error", err)
+		os.Exit(1)
+	}
+
+	crypter, err := auth.NewAESCrypter([]byte(cfg.DataEncryptionKey))
+	if err != nil {
+		logger.Error("failed to initialize crypter", "error", err)
+		os.Exit(1)
+	}
+
+	var mailer auth.Mailer = auth.NoopMailer{}
+	resendKey := os.Getenv("RESEND_API_KEY")
+	resendFrom := os.Getenv("RESEND_FROM_EMAIL")
+	if resendKey != "" && resendFrom != "" {
+		mailer = auth.NewResendMailer(resendKey, resendFrom)
+	}
+
+	appBaseURL := os.Getenv("APP_URL")
+	if appBaseURL == "" {
+		appBaseURL = "http://localhost:3000"
+	}
+
+	authService := auth.NewService(pool, tokens, crypter, mailer, appBaseURL)
+	production := os.Getenv("APP_ENV") == "production"
+
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, production),
 	}
 
 	serverErr := make(chan error, 1)

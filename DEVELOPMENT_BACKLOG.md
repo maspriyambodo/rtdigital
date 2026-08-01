@@ -35,15 +35,15 @@ Tujuan: menyiapkan monorepo, aplikasi dasar, database, CI/CD, serta lingkungan d
 
 Tujuan: autentikasi aman menggunakan email/nomor telepon, access token, refresh token, dan lifecycle akun.
 
-- [ ] **Task 1.1:** Buat migration `organizations`, `users`, session/refresh token, activation token, dan password reset token.
-- [ ] **Task 1.2:** Implementasi password hash Argon2id, normalisasi email/telepon, lockout login, dan validasi status akun.
-- [ ] **Task 1.3:** Implementasi `POST /auth/login`: access JWT, refresh token HttpOnly, session record, audit login.
-- [ ] **Task 1.4:** Implementasi refresh token rotation, logout perangkat aktif, dan logout seluruh perangkat.
-- [ ] **Task 1.5:** Implementasi undangan/aktivasi akun dengan token sekali pakai dan kedaluwarsa.
-- [ ] **Task 1.6:** Implementasi lupa/reset kata sandi menggunakan Resend API.
-- [ ] **Task 1.7:** Implementasi MFA pengurus dan verifikasi MFA saat login.
-- [ ] **Task 1.8:** Buat UI login, aktivasi akun, lupa/reset kata sandi, profil, ganti kata sandi, dan logout.
-- [ ] **Task 1.9:** Tambahkan test autentikasi: lockout, token expired, refresh rotation, logout, dan akun nonaktif.
+- [x] **Task 1.1:** Buat migration `organizations`, `users`, session/refresh token, activation token, dan password reset token.
+- [x] **Task 1.2:** Implementasi password hash Argon2id, normalisasi email/telepon, lockout login, dan validasi status akun.
+- [x] **Task 1.3:** Implementasi `POST /auth/login`: access JWT, refresh token HttpOnly, session record, audit login.
+- [x] **Task 1.4:** Implementasi refresh token rotation, logout perangkat aktif, dan logout seluruh perangkat.
+- [ ] **Task 1.5:** Implementasi undangan/aktivasi akun dengan token sekali pakai dan kedaluwarsa. *(Aktivasi token telah ada; pembuatan undangan menunggu API manajemen pengguna Epic 2.)*
+- [x] **Task 1.6:** Implementasi lupa/reset kata sandi menggunakan Resend API.
+- [ ] **Task 1.7:** Implementasi MFA pengurus dan verifikasi MFA saat login. *(TOTP terenkripsi, enrollment, dan verifikasi login telah ada; pembatasan wajib khusus peran pengurus menunggu RBAC Epic 2.)*
+- [x] **Task 1.8:** Buat UI login, aktivasi akun, lupa/reset kata sandi, profil, ganti kata sandi, dan logout.
+- [ ] **Task 1.9:** Tambahkan test autentikasi: lockout, token expired, refresh rotation, logout, dan akun nonaktif. *(Unit test lulus; integration test tersedia tetapi belum dijalankan terhadap PostgreSQL bermigrasi.)*
 
 ---
 

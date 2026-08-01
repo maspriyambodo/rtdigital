@@ -6,9 +6,11 @@ import (
 )
 
 type Config struct {
-	Port        string
-	DatabaseURL string
-	R2          R2Config
+	Port             string
+	DatabaseURL      string
+	JWTSecret        string
+	DataEncryptionKey string
+	R2               R2Config
 }
 
 type R2Config struct {
@@ -30,6 +32,16 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("DATABASE_URL is required")
 	}
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if len(jwtSecret) < 32 {
+		return Config{}, fmt.Errorf("JWT_SECRET must be at least 32 bytes")
+	}
+
+	dataEncryptionKey := os.Getenv("DATA_ENCRYPTION_KEY")
+	if len(dataEncryptionKey) != 32 {
+		return Config{}, fmt.Errorf("DATA_ENCRYPTION_KEY must be exactly 32 bytes")
+	}
+
 	r2 := R2Config{
 		Endpoint:        os.Getenv("R2_ENDPOINT"),
 		Bucket:          os.Getenv("R2_BUCKET"),
@@ -42,9 +54,11 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		Port:        port,
-		DatabaseURL: databaseURL,
-		R2:          r2,
+		Port:              port,
+		DatabaseURL:       databaseURL,
+		JWTSecret:         jwtSecret,
+		DataEncryptionKey: dataEncryptionKey,
+		R2:                r2,
 	}, nil
 }
 

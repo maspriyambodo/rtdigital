@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 )
 
 type requestIDKey struct{}
@@ -18,12 +20,16 @@ type Server struct {
 	handler http.Handler
 }
 
-func NewServer(logger *slog.Logger, db *pgxpool.Pool) *Server {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", liveness)
-	mux.HandleFunc("GET /readyz", readiness(db))
+func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, production bool) *Server {
+	root := http.NewServeMux()
+	root.HandleFunc("GET /healthz", liveness)
+	root.HandleFunc("GET /readyz", readiness(db))
 
-	return &Server{handler: withRequestID(withRecovery(logger, withLogging(logger, mux)))}
+	api := http.NewServeMux()
+	auth.NewHandler(authService, tokens, production).RegisterRoutes(api)
+	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
+
+	return &Server{handler: withRequestID(withRecovery(logger, withLogging(logger, root)))}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
