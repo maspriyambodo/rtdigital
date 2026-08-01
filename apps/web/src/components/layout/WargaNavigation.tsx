@@ -43,13 +43,14 @@ export function WargaNavigation() {
               alignItems: "center",
               justifyContent: "center",
               minHeight: 44,
-              padding: "var(--space-2)",
+              padding: "var(--space-2) 2px",
               color: isActive
                 ? "var(--color-primary-600)"
                 : "var(--color-text-secondary)",
-              fontSize: "0.875rem",
+              fontSize: "0.75rem",
               fontWeight: isActive ? 600 : 400,
               textAlign: "center",
+              whiteSpace: "nowrap",
             }}
           >
             {item.label}

@@ -19,15 +19,15 @@ Backlog ini memecah MVP menjadi epic dan task yang dapat dikerjakan bertahap. Se
 
 Tujuan: menyiapkan monorepo, aplikasi dasar, database, CI/CD, serta lingkungan development.
 
-- [ ] **Task 0.1:** Scaffold monorepo: `apps/web`, `services/api`, `infrastructure`, pnpm workspace, Go module.
-- [ ] **Task 0.2:** Inisialisasi Next.js App Router, TypeScript strict, OpenNext, design token CSS, dan PWA manifest.
-- [ ] **Task 0.3:** Buat Go API modular monolith dengan `net/http`, `ServeMux`, `slog`, request ID, recovery, graceful shutdown.
-- [ ] **Task 0.4:** Konfigurasi koneksi PostgreSQL `pgxpool`, migration SQL versioned, dan seed data development.
-- [ ] **Task 0.5:** Konfigurasi Docker Compose untuk `web`, `api`, PostgreSQL, Redis lokal, MinIO, dan inisialisasi bucket.
-- [ ] **Task 0.6:** Buat konfigurasi Cloudflare R2 S3-compatible, termasuk signed upload/download URL dan MinIO emulator lokal.
-- [ ] **Task 0.7:** Buat CI minimum: format check, lint, type check, unit test, integration test, build frontend, build image API.
-- [ ] **Task 0.8:** Buat shell UI: layout warga, bottom navigation, layout pengurus, sidebar/drawer, error state, offline notice.
-- [ ] **Task 0.9:** Implementasi komponen dasar: `Button`, `FormField`, `TextInput`, `Select`, `DatePicker`, `StatusBadge`, `EmptyState`.
+- [x] **Task 0.1:** Scaffold monorepo: `apps/web`, `services/api`, `infrastructure`, pnpm workspace, Go module.
+- [x] **Task 0.2:** Inisialisasi Next.js App Router, TypeScript strict, OpenNext, design token CSS, dan PWA manifest.
+- [x] **Task 0.3:** Buat Go API modular monolith dengan `net/http`, `ServeMux`, `slog`, request ID, recovery, graceful shutdown.
+- [x] **Task 0.4:** Konfigurasi koneksi PostgreSQL `pgxpool`, migration SQL versioned, dan seed data development.
+- [x] **Task 0.5:** Konfigurasi Docker Compose untuk `web`, `api`, PostgreSQL, Redis lokal, MinIO, dan inisialisasi bucket.
+- [x] **Task 0.6:** Buat konfigurasi Cloudflare R2 S3-compatible, termasuk signed upload/download URL dan MinIO emulator lokal.
+- [x] **Task 0.7:** Buat CI minimum: format check, lint, type check, unit test, integration test, build frontend, build image API.
+- [x] **Task 0.8:** Buat shell UI: layout warga, bottom navigation, layout pengurus, sidebar/drawer, error state, offline notice.
+- [x] **Task 0.9:** Implementasi komponen dasar: `Button`, `FormField`, `TextInput`, `Select`, `DatePicker`, `StatusBadge`, `EmptyState`.
 
 ---
 

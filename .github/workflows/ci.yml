@@ -35,11 +35,43 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Unit tests
-        run: go test -race ./...
+      - name: Start integration services
+        run: docker compose -f ../../docker-compose.yml up -d postgres redis minio minio-init
 
-      - name: Build
+      - name: Wait for integration services
+        run: |
+          for attempt in $(seq 1 30); do
+            postgres_ready="$(docker compose -f ../../docker-compose.yml ps --format json | jq -r 'select(.Service == "postgres") | .Health')"
+            minio_ready="$(docker compose -f ../../docker-compose.yml ps --format json | jq -r 'select(.Service == "minio") | .Health')"
+            minio_init_exit="$(docker compose -f ../../docker-compose.yml ps --format json | jq -r 'select(.Service == "minio-init") | .ExitCode')"
+            if [ "$postgres_ready" = "healthy" ] && [ "$minio_ready" = "healthy" ] && [ "$minio_init_exit" = "0" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f ../../docker-compose.yml ps
+          docker compose -f ../../docker-compose.yml logs --no-color
+          exit 1
+
+      - name: Unit and integration tests
+        env:
+          DATABASE_URL: postgres://rtdigital:rtdigital_local_only@localhost:5432/rtdigital?sslmode=disable
+          R2_ENDPOINT: http://localhost:9000
+          R2_BUCKET: rtdigital-local
+          R2_ACCESS_KEY_ID: minioadmin
+          R2_SECRET_ACCESS_KEY: minioadmin
+          R2_USE_PATH_STYLE: "true"
+        run: go test -race -v ./...
+
+      - name: Build binary
         run: go build ./cmd/api
+
+      - name: Build API image
+        run: docker build -f ../../infrastructure/docker/api/Dockerfile -t rtdigital-api:ci .
+
+      - name: Stop integration services
+        if: always()
+        run: docker compose -f ../../docker-compose.yml down -v
 
   web:
     name: Web

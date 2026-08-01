@@ -37,7 +37,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger),
+		Handler: httpapi.NewServer(logger, pool),
 	}
 
 	serverErr := make(chan error, 1)

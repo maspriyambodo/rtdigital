@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"runtime/debug"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type requestIDKey struct{}
@@ -16,10 +18,10 @@ type Server struct {
 	handler http.Handler
 }
 
-func NewServer(logger *slog.Logger) *Server {
+func NewServer(logger *slog.Logger, db *pgxpool.Pool) *Server {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", health)
-	mux.HandleFunc("GET /healthz", health)
+	mux.HandleFunc("GET /healthz", liveness)
+	mux.HandleFunc("GET /readyz", readiness(db))
 
 	return &Server{handler: withRequestID(withRecovery(logger, withLogging(logger, mux)))}
 }
@@ -28,9 +30,26 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.handler.ServeHTTP(w, r)
 }
 
-func health(w http.ResponseWriter, _ *http.Request) {
+func liveness(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, _ = w.Write([]byte(`{"status":"ok"}`))
+}
+
+func readiness(db *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+		defer cancel()
+
+		if err := db.Ping(ctx); err != nil {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			_, _ = w.Write([]byte(`{"status":"unavailable"}`))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_, _ = w.Write([]byte(`{"status":"ready"}`))
+	}
 }
 
 func withRequestID(next http.Handler) http.Handler {
