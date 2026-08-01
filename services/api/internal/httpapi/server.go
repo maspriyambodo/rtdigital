@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
 
@@ -21,7 +22,7 @@ type Server struct {
 	handler http.Handler
 }
 
-func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, authz *auth.AuthorizationService, usersService *users.Service, production bool) *Server {
+func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, authz *auth.AuthorizationService, usersService *users.Service, residentsService *residents.Service, production bool) *Server {
 	root := http.NewServeMux()
 	root.HandleFunc("GET /healthz", liveness)
 	root.HandleFunc("GET /readyz", readiness(db))
@@ -29,6 +30,7 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	api := http.NewServeMux()
 	auth.NewHandler(authService, tokens, authz, production).RegisterRoutes(api)
 	users.NewHandler(usersService, tokens, authz).RegisterRoutes(api)
+	residents.NewHandler(residentsService, tokens, authz).RegisterRoutes(api)
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 
 	return &Server{handler: withRequestID(withRecovery(logger, withLogging(logger, root)))}

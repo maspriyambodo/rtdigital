@@ -67,16 +67,16 @@ Tujuan: mengelola pengguna, peran, permission, serta scope akses organisasi.
 
 Tujuan: pendataan rumah, keluarga, warga, serta koreksi data dengan perlindungan data sensitif.
 
-- [ ] **Task 3.1:** Buat migration `house_units`, `households`, `residents`, dan `household_members` beserta constraint bisnis.
-- [ ] **Task 3.2:** Implementasi enkripsi NIK/nomor KK, blind index, masking respons API, dan audit akses sensitif.
-- [ ] **Task 3.3:** Implementasi API CRUD rumah/unit serta penonaktifan unit.
-- [ ] **Task 3.4:** Implementasi API CRUD keluarga, penetapan kepala keluarga, dan riwayat anggota keluarga.
-- [ ] **Task 3.5:** Implementasi API CRUD warga, pencarian, filter status, dan verifikasi pengurus.
-- [ ] **Task 3.6:** Implementasi pengajuan koreksi data warga, review, setujui, tolak, dan minta revisi.
-- [ ] **Task 3.7:** Implementasi dry-run validasi CSV, deteksi duplikat, import data awal, dan audit import.
-- [ ] **Task 3.8:** Buat UI pengurus untuk rumah/unit, keluarga, warga, filter, pencarian, dan detail data.
-- [ ] **Task 3.9:** Buat UI warga untuk profil keluarga, anggota keluarga, dan koreksi data.
-- [ ] **Task 3.10:** Tambahkan test constraint kepala keluarga, anggota aktif, masking, dan isolasi tenant.
+- [x] **Task 3.1:** Buat migration `house_units`, `households`, `residents`, dan `household_members` beserta constraint bisnis.
+- [x] **Task 3.2:** Implementasi enkripsi NIK/nomor KK, blind index, masking respons API, dan audit akses sensitif.
+- [x] **Task 3.3:** Implementasi API CRUD rumah/unit serta penonaktifan unit.
+- [x] **Task 3.4:** Implementasi API CRUD keluarga, penetapan kepala keluarga, dan riwayat anggota keluarga.
+- [x] **Task 3.5:** Implementasi API CRUD warga, pencarian, filter status, dan verifikasi pengurus.
+- [x] **Task 3.6:** Implementasi pengajuan koreksi data warga, review, setujui, tolak, dan minta revisi.
+- [x] **Task 3.7:** Implementasi dry-run validasi CSV, deteksi duplikat, import data awal, dan audit import.
+- [x] **Task 3.8:** Buat UI pengurus untuk rumah/unit, keluarga, warga, filter, pencarian, dan detail data.
+- [x] **Task 3.9:** Buat UI warga untuk profil keluarga, anggota keluarga, dan koreksi data.
+- [x] **Task 3.10:** Tambahkan test constraint kepala keluarga, anggota aktif, masking, dan isolasi tenant.
 
 ---
 

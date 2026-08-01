@@ -15,6 +15,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
 
@@ -44,7 +45,8 @@ func TestAuthorizationAndRBAC(t *testing.T) {
 	authService := auth.NewService(pool, tokens, crypter, auth.NoopMailer{}, "http://localhost:3000")
 	authz := auth.NewAuthorizationService(pool)
 	usersService := users.NewService(pool, auth.NoopMailer{}, "http://localhost:3000")
-	server := httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, false)
+	residentsService := residents.NewService(pool, crypter, "12345678901234567890123456789012")
+	server := httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, false)
 
 	const orgID = "11111111-1111-1111-1111-111111111111"
 	const otherOrgID = "22222222-2222-2222-2222-222222222222"

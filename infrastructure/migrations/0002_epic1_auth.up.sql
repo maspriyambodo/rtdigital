@@ -28,7 +28,8 @@ CREATE TABLE users (
     mfa_enabled_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    CONSTRAINT chk_users_contact CHECK (email IS NOT NULL OR phone IS NOT NULL)
+    CONSTRAINT chk_users_contact CHECK (email IS NOT NULL OR phone IS NOT NULL),
+    CONSTRAINT uq_users_organization_id_id UNIQUE (organization_id, id)
 );
 
 CREATE INDEX idx_users_organization_id ON users (organization_id);
