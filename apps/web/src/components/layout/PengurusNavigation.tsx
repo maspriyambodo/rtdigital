@@ -7,6 +7,7 @@ import { useState } from "react";
 const items = [
   { href: "/pengurus", label: "Dashboard" },
   { href: "/pengurus/keluarga", label: "Data Warga" },
+  { href: "/pengurus/pengguna", label: "Pengguna & Peran" },
   { href: "/pengurus/tagihan", label: "Iuran" },
   { href: "/pengurus/kas", label: "Buku Kas" },
   { href: "/pengurus/surat", label: "Surat" },

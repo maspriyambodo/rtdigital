@@ -80,6 +80,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!state.isInitialized) {
+      // Background initialization from the HttpOnly refresh-token cookie.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void refresh();
     }
   }, [refresh, state.isInitialized]);

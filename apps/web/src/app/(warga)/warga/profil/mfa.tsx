@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { ApiException, apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/Button";
@@ -16,7 +16,7 @@ export function MFASettings() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
-  async function authorizedRequest<T>(path: string, options: RequestInit): Promise<T> {
+  const authorizedRequest = useCallback(async <T,>(path: string, options: RequestInit = {}): Promise<T> => {
     const token = await getAccessToken();
     if (!token) {
       throw new Error("Sesi berakhir. Silakan masuk kembali.");
@@ -25,7 +25,13 @@ export function MFASettings() {
       ...options,
       headers: { ...options.headers, Authorization: `Bearer ${token}` },
     });
-  }
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    void authorizedRequest<{ user: { mfa_active: boolean } }>("me")
+      .then((data) => setEnabled(data.user.mfa_active))
+      .catch(() => undefined);
+  }, [authorizedRequest]);
 
   async function handleGenerate() {
     setLoading(true);

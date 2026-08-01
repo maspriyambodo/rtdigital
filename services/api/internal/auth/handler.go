@@ -15,11 +15,12 @@ type claimsContextKey struct{}
 type Handler struct {
 	service       *Service
 	tokens        *TokenManager
+	authz         *AuthorizationService
 	secureCookies bool
 }
 
-func NewHandler(service *Service, tokens *TokenManager, secureCookies bool) *Handler {
-	return &Handler{service: service, tokens: tokens, secureCookies: secureCookies}
+func NewHandler(service *Service, tokens *TokenManager, authz *AuthorizationService, secureCookies bool) *Handler {
+	return &Handler{service: service, tokens: tokens, authz: authz, secureCookies: secureCookies}
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
@@ -31,6 +32,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /auth/forgot-password", h.forgotPassword)
 	mux.HandleFunc("POST /auth/reset-password", h.resetPassword)
 	mux.Handle("POST /auth/mfa/verify", h.requireAccess(http.HandlerFunc(h.verifyMFA), false))
+	mux.Handle("GET /me", h.requirePrincipal(http.HandlerFunc(h.me), false))
 	mux.Handle("PATCH /me/password", h.requireAccess(http.HandlerFunc(h.changePassword), true))
 	mux.Handle("POST /me/mfa/generate", h.requireAccess(http.HandlerFunc(h.generateMFA), true))
 	mux.Handle("POST /me/mfa/enable", h.requireAccess(http.HandlerFunc(h.enableMFA), true))
@@ -213,6 +215,26 @@ func (h *Handler) disableMFA(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
+	data, err := h.service.GetCurrentPrincipalInfo(r.Context(), PrincipalFromContext(r.Context()))
+	if err != nil {
+		writeError(w, r, http.StatusForbidden, "SESSION_INVALID", "Sesi tidak valid atau telah berakhir.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": data})
+}
+
+func (h *Handler) requirePrincipal(next http.Handler, requireMFA bool) http.Handler {
+	return h.requireAccess(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		principal, err := h.authz.BuildPrincipal(r.Context(), ClaimsFromContext(r.Context()))
+		if err != nil {
+			writeError(w, r, http.StatusUnauthorized, "SESSION_INVALID", "Sesi tidak valid atau telah berakhir.")
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), principalContextKey{}, principal)))
+	}), requireMFA)
+}
+
 func (h *Handler) requireAccess(next http.Handler, requireMFA bool) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const prefix = "Bearer "
@@ -263,6 +285,8 @@ func (h *Handler) writeAuthError(w http.ResponseWriter, r *http.Request, err err
 		writeError(w, r, http.StatusForbidden, "ACTIVATION_REQUIRED", "Akun belum diaktivasi.")
 	case errors.Is(err, ErrAccountLocked):
 		writeError(w, r, http.StatusTooManyRequests, "ACCOUNT_LOCKED", "Akun terkunci sementara.")
+	case errors.Is(err, ErrMFAEnrollmentRequired):
+		writeError(w, r, http.StatusForbidden, "MFA_ENROLLMENT_REQUIRED", "Peran pengurus wajib mengaktifkan MFA terlebih dahulu.")
 	case errors.Is(err, ErrSessionExpired), errors.Is(err, ErrInvalidToken):
 		writeError(w, r, http.StatusUnauthorized, "SESSION_EXPIRED", "Sesi telah berakhir.")
 	case errors.Is(err, ErrTokenNotFound):

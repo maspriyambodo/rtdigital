@@ -38,7 +38,7 @@ export default function LoginPage() {
           body: JSON.stringify({ code: mfaCode }),
         });
         login(result.access_token, result.expires_at);
-        router.replace("/warga");
+        await redirectByRole(result.access_token);
         return;
       }
 
@@ -54,7 +54,7 @@ export default function LoginPage() {
       }
 
       login(result.access_token, result.expires_at);
-      router.replace("/warga");
+      await redirectByRole(result.access_token);
     } catch (cause) {
       setError(
         cause instanceof ApiException
@@ -63,6 +63,20 @@ export default function LoginPage() {
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function redirectByRole(accessToken: string) {
+    try {
+      const principal = await apiFetch<{ roles: string[] }>("me", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const isPengurus = principal.roles.some((role) =>
+        ["super_admin", "ketua_rt", "sekretaris", "bendahara", "pengurus"].includes(role),
+      );
+      router.replace(isPengurus ? "/pengurus" : "/warga");
+    } catch {
+      router.replace("/warga");
     }
   }
 

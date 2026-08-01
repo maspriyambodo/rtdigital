@@ -20,8 +20,9 @@ var (
 	ErrAccountInvited     = errors.New("account activation required")
 	ErrSessionExpired     = errors.New("session expired or revoked")
 	ErrTokenNotFound      = errors.New("token not found or expired")
-	ErrMFANotConfigured   = errors.New("MFA not configured")
-	ErrWeakPassword       = errors.New("password must be at least 8 characters")
+	ErrMFANotConfigured       = errors.New("MFA not configured")
+	ErrMFAEnrollmentRequired  = errors.New("MFA enrollment required")
+	ErrWeakPassword           = errors.New("password must be at least 8 characters")
 )
 
 const (
@@ -96,6 +97,21 @@ func (s *Service) Login(ctx context.Context, identifier, password, userAgent, ip
 	if err != nil || !ok {
 		_ = s.recordFailedLogin(ctx, user.ID)
 		return LoginResult{}, ErrInvalidCredentials
+	}
+
+	var mandatoryMFA bool
+	if err := s.db.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM user_roles ur
+			JOIN roles r ON r.id = ur.role_id
+			WHERE ur.user_id = $1
+			  AND r.code IN ('super_admin', 'ketua_rt', 'sekretaris', 'bendahara')
+		)`, user.ID).Scan(&mandatoryMFA); err != nil {
+		return LoginResult{}, fmt.Errorf("check mandatory MFA role: %w", err)
+	}
+	if mandatoryMFA && (user.MFAEnabledAt == nil || user.MFASecretEncrypted == nil) {
+		return LoginResult{}, ErrMFAEnrollmentRequired
 	}
 
 	sessionID := newUUID()
@@ -326,6 +342,51 @@ func (s *Service) VerifyMFA(ctx context.Context, claims *TokenClaims, code strin
 		return LoginResult{}, err
 	}
 	return LoginResult{AccessToken: accessToken, AccessExpires: s.now().Add(s.tokens.AccessExpiry())}, nil
+}
+
+type PrincipalInfo struct {
+	User         UserInfo `json:"user"`
+	Organization OrgInfo  `json:"organization"`
+	Roles        []string `json:"roles"`
+	Permissions  []string `json:"permissions"`
+}
+
+type UserInfo struct {
+	ID        string  `json:"id"`
+	Email     *string `json:"email"`
+	Phone     *string `json:"phone"`
+	Status    string  `json:"status"`
+	MFAActive bool    `json:"mfa_active"`
+}
+
+type OrgInfo struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (s *Service) GetCurrentPrincipalInfo(ctx context.Context, principal *Principal) (PrincipalInfo, error) {
+	if principal == nil {
+		return PrincipalInfo{}, ErrSessionExpired
+	}
+
+	var user UserInfo
+	var org OrgInfo
+	if err := s.db.QueryRow(ctx, `
+		SELECT u.id, u.email, u.phone, u.status, u.mfa_enabled_at IS NOT NULL, o.id, o.name
+		FROM users u
+		JOIN organizations o ON o.id = u.organization_id
+		WHERE u.id = $1 AND u.organization_id = $2 AND u.status = 'active'`,
+		principal.UserID, principal.OrganizationID,
+	).Scan(&user.ID, &user.Email, &user.Phone, &user.Status, &user.MFAActive, &org.ID, &org.Name); err != nil {
+		return PrincipalInfo{}, fmt.Errorf("fetch principal info: %w", err)
+	}
+
+	permissions := make([]string, 0, len(principal.Permissions))
+	for code := range principal.Permissions {
+		permissions = append(permissions, code)
+	}
+
+	return PrincipalInfo{User: user, Organization: org, Roles: principal.RoleCodes, Permissions: permissions}, nil
 }
 
 func (s *Service) recordFailedLogin(ctx context.Context, userID string) error {

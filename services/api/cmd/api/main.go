@@ -14,6 +14,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/config"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
 
 func main() {
@@ -61,11 +62,13 @@ func main() {
 	}
 
 	authService := auth.NewService(pool, tokens, crypter, mailer, appBaseURL)
+	authz := auth.NewAuthorizationService(pool)
+	usersService := users.NewService(pool, mailer, appBaseURL)
 	production := os.Getenv("APP_ENV") == "production"
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, production),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, production),
 	}
 
 	serverErr := make(chan error, 1)

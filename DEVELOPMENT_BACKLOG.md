@@ -39,11 +39,12 @@ Tujuan: autentikasi aman menggunakan email/nomor telepon, access token, refresh 
 - [x] **Task 1.2:** Implementasi password hash Argon2id, normalisasi email/telepon, lockout login, dan validasi status akun.
 - [x] **Task 1.3:** Implementasi `POST /auth/login`: access JWT, refresh token HttpOnly, session record, audit login.
 - [x] **Task 1.4:** Implementasi refresh token rotation, logout perangkat aktif, dan logout seluruh perangkat.
-- [ ] **Task 1.5:** Implementasi undangan/aktivasi akun dengan token sekali pakai dan kedaluwarsa. *(Aktivasi token telah ada; pembuatan undangan menunggu API manajemen pengguna Epic 2.)*
+- [x] **Task 1.5:** Implementasi undangan/aktivasi akun dengan token sekali pakai dan kedaluwarsa.
 - [x] **Task 1.6:** Implementasi lupa/reset kata sandi menggunakan Resend API.
-- [ ] **Task 1.7:** Implementasi MFA pengurus dan verifikasi MFA saat login. *(TOTP terenkripsi, enrollment, dan verifikasi login telah ada; pembatasan wajib khusus peran pengurus menunggu RBAC Epic 2.)*
+- [x] **Task 1.7:** Implementasi MFA pengurus dan verifikasi MFA saat login. *(Login serta penetapan peran Super Admin, Ketua RT, Sekretaris, dan Bendahara kini mewajibkan MFA.)*
 - [x] **Task 1.8:** Buat UI login, aktivasi akun, lupa/reset kata sandi, profil, ganti kata sandi, dan logout.
-- [ ] **Task 1.9:** Tambahkan test autentikasi: lockout, token expired, refresh rotation, logout, dan akun nonaktif. *(Unit test lulus; integration test tersedia tetapi belum dijalankan terhadap PostgreSQL bermigrasi.)*
+- [x] **Task 1.9:** Tambahkan test autentikasi: lockout, token expired, refresh rotation, logout, dan akun nonaktif.
+
 
 ---
 
@@ -51,14 +52,14 @@ Tujuan: autentikasi aman menggunakan email/nomor telepon, access token, refresh 
 
 Tujuan: mengelola pengguna, peran, permission, serta scope akses organisasi.
 
-- [ ] **Task 2.1:** Buat migration `roles`, `permissions`, `user_roles`, dan `role_permissions`.
-- [ ] **Task 2.2:** Seed peran sistem serta permission sesuai `USER_ROLES_AND_PERMISSIONS.md`.
-- [ ] **Task 2.3:** Implementasi middleware authentication, permission check, dan principal context.
-- [ ] **Task 2.4:** Implementasi pembatasan `organization_id`, ownership keluarga, assignment, serta separation of duties.
-- [ ] **Task 2.5:** Implementasi API daftar pengguna, detail pengguna, undangan, perubahan status, dan penonaktifan.
-- [ ] **Task 2.6:** Implementasi API tambah/cabut peran dengan larangan eskalasi hak akses sendiri.
-- [ ] **Task 2.7:** Buat UI daftar pengguna, detail akun, undang pengguna, ubah status, dan pengelolaan peran.
-- [ ] **Task 2.8:** Tambahkan authorization test untuk seluruh peran utama.
+- [x] **Task 2.1:** Buat migration `roles`, `permissions`, `user_roles`, dan `role_permissions`.
+- [x] **Task 2.2:** Seed peran sistem serta permission sesuai `USER_ROLES_AND_PERMISSIONS.md`.
+- [x] **Task 2.3:** Implementasi middleware authentication, permission check, dan principal context.
+- [x] **Task 2.4:** Implementasi pembatasan `organization_id`, assignment, serta separation of duties. *(Ownership keluarga diterapkan pada domain keluarga Epic 3.)*
+- [x] **Task 2.5:** Implementasi API daftar pengguna, detail pengguna, undangan, perubahan status, dan penonaktifan.
+- [x] **Task 2.6:** Implementasi API tambah/cabut peran dengan larangan eskalasi hak akses sendiri serta guard MFA.
+- [x] **Task 2.7:** Buat UI daftar pengguna, detail akun, undang pengguna, ubah status, dan pengelolaan peran.
+- [x] **Task 2.8:** Tambahkan authorization test untuk peran utama, isolasi tenant, MFA, dan separation of duties.
 
 ---
 
