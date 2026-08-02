@@ -17,6 +17,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/letters"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
@@ -82,11 +83,12 @@ func main() {
 	cashService := cash.NewService(pool)
 	paymentsService := payments.NewService(pool, cashService)
 	communicationService := communication.NewService(pool)
+	lettersService := letters.NewService(pool)
 	production := os.Getenv("APP_ENV") == "production"
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, storage),
 	}
 
 	serverErr := make(chan error, 1)

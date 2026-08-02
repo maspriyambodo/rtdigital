@@ -51,6 +51,8 @@ func (s *Service) PresignUpload(ctx context.Context, principal *auth.Principal, 
 		folder = "announcement-attachment"
 	case "event":
 		folder = "event-attachment"
+	case "letter_request":
+		folder = "letter-attachment"
 	}
 	storageKey := fmt.Sprintf("private/%s/%s/%s", principal.OrganizationID, folder, fileID)
 	presigned, err := s.storage.PresignUpload(ctx, storageKey, request.MIMEType, uploadLifetime)
@@ -241,6 +243,24 @@ func (s *Service) PresignDownload(ctx context.Context, principal *auth.Principal
 		    ))
 		    OR
 		    (a.entity_type = 'event' AND a.purpose = 'attachment' AND $7)
+		    OR
+		    (a.entity_type = 'letter_request' AND a.purpose IN ('attachment', 'issued_letter') AND (
+		        $9
+		        OR EXISTS (
+		            SELECT 1 FROM letter_requests lr
+		            WHERE lr.organization_id = a.organization_id
+		              AND lr.id = a.entity_id
+		              AND (
+		                lr.requester_user_id = $3
+		                OR EXISTS (
+		                  SELECT 1 FROM household_members mine
+		                  JOIN users u ON u.organization_id = a.organization_id AND u.resident_id = mine.resident_id
+		                  JOIN household_members target ON target.household_id = mine.household_id AND target.is_active
+		                  WHERE mine.is_active AND u.id = $3 AND target.resident_id = lr.resident_id
+		                )
+		              )
+		        )
+		    ))
 		  )`,
 		fileID,
 		principal.OrganizationID,
@@ -250,6 +270,7 @@ func (s *Service) PresignDownload(ctx context.Context, principal *auth.Principal
 		principal.HasPermission("announcement.read"),
 		principal.HasPermission("event.read"),
 		principal.HasPermission("announcement.create"),
+		principal.HasPermission("letter_request.process") || principal.HasPermission("letter_request.approve"),
 	).Scan(&storageKey)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return PresignDownloadResponse{}, ErrFileNotFound

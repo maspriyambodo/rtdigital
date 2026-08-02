@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -117,4 +118,17 @@ func (s *Storage) PresignDownload(
 	}
 
 	return request.URL, nil
+}
+
+func (s *Storage) PutObject(ctx context.Context, key string, data []byte, contentType string) error {
+	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:      aws.String(s.bucket),
+		Key:         aws.String(key),
+		Body:        bytes.NewReader(data),
+		ContentType: aws.String(contentType),
+	})
+	if err != nil {
+		return fmt.Errorf("put object for key %q: %w", key, err)
+	}
+	return nil
 }

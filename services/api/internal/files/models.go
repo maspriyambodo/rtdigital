@@ -36,7 +36,7 @@ func (r PresignUploadRequest) Validate() error {
 		if r.Purpose != "proof" {
 			return ErrValidation
 		}
-	case "announcement", "event":
+	case "announcement", "event", "letter_request":
 		if r.Purpose != "attachment" {
 			return ErrValidation
 		}

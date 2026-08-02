@@ -16,6 +16,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/letters"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
@@ -27,10 +28,19 @@ type Server struct {
 	handler http.Handler
 }
 
-func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, authz *auth.AuthorizationService, usersService *users.Service, residentsService *residents.Service, invoicesService *invoices.Service, filesService *files.Service, paymentsService *payments.Service, cashService *cash.Service, production bool, communicationServices ...*communication.Service) *Server {
+func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, authz *auth.AuthorizationService, usersService *users.Service, residentsService *residents.Service, invoicesService *invoices.Service, filesService *files.Service, paymentsService *payments.Service, cashService *cash.Service, production bool, services ...any) *Server {
 	var communicationService *communication.Service
-	if len(communicationServices) > 0 {
-		communicationService = communicationServices[0]
+	var lettersService *letters.Service
+	var letterStorage letters.StorageClient
+	for _, service := range services {
+		switch value := service.(type) {
+		case *communication.Service:
+			communicationService = value
+		case *letters.Service:
+			lettersService = value
+		case letters.StorageClient:
+			letterStorage = value
+		}
 	}
 
 	root := http.NewServeMux()
@@ -53,6 +63,9 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	}
 	if communicationService != nil {
 		communication.NewHandler(communicationService, tokens, authz).RegisterRoutes(api)
+	}
+	if lettersService != nil {
+		letters.NewHandler(lettersService, tokens, authz, letterStorage, filesService).RegisterRoutes(api)
 	}
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 

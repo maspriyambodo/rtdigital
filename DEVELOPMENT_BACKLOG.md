@@ -112,7 +112,7 @@ Tujuan: warga mengirim pembayaran manual; bendahara memverifikasi dengan alur am
 
 ---
 
-## Epic 6: Buku Kas
+## [x] Epic 6: Buku Kas
 
 Tujuan: mencatat pemasukan/pengeluaran RT tanpa menghapus riwayat transaksi.
 
@@ -127,7 +127,7 @@ Tujuan: mencatat pemasukan/pengeluaran RT tanpa menghapus riwayat transaksi.
 
 ---
 
-## Epic 7: Pengumuman dan Agenda
+## [x] Epic 7: Pengumuman dan Agenda
 
 Tujuan: kanal informasi RT dan agenda kegiatan yang mudah dibaca dari perangkat seluler.
 
@@ -141,18 +141,18 @@ Tujuan: kanal informasi RT dan agenda kegiatan yang mudah dibaca dari perangkat 
 
 ---
 
-## Epic 8: Surat Pengantar
+## [x] Epic 8: Surat Pengantar
 
 Tujuan: pengajuan surat dari formulir sampai PDF terbit dan dapat diunduh.
 
-- [ ] **Task 8.1:** Buat migration `letter_types` dan `letter_requests`.
-- [ ] **Task 8.2:** Implementasi API jenis surat: requirements, schema formulir, template, pola nomor, dan status.
-- [ ] **Task 8.3:** Implementasi validasi form dinamis, lampiran wajib, dan pengajuan surat oleh warga.
-- [ ] **Task 8.4:** Implementasi workflow surat: draft, diajukan, review, revisi, persetujuan, penolakan, penerbitan, pembatalan.
-- [ ] **Task 8.5:** Implementasi nomor surat unik, generator PDF, penyimpanan PDF di R2, dan signed download.
-- [ ] **Task 8.6:** Buat UI warga untuk pilih jenis surat, form bertahap, lampiran, status, revisi, dan unduh PDF.
-- [ ] **Task 8.7:** Buat UI sekretaris/ketua RT untuk antrean, review, catatan internal, setujui, tolak, dan terbitkan.
-- [ ] **Task 8.8:** Tambahkan test transisi status, kelengkapan lampiran, nomor surat, dan authorization.
+- [x] **Task 8.1:** Buat migration `letter_types` dan `letter_requests`.
+- [x] **Task 8.2:** Implementasi API jenis surat: requirements, schema formulir, template, pola nomor, dan status.
+- [x] **Task 8.3:** Implementasi validasi form dinamis, lampiran wajib, dan pengajuan surat oleh warga.
+- [x] **Task 8.4:** Implementasi workflow surat: draft, diajukan, review, revisi, persetujuan, penolakan, penerbitan, pembatalan.
+- [x] **Task 8.5:** Implementasi nomor surat unik, generator PDF, penyimpanan PDF di R2, dan signed download.
+- [x] **Task 8.6:** Buat UI warga untuk pilih jenis surat, form bertahap, lampiran, status, revisi, dan unduh PDF.
+- [x] **Task 8.7:** Buat UI sekretaris/ketua RT untuk antrean, review, catatan internal, setujui, tolak, dan terbitkan.
+- [x] **Task 8.8:** Tambahkan test transisi status, kelengkapan lampiran, nomor surat, dan authorization.
 
 ---
 
