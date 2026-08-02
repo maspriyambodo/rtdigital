@@ -131,13 +131,13 @@ Tujuan: mencatat pemasukan/pengeluaran RT tanpa menghapus riwayat transaksi.
 
 Tujuan: kanal informasi RT dan agenda kegiatan yang mudah dibaca dari perangkat seluler.
 
-- [ ] **Task 7.1:** Buat migration `announcements`, `announcement_targets`, dan `events`.
-- [ ] **Task 7.2:** Implementasi API pengumuman: draft, target, jadwal, publish, archive, dan statistik baca.
-- [ ] **Task 7.3:** Implementasi API agenda: buat, ubah, batal, status, dan lampiran.
-- [ ] **Task 7.4:** Implementasi seleksi target pengumuman berdasarkan seluruh warga, peran, keluarga, atau unit.
-- [ ] **Task 7.5:** Buat UI pengurus untuk pengumuman, agenda, penjadwalan, target, dan arsip.
-- [ ] **Task 7.6:** Buat UI warga untuk daftar/detail pengumuman, agenda mendatang, dan penanda penting.
-- [ ] **Task 7.7:** Tambahkan test target visibility, status jadwal, dan akses lampiran.
+- [x] **Task 7.1:** Buat migration `announcements`, `announcement_targets`, dan `events`.
+- [x] **Task 7.2:** Implementasi API pengumuman: draft, target, jadwal, publish, archive, dan statistik baca.
+- [x] **Task 7.3:** Implementasi API agenda: buat, ubah, batal, status, dan lampiran.
+- [x] **Task 7.4:** Implementasi seleksi target pengumuman berdasarkan seluruh warga, peran, keluarga, atau unit.
+- [x] **Task 7.5:** Buat UI pengurus untuk pengumuman, agenda, penjadwalan, target, dan arsip.
+- [x] **Task 7.6:** Buat UI warga untuk daftar/detail pengumuman, agenda mendatang, dan penanda penting.
+- [x] **Task 7.7:** Tambahkan test target visibility, status jadwal, dan akses lampiran.
 
 ---
 

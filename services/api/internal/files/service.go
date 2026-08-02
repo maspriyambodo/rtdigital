@@ -44,8 +44,13 @@ func (s *Service) PresignUpload(ctx context.Context, principal *auth.Principal, 
 
 	fileID := newUUID()
 	folder := "payment-proof"
-	if request.EntityType == "cash_transaction" {
+	switch request.EntityType {
+	case "cash_transaction":
 		folder = "cash-proof"
+	case "announcement":
+		folder = "announcement-attachment"
+	case "event":
+		folder = "event-attachment"
 	}
 	storageKey := fmt.Sprintf("private/%s/%s/%s", principal.OrganizationID, folder, fileID)
 	presigned, err := s.storage.PresignUpload(ctx, storageKey, request.MIMEType, uploadLifetime)
@@ -194,12 +199,57 @@ func (s *Service) PresignDownload(ctx context.Context, principal *auth.Principal
 		    ))
 		    OR
 		    (a.entity_type = 'cash_transaction' AND a.purpose = 'proof' AND $5)
+		    OR
+		    (a.entity_type = 'announcement' AND a.purpose = 'attachment' AND $6 AND EXISTS (
+		        SELECT 1 FROM announcements an
+		        WHERE an.organization_id = a.organization_id
+		          AND an.id = a.entity_id
+		          AND (
+		            $8
+		            OR (
+		              an.status = 'published'
+		              AND (an.publish_at IS NULL OR an.publish_at <= now())
+		              AND (an.expire_at IS NULL OR an.expire_at > now())
+		              AND (
+		                EXISTS (SELECT 1 FROM announcement_targets t
+		                        WHERE t.organization_id = an.organization_id
+		                          AND t.announcement_id = an.id
+		                          AND t.target_type = 'all')
+		                OR EXISTS (SELECT 1 FROM announcement_targets t JOIN user_roles ur ON ur.role_id = t.target_id
+		                           WHERE t.organization_id = an.organization_id
+		                             AND t.announcement_id = an.id
+		                             AND t.target_type = 'role'
+		                             AND ur.user_id = $3)
+		                OR EXISTS (SELECT 1 FROM announcement_targets t
+		                           JOIN household_members hm ON hm.household_id = t.target_id AND hm.is_active
+		                           JOIN users u ON u.organization_id = hm.organization_id AND u.resident_id = hm.resident_id
+		                           WHERE t.organization_id = an.organization_id
+		                             AND t.announcement_id = an.id
+		                             AND t.target_type = 'household'
+		                             AND u.id = $3)
+		                OR EXISTS (SELECT 1 FROM announcement_targets t
+		                           JOIN households h ON h.organization_id = t.organization_id AND h.house_unit_id = t.target_id
+		                           JOIN household_members hm ON hm.household_id = h.id AND hm.is_active
+		                           JOIN users u ON u.organization_id = hm.organization_id AND u.resident_id = hm.resident_id
+		                           WHERE t.organization_id = an.organization_id
+		                             AND t.announcement_id = an.id
+		                             AND t.target_type = 'house_unit'
+		                             AND u.id = $3)
+		              )
+		            )
+		          )
+		    ))
+		    OR
+		    (a.entity_type = 'event' AND a.purpose = 'attachment' AND $7)
 		  )`,
 		fileID,
 		principal.OrganizationID,
 		principal.UserID,
 		principal.HasPermission("payment.read"),
 		principal.HasPermission("cash.read"),
+		principal.HasPermission("announcement.read"),
+		principal.HasPermission("event.read"),
+		principal.HasPermission("announcement.create"),
 	).Scan(&storageKey)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return PresignDownloadResponse{}, ErrFileNotFound

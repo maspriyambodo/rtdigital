@@ -10,6 +10,7 @@ const items = [
   { href: "/pengurus/keluarga", label: "Data Keluarga" },
   { href: "/pengurus/warga", label: "Data Warga" },
   { href: "/pengurus/pengguna", label: "Pengguna & Peran" },
+  { href: "/pengurus/pengumuman", label: "Pengumuman & Agenda" },
   { href: "/pengurus/tagihan", label: "Iuran" },
   { href: "/pengurus/kas", label: "Buku Kas" },
   { href: "/pengurus/surat", label: "Surat" },

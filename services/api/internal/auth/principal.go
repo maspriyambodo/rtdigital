@@ -33,6 +33,11 @@ func PrincipalFromContext(ctx context.Context) *Principal {
 	return principal
 }
 
+// WithPrincipal stores an authenticated principal for handlers requiring resource-specific authorization.
+func WithPrincipal(ctx context.Context, principal *Principal) context.Context {
+	return context.WithValue(ctx, principalContextKey{}, principal)
+}
+
 type AuthorizationService struct {
 	db *pgxpool.Pool
 }

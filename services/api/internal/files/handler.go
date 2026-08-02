@@ -19,13 +19,31 @@ func NewHandler(service *Service, tokens *auth.TokenManager, authz *auth.Authori
 }
 
 func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
-	mux.Handle("POST /files/presign-upload", h.require("payment.submit", h.presignUpload))
-	mux.Handle("POST /files/confirm-upload", h.require("payment.submit", h.confirmUpload))
-	mux.Handle("GET /files/{id}/download", h.require("payment.read", h.presignDownload))
+	mux.Handle("POST /files/presign-upload", h.requireAuthenticated(h.presignUpload))
+	mux.Handle("POST /files/confirm-upload", h.requireAuthenticated(h.confirmUpload))
+	mux.Handle("GET /files/{id}/download", h.requireAuthenticated(h.presignDownload))
 }
 
-func (h *Handler) require(permission string, next http.HandlerFunc) http.Handler {
-	return auth.RequireAuthenticatedPermission(h.tokens, h.authz, permission, false, next)
+func (h *Handler) requireAuthenticated(next http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		const prefix = "Bearer "
+		header := r.Header.Get("Authorization")
+		if len(header) < len(prefix) || header[:len(prefix)] != prefix {
+			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Access token wajib diisi.")
+			return
+		}
+		claims, err := h.tokens.VerifyAccessToken(header[len(prefix):])
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "UNAUTHORIZED", "Access token tidak valid atau kedaluwarsa.")
+			return
+		}
+		principal, err := h.authz.BuildPrincipal(r.Context(), claims)
+		if err != nil {
+			writeError(w, http.StatusUnauthorized, "SESSION_INVALID", "Sesi tidak valid atau telah berakhir.")
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(auth.WithPrincipal(r.Context(), principal)))
+	})
 }
 
 func (h *Handler) presignUpload(w http.ResponseWriter, r *http.Request) {
@@ -34,12 +52,36 @@ func (h *Handler) presignUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response, err := h.service.PresignUpload(r.Context(), auth.PrincipalFromContext(r.Context()), request)
+	principal := auth.PrincipalFromContext(r.Context())
+	if !canUploadFor(principal, request.EntityType) {
+		writeError(w, http.StatusForbidden, "PERMISSION_DENIED", "Akses tidak diizinkan.")
+		return
+	}
+
+	response, err := h.service.PresignUpload(r.Context(), principal, request)
 	if err != nil {
 		h.writeServiceError(w, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": response})
+}
+
+func canUploadFor(principal *auth.Principal, entityType string) bool {
+	if principal == nil {
+		return false
+	}
+	switch entityType {
+	case "payment":
+		return principal.HasPermission("payment.submit")
+	case "cash_transaction":
+		return principal.HasPermission("cash.create")
+	case "announcement":
+		return principal.HasPermission("announcement.create")
+	case "event":
+		return principal.HasPermission("event.create")
+	default:
+		return false
+	}
 }
 
 func (h *Handler) confirmUpload(w http.ResponseWriter, r *http.Request) {

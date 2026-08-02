@@ -57,6 +57,7 @@ func TestInvoicesIntegration(t *testing.T) {
 		invoices.NewService(pool),
 		nil,
 		nil,
+		nil,
 		false,
 	)
 

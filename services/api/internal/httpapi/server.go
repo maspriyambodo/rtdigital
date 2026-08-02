@@ -13,6 +13,7 @@ import (
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
@@ -26,7 +27,12 @@ type Server struct {
 	handler http.Handler
 }
 
-func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, authz *auth.AuthorizationService, usersService *users.Service, residentsService *residents.Service, invoicesService *invoices.Service, filesService *files.Service, paymentsService *payments.Service, cashService *cash.Service, production bool) *Server {
+func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager, authService *auth.Service, authz *auth.AuthorizationService, usersService *users.Service, residentsService *residents.Service, invoicesService *invoices.Service, filesService *files.Service, paymentsService *payments.Service, cashService *cash.Service, production bool, communicationServices ...*communication.Service) *Server {
+	var communicationService *communication.Service
+	if len(communicationServices) > 0 {
+		communicationService = communicationServices[0]
+	}
+
 	root := http.NewServeMux()
 	root.HandleFunc("GET /healthz", liveness)
 	root.HandleFunc("GET /readyz", readiness(db))
@@ -44,6 +50,9 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	}
 	if cashService != nil {
 		cash.NewHandler(cashService, tokens, authz).RegisterRoutes(api)
+	}
+	if communicationService != nil {
+		communication.NewHandler(communicationService, tokens, authz).RegisterRoutes(api)
 	}
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 

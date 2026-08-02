@@ -85,6 +85,7 @@ func TestPaymentsIntegration(t *testing.T) {
 		payments.NewService(pool, cashService),
 		cashService,
 		false,
+		nil,
 	)
 
 	var sequence uint64 = uint64(time.Now().UnixNano())

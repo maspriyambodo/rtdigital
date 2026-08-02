@@ -48,7 +48,7 @@ func TestAuthorizationAndRBAC(t *testing.T) {
 	usersService := users.NewService(pool, auth.NoopMailer{}, "http://localhost:3000")
 	residentsService := residents.NewService(pool, crypter, "12345678901234567890123456789012")
 	invoicesService := invoices.NewService(pool)
-	server := httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, nil, nil, false)
+	server := httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, nil, nil, nil, false)
 
 	const orgID = "11111111-1111-1111-1111-111111111111"
 	const otherOrgID = "22222222-2222-2222-2222-222222222222"

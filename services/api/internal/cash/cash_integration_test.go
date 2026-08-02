@@ -58,6 +58,7 @@ func TestCashBookIntegration(t *testing.T) {
 		payments.NewService(pool, cashService),
 		cashService,
 		false,
+		nil,
 	)
 
 	sequence := uint64(time.Now().UnixNano())
