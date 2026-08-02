@@ -84,15 +84,15 @@ Tujuan: pendataan rumah, keluarga, warga, serta koreksi data dengan perlindungan
 
 Tujuan: membuat jenis iuran serta menerbitkan tagihan individual atau massal.
 
-- [ ] **Task 4.1:** Buat migration `due_types` dan `invoices` beserta index, status, dan constraint nominal.
-- [ ] **Task 4.2:** Implementasi API CRUD jenis iuran dan penonaktifan.
-- [ ] **Task 4.3:** Implementasi pembuatan tagihan individual dengan nomor tagihan unik.
-- [ ] **Task 4.4:** Implementasi pembuatan tagihan massal dengan idempotency key, validasi sasaran, dan ringkasan hasil.
-- [ ] **Task 4.5:** Implementasi penyesuaian/diskon dan pembatalan tagihan dengan alasan serta audit log.
-- [ ] **Task 4.6:** Implementasi daftar tagihan, detail, tunggakan, filter periode, dan scope keluarga.
-- [ ] **Task 4.7:** Buat UI pengurus untuk jenis iuran, pembuatan tagihan, daftar tagihan, dan tunggakan.
-- [ ] **Task 4.8:** Buat UI warga untuk tagihan aktif, detail tagihan, dan riwayat tagihan.
-- [ ] **Task 4.9:** Tambahkan test pembuatan massal, idempotency, status tagihan, dan scope warga.
+- [x] **Task 4.1:** Buat migration `due_types` dan `invoices` beserta index, status, dan constraint nominal.
+- [x] **Task 4.2:** Implementasi API CRUD jenis iuran dan penonaktifan.
+- [x] **Task 4.3:** Implementasi pembuatan tagihan individual dengan nomor tagihan unik.
+- [x] **Task 4.4:** Implementasi pembuatan tagihan massal dengan idempotency key, validasi sasaran, dan ringkasan hasil.
+- [x] **Task 4.5:** Implementasi penyesuaian/diskon dan pembatalan tagihan dengan alasan serta audit log.
+- [x] **Task 4.6:** Implementasi daftar tagihan, detail, tunggakan, filter periode, dan scope keluarga.
+- [x] **Task 4.7:** Buat UI pengurus untuk jenis iuran, pembuatan tagihan, daftar tagihan, dan tunggakan.
+- [x] **Task 4.8:** Buat UI warga untuk tagihan aktif, detail tagihan, dan riwayat tagihan.
+- [x] **Task 4.9:** Tambahkan test pembuatan massal, idempotency, status tagihan, dan scope warga.
 
 ---
 
