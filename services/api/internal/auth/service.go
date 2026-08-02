@@ -14,15 +14,15 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrAccountInactive    = errors.New("account is inactive")
-	ErrAccountLocked      = errors.New("account is temporarily locked")
-	ErrAccountInvited     = errors.New("account activation required")
-	ErrSessionExpired     = errors.New("session expired or revoked")
-	ErrTokenNotFound      = errors.New("token not found or expired")
-	ErrMFANotConfigured       = errors.New("MFA not configured")
-	ErrMFAEnrollmentRequired  = errors.New("MFA enrollment required")
-	ErrWeakPassword           = errors.New("password must be at least 8 characters")
+	ErrInvalidCredentials    = errors.New("invalid credentials")
+	ErrAccountInactive       = errors.New("account is inactive")
+	ErrAccountLocked         = errors.New("account is temporarily locked")
+	ErrAccountInvited        = errors.New("account activation required")
+	ErrSessionExpired        = errors.New("session expired or revoked")
+	ErrTokenNotFound         = errors.New("token not found or expired")
+	ErrMFANotConfigured      = errors.New("MFA not configured")
+	ErrMFAEnrollmentRequired = errors.New("MFA enrollment required")
+	ErrWeakPassword          = errors.New("password must be at least 8 characters")
 )
 
 const (

@@ -12,17 +12,20 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
 )
 
 type Service struct {
-	db  *pgxpool.Pool
-	now func() time.Time
+	db   *pgxpool.Pool
+	cash *cash.Service
+	now  func() time.Time
 }
 
-func NewService(db *pgxpool.Pool) *Service {
+func NewService(db *pgxpool.Pool, cashService *cash.Service) *Service {
 	return &Service{
-		db:  db,
-		now: func() time.Time { return time.Now().UTC() },
+		db:   db,
+		cash: cashService,
+		now:  func() time.Time { return time.Now().UTC() },
 	}
 }
 
@@ -398,16 +401,17 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	var status, createdBy, invoiceID string
+	var status, createdBy, invoiceID, paymentNumber string
 	var amount float64
+	var paidAt time.Time
 	err = tx.QueryRow(ctx, `
-		SELECT verification_status, created_by, invoice_id, amount
+		SELECT verification_status, created_by, invoice_id, amount, payment_number, paid_at
 		FROM payments
 		WHERE id = $1 AND organization_id = $2
 		FOR UPDATE`,
 		paymentID,
 		principal.OrganizationID,
-	).Scan(&status, &createdBy, &invoiceID, &amount)
+	).Scan(&status, &createdBy, &invoiceID, &amount, &paymentNumber, &paidAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return PaymentActionResponse{}, ErrPaymentNotFound
 	}
@@ -443,6 +447,12 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 			principal.OrganizationID,
 		); err != nil {
 			return PaymentActionResponse{}, fmt.Errorf("update paid invoice amount: %w", err)
+		}
+		if s.cash == nil {
+			return PaymentActionResponse{}, fmt.Errorf("cash service is required")
+		}
+		if err := s.cash.RecordVerifiedPayment(ctx, tx, principal, paymentID, paymentNumber, amount, paidAt); err != nil {
+			return PaymentActionResponse{}, err
 		}
 	} else {
 		if _, err := tx.Exec(ctx, `

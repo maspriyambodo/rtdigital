@@ -116,14 +116,14 @@ Tujuan: warga mengirim pembayaran manual; bendahara memverifikasi dengan alur am
 
 Tujuan: mencatat pemasukan/pengeluaran RT tanpa menghapus riwayat transaksi.
 
-- [ ] **Task 6.1:** Buat migration `cash_categories` dan `cash_transactions`.
-- [ ] **Task 6.2:** Implementasi pencatatan pemasukan kas otomatis saat pembayaran diverifikasi.
-- [ ] **Task 6.3:** Implementasi API CRUD kategori kas.
-- [ ] **Task 6.4:** Implementasi API transaksi kas manual dengan validasi nominal, kategori, bukti, dan audit.
-- [ ] **Task 6.5:** Implementasi transaksi pembalik untuk koreksi; larang penghapusan transaksi historis.
-- [ ] **Task 6.6:** Implementasi API buku kas, saldo berjalan, filter periode/kategori, dan detail transaksi.
-- [ ] **Task 6.7:** Buat UI bendahara untuk kategori kas, catat transaksi, buku kas, dan pembalikan.
-- [ ] **Task 6.8:** Tambahkan test relasi payment-kas, pembalikan, saldo, dan larangan delete.
+- [x] **Task 6.1:** Buat migration `cash_categories` dan `cash_transactions`.
+- [x] **Task 6.2:** Implementasi pencatatan pemasukan kas otomatis saat pembayaran diverifikasi.
+- [x] **Task 6.3:** Implementasi API CRUD kategori kas.
+- [x] **Task 6.4:** Implementasi API transaksi kas manual dengan validasi nominal, kategori, bukti, dan audit.
+- [x] **Task 6.5:** Implementasi transaksi pembalik untuk koreksi; larang penghapusan transaksi historis.
+- [x] **Task 6.6:** Implementasi API buku kas, saldo berjalan, filter periode/kategori, dan detail transaksi.
+- [x] **Task 6.7:** Buat UI bendahara untuk kategori kas, catat transaksi, buku kas, dan pembalikan.
+- [x] **Task 6.8:** Tambahkan test relasi payment-kas, pembalikan, saldo, dan larangan delete.
 
 ---
 

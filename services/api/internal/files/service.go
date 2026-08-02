@@ -43,7 +43,11 @@ func (s *Service) PresignUpload(ctx context.Context, principal *auth.Principal, 
 	}
 
 	fileID := newUUID()
-	storageKey := fmt.Sprintf("private/%s/payment-proof/%s", principal.OrganizationID, fileID)
+	folder := "payment-proof"
+	if request.EntityType == "cash_transaction" {
+		folder = "cash-proof"
+	}
+	storageKey := fmt.Sprintf("private/%s/%s/%s", principal.OrganizationID, folder, fileID)
 	presigned, err := s.storage.PresignUpload(ctx, storageKey, request.MIMEType, uploadLifetime)
 	if err != nil {
 		return PresignUploadResponse{}, fmt.Errorf("%w: presign upload", ErrStorage)
@@ -176,20 +180,26 @@ func (s *Service) PresignDownload(ctx context.Context, principal *auth.Principal
 		JOIN file_attachments a
 		  ON a.organization_id = f.organization_id
 		 AND a.file_id = f.id
-		 AND a.entity_type = 'payment'
-		 AND a.purpose = 'payment_proof'
-		JOIN payments p
-		  ON p.organization_id = a.organization_id
-		 AND p.id = a.entity_id
 		WHERE f.id = $1
 		  AND f.organization_id = $2
 		  AND f.deleted_at IS NULL
 		  AND f.confirmed_at IS NOT NULL
-		  AND (p.created_by = $3 OR $4)`,
+		  AND (
+		    (a.entity_type = 'payment' AND a.purpose = 'payment_proof' AND EXISTS (
+		        SELECT 1
+		        FROM payments p
+		        WHERE p.organization_id = a.organization_id
+		          AND p.id = a.entity_id
+		          AND (p.created_by = $3 OR $4)
+		    ))
+		    OR
+		    (a.entity_type = 'cash_transaction' AND a.purpose = 'proof' AND $5)
+		  )`,
 		fileID,
 		principal.OrganizationID,
 		principal.UserID,
 		principal.HasPermission("payment.read"),
+		principal.HasPermission("cash.read"),
 	).Scan(&storageKey)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return PresignDownloadResponse{}, ErrFileNotFound

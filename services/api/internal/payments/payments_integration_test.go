@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
@@ -70,6 +71,7 @@ func TestPaymentsIntegration(t *testing.T) {
 	}
 
 	storage := &memoryStorage{objects: make(map[string]platform.ObjectMetadata)}
+	cashService := cash.NewService(pool)
 	server := httpapi.NewServer(
 		slog.New(slog.NewTextHandler(os.Stderr, nil)),
 		pool,
@@ -80,7 +82,8 @@ func TestPaymentsIntegration(t *testing.T) {
 		residents.NewService(pool, crypter, "12345678901234567890123456789012"),
 		invoices.NewService(pool),
 		files.NewService(pool, storage),
-		payments.NewService(pool),
+		payments.NewService(pool, cashService),
+		cashService,
 		false,
 	)
 

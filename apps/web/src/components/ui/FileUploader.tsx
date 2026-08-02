@@ -18,6 +18,7 @@ interface PresignUploadResponse {
 }
 
 export interface FileUploaderProps {
+  entityType?: "payment" | "cash_transaction";
   entityId: string;
   onChange: (fileId: string | undefined) => void;
   disabled?: boolean;
@@ -57,6 +58,7 @@ function uploadToStorage(
 }
 
 export function FileUploader({
+  entityType = "payment",
   entityId,
   onChange,
   disabled = false,
@@ -88,7 +90,7 @@ export function FileUploader({
   const upload = async (selectedFile: File) => {
     if (!entityId) {
       setStatus("error");
-      setMessage("Tagihan belum dipilih.");
+      setMessage(entityType === "cash_transaction" ? "Transaksi belum siap." : "Tagihan belum dipilih.");
       return;
     }
     if (!acceptedMIMETypes.includes(selectedFile.type as (typeof acceptedMIMETypes)[number])) {
@@ -113,9 +115,9 @@ export function FileUploader({
       const presigned = await apiFetch<PresignUploadResponse>("files/presign-upload", {
         method: "POST",
         body: JSON.stringify({
-          entity_type: "payment",
+          entity_type: entityType,
           entity_id: entityId,
-          purpose: "payment_proof",
+          purpose: entityType === "cash_transaction" ? "proof" : "payment_proof",
           original_name: selectedFile.name,
           mime_type: selectedFile.type,
           size_bytes: selectedFile.size,
@@ -140,7 +142,7 @@ export function FileUploader({
       setProgress(100);
       onChange(presigned.file_id);
     } catch (error) {
-      const fallback = "Bukti pembayaran gagal diunggah.";
+      const fallback = entityType === "cash_transaction" ? "Bukti transaksi gagal diunggah." : "Bukti pembayaran gagal diunggah.";
       setStatus("error");
       setMessage(error instanceof ApiException || error instanceof Error ? error.message : fallback);
       setProgress(0);

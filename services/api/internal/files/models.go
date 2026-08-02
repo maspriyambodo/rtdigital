@@ -27,7 +27,16 @@ type PresignUploadRequest struct {
 }
 
 func (r PresignUploadRequest) Validate() error {
-	if r.EntityType != "payment" || r.Purpose != "payment_proof" {
+	switch r.EntityType {
+	case "payment":
+		if r.Purpose != "payment_proof" {
+			return ErrValidation
+		}
+	case "cash_transaction":
+		if r.Purpose != "proof" {
+			return ErrValidation
+		}
+	default:
 		return ErrValidation
 	}
 	if strings.TrimSpace(r.EntityID) == "" ||

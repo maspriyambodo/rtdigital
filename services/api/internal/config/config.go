@@ -6,11 +6,11 @@ import (
 )
 
 type Config struct {
-	Port             string
-	DatabaseURL      string
-	JWTSecret        string
+	Port              string
+	DatabaseURL       string
+	JWTSecret         string
 	DataEncryptionKey string
-	R2               R2Config
+	R2                R2Config
 }
 
 type R2Config struct {

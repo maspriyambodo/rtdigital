@@ -11,12 +11,12 @@ import (
 )
 
 type ImportResult struct {
-	TotalRows   int      `json:"total_rows"`
-	ValidRows   int      `json:"valid_rows"`
-	InvalidRows int      `json:"invalid_rows"`
-	DuplicateRows int    `json:"duplicate_rows"`
-	ImportedRows int     `json:"imported_rows"`
-	Errors      []string `json:"errors"`
+	TotalRows     int      `json:"total_rows"`
+	ValidRows     int      `json:"valid_rows"`
+	InvalidRows   int      `json:"invalid_rows"`
+	DuplicateRows int      `json:"duplicate_rows"`
+	ImportedRows  int      `json:"imported_rows"`
+	Errors        []string `json:"errors"`
 }
 
 type importResidentRow struct {

@@ -15,12 +15,12 @@ import (
 )
 
 var (
-	ErrValidation       = errors.New("validation failed")
-	ErrUserNotFound     = errors.New("user not found")
-	ErrRoleNotFound     = errors.New("role not found")
-	ErrDuplicateContact       = errors.New("email or phone already in use")
-	ErrCannotEscalate         = errors.New("cannot escalate privileges")
-	ErrCannotModifySelf       = errors.New("cannot modify own roles")
+	ErrValidation            = errors.New("validation failed")
+	ErrUserNotFound          = errors.New("user not found")
+	ErrRoleNotFound          = errors.New("role not found")
+	ErrDuplicateContact      = errors.New("email or phone already in use")
+	ErrCannotEscalate        = errors.New("cannot escalate privileges")
+	ErrCannotModifySelf      = errors.New("cannot modify own roles")
 	ErrMFAEnrollmentRequired = errors.New("MFA enrollment required")
 )
 
@@ -249,7 +249,7 @@ func (s *Service) changeRole(ctx context.Context, principal *auth.Principal, use
 				return ErrMFAEnrollmentRequired
 			}
 		}
-		
+
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO user_roles (user_id, role_id, assigned_by)
 			VALUES ($1, $2, $3)
