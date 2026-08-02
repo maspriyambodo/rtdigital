@@ -14,6 +14,7 @@ export default function ErrorPage({
         placeItems: "center",
         padding: "var(--space-4)",
         textAlign: "center",
+        background: "var(--color-bg-subtle)",
       }}
     >
       <section
