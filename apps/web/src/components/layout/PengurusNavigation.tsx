@@ -53,11 +53,12 @@ export function PengurusNavigation({
               borderRadius: "var(--radius-md)",
               color: isActive
                 ? "var(--color-primary-700)"
-                : "var(--color-text)",
+                : "var(--color-text-secondary)",
               background: isActive
                 ? "var(--color-primary-50)"
                 : "transparent",
-              fontWeight: isActive ? 600 : 400,
+              fontWeight: isActive ? 600 : 500,
+              transition: "background-color var(--transition-fast), color var(--transition-fast)",
             }}
           >
             {item.label}

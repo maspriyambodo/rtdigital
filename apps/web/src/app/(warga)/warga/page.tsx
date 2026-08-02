@@ -8,21 +8,25 @@ import { TextInput } from "@/components/ui/TextInput";
 
 export default function WargaHomePage() {
   return (
-    <div style={{ display: "grid", gap: "var(--space-8)" }}>
-      <section>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
+      <header>
         <h1
           style={{
-            marginBottom: "var(--space-2)",
-            fontSize: "1.5rem",
+            margin: 0,
+            marginBottom: "var(--space-1)",
+            fontSize: "1.875rem",
+            fontWeight: 700,
             lineHeight: 1.2,
+            letterSpacing: "-0.025em",
+            color: "var(--color-text)",
           }}
         >
           Beranda Warga
         </h1>
-        <p style={{ color: "var(--color-text-secondary)" }}>
+        <p style={{ margin: 0, color: "var(--color-text-secondary)", fontSize: "1rem" }}>
           Shell warga siap digunakan.
         </p>
-      </section>
+      </header>
 
       <EmptyState
         title="Belum ada informasi"
@@ -30,8 +34,27 @@ export default function WargaHomePage() {
         action={<Button variant="outline">Muat ulang</Button>}
       />
 
-      <section style={{ display: "grid", gap: "var(--space-4)" }}>
-        <h2 style={{ fontSize: "1.25rem", lineHeight: 1.25 }}>
+      <section
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-4)",
+          padding: "var(--space-5)",
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-lg)",
+          boxShadow: "var(--shadow-sm)",
+        }}
+      >
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "1.125rem",
+            fontWeight: 600,
+            lineHeight: 1.25,
+            color: "var(--color-text)",
+          }}
+        >
           Komponen UI dasar
         </h2>
 

@@ -46,12 +46,13 @@ export function WargaNavigation() {
               minHeight: 44,
               padding: "var(--space-2) 2px",
               color: isActive
-                ? "var(--color-primary-600)"
+                ? "var(--color-primary-700)"
                 : "var(--color-text-secondary)",
               fontSize: "0.75rem",
-              fontWeight: isActive ? 600 : 400,
+              fontWeight: isActive ? 600 : 500,
               textAlign: "center",
               whiteSpace: "nowrap",
+              transition: "color var(--transition-fast)",
             }}
           >
             {item.label}
