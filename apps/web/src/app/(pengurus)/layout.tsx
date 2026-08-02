@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { PengurusNavigation } from "@/components/layout/PengurusNavigation";
 
 export default function PengurusLayout({
@@ -35,7 +36,28 @@ export default function PengurusLayout({
             background: "var(--color-surface)",
           }}
         >
-          <div style={{ position: "relative" }}>
+          <div
+            style={{
+              position: "relative",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "var(--space-3)",
+            }}
+          >
+            <div style={{ display: "flex", minWidth: 0, alignItems: "center", gap: "var(--space-2)" }}>
+              <Image
+                src="/logo.png"
+                alt=""
+                width={40}
+                height={40}
+                priority
+                style={{ flexShrink: 0, width: "auto", height: "2.5rem", maxWidth: "100%", objectFit: "contain" }}
+              />
+              <span style={{ overflow: "hidden", fontWeight: 700, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                RT Digital
+              </span>
+            </div>
             <PengurusNavigation mobile />
           </div>
         </header>

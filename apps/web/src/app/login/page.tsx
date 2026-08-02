@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
@@ -102,14 +103,32 @@ export default function LoginPage() {
           width: "100%",
         }}
       >
-        <h1 id="login-title" style={{ fontSize: "1.5rem", marginBottom: "var(--space-2)", textAlign: "center" }}>
-          {mfaToken ? "Verifikasi MFA" : "Masuk RT Digital"}
-        </h1>
-        <p style={{ color: "var(--color-text-secondary)", marginBottom: "var(--space-6)", textAlign: "center" }}>
-          {mfaToken
-            ? "Masukkan kode dari aplikasi authenticator."
-            : "Akses layanan warga dan pengurus RT."}
-        </p>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "var(--space-2)",
+            marginBottom: "var(--space-6)",
+          }}
+        >
+          <Image
+            src="/logo.png"
+            alt=""
+            width={64}
+            height={64}
+            priority
+            style={{ flexShrink: 0, width: "auto", height: "4rem", maxWidth: "100%", objectFit: "contain" }}
+          />
+          <h1 id="login-title" style={{ fontSize: "1.5rem", textAlign: "center" }}>
+            {mfaToken ? "Verifikasi MFA" : "Masuk RT Digital"}
+          </h1>
+          <p style={{ color: "var(--color-text-secondary)", textAlign: "center" }}>
+            {mfaToken
+              ? "Masukkan kode dari aplikasi authenticator."
+              : "Akses layanan warga dan pengurus RT."}
+          </p>
+        </div>
 
         {error ? (
           <p

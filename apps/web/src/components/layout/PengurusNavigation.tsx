@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -83,13 +84,23 @@ export function PengurusNavigation({
       >
         <div
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "var(--space-2)",
             marginBottom: "var(--space-4)",
             paddingBottom: "var(--space-4)",
             borderBottom: "1px solid var(--color-border)",
-            fontWeight: 700,
           }}
         >
-          RT Digital
+          <Image
+            src="/logo.png"
+            alt=""
+            width={40}
+            height={40}
+            priority
+            style={{ flexShrink: 0, width: "auto", height: "2.5rem", maxWidth: "100%", objectFit: "contain" }}
+          />
+          <span style={{ fontWeight: 700 }}>RT Digital</span>
         </div>
         {nav}
       </aside>
