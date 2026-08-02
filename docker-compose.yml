@@ -29,6 +29,8 @@ services:
       PORT: "8080"
       DATABASE_URL: postgres://rtdigital:rtdigital_local_only@postgres:5432/rtdigital?sslmode=disable
       REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY:?DATA_ENCRYPTION_KEY is required}
       R2_ENDPOINT: http://minio:9000
       R2_BUCKET: rtdigital-local
       R2_ACCESS_KEY_ID: minioadmin
