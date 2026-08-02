@@ -55,6 +55,8 @@ func TestInvoicesIntegration(t *testing.T) {
 		usersService,
 		residentsService,
 		invoices.NewService(pool),
+		nil,
+		nil,
 		false,
 	)
 
@@ -100,8 +102,8 @@ func TestInvoicesIntegration(t *testing.T) {
 		}
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO sessions (id, user_id, organization_id, refresh_token_hash, expires_at)
-			VALUES ($1, $2, $3, 'test-hash', now() + interval '1 hour')`,
-			sessionID, userID, organizationID,
+			VALUES ($1, $2, $3, $4, now() + interval '1 hour')`,
+			sessionID, userID, organizationID, fmt.Sprintf("refresh-hash-%s", sessionID),
 		); err != nil {
 			t.Fatalf("create session: %v", err)
 		}

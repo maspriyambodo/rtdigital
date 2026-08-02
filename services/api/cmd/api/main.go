@@ -12,8 +12,10 @@ import (
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/config"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
@@ -51,6 +53,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	storage, err := platform.NewStorage(initCtx, cfg.R2)
+	if err != nil {
+		logger.Error("failed to initialize storage", "error", err)
+		os.Exit(1)
+	}
+
 	var mailer auth.Mailer = auth.NoopMailer{}
 	resendKey := os.Getenv("RESEND_API_KEY")
 	resendFrom := os.Getenv("RESEND_FROM_EMAIL")
@@ -68,11 +76,13 @@ func main() {
 	usersService := users.NewService(pool, mailer, appBaseURL)
 	residentsService := residents.NewService(pool, crypter, cfg.DataEncryptionKey)
 	invoicesService := invoices.NewService(pool)
+	filesService := files.NewService(pool, storage)
+	paymentsService := payments.NewService(pool)
 	production := os.Getenv("APP_ENV") == "production"
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, production),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, production),
 	}
 
 	serverErr := make(chan error, 1)

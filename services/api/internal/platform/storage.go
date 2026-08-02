@@ -13,6 +13,7 @@ import (
 )
 
 type Storage struct {
+	client  *s3.Client
 	presign *s3.PresignClient
 	bucket  string
 }
@@ -20,6 +21,11 @@ type Storage struct {
 type PresignedURL struct {
 	URL     string
 	Headers map[string]string
+}
+
+type ObjectMetadata struct {
+	SizeBytes   int64
+	ContentType string
 }
 
 func NewStorage(ctx context.Context, cfg config.R2Config) (*Storage, error) {
@@ -53,6 +59,7 @@ func NewStorage(ctx context.Context, cfg config.R2Config) (*Storage, error) {
 	})
 
 	return &Storage{
+		client:  client,
 		presign: s3.NewPresignClient(client),
 		bucket:  cfg.Bucket,
 	}, nil
@@ -78,6 +85,21 @@ func (s *Storage) PresignUpload(
 		Headers: map[string]string{
 			"Content-Type": contentType,
 		},
+	}, nil
+}
+
+func (s *Storage) HeadObject(ctx context.Context, key string) (ObjectMetadata, error) {
+	result, err := s.client.HeadObject(ctx, &s3.HeadObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		return ObjectMetadata{}, fmt.Errorf("head object for key %q: %w", key, err)
+	}
+
+	return ObjectMetadata{
+		SizeBytes:   aws.ToInt64(result.ContentLength),
+		ContentType: aws.ToString(result.ContentType),
 	}, nil
 }
 

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 
+import { PaymentForm } from "./PaymentForm";
+
 type InvoiceStatus =
   | "unpaid"
   | "pending_verification"
@@ -31,6 +33,36 @@ interface Invoice {
   cancelled_at: string | null;
   cancellation_reason: string | null;
 }
+
+type PaymentStatus = "pending" | "verified" | "rejected" | "cancelled";
+
+interface Payment {
+  id: string;
+  payment_number: string;
+  method: string;
+  amount: number;
+  paid_at: string;
+  proof_file_id: string | null;
+  verification_status: PaymentStatus;
+  rejection_reason: string | null;
+  cancellation_reason: string | null;
+}
+
+const paymentMethod: Record<string, string> = {
+  cash: "Tunai",
+  transfer: "Transfer",
+  other: "Lainnya",
+};
+
+const paymentStatus: Record<
+  PaymentStatus,
+  { label: string; variant: "neutral" | "warning" | "success" | "danger" }
+> = {
+  pending: { label: "Menunggu verifikasi", variant: "neutral" },
+  verified: { label: "Diterima", variant: "success" },
+  rejected: { label: "Ditolak", variant: "danger" },
+  cancelled: { label: "Dibatalkan", variant: "danger" },
+};
 
 const status: Record<
   InvoiceStatus,
@@ -57,6 +89,63 @@ export default function TagihanWargaPage() {
   const [error, setError] = useState("");
   const [arrears, setArrears] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+
+  const loadPayments = useCallback(
+    async (invoiceID: string) => {
+      setLoadingPayments(true);
+      setPaymentError("");
+
+      try {
+        const accessToken = await getAccessToken();
+        if (!accessToken) {
+          throw new Error("Sesi telah berakhir. Silakan masuk kembali.");
+        }
+        const data = await apiFetch<Payment[]>(`payments?invoice_id=${invoiceID}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        setPayments(data);
+      } catch (cause) {
+        setPayments([]);
+        setPaymentError(
+          cause instanceof ApiException || cause instanceof Error
+            ? cause.message
+            : "Gagal memuat riwayat pembayaran.",
+        );
+      } finally {
+        setLoadingPayments(false);
+      }
+    },
+    [getAccessToken],
+  );
+
+  const openInvoiceDetail = (invoice: Invoice) => {
+    setSelectedInvoice(invoice);
+    setShowPaymentForm(false);
+    void loadPayments(invoice.id);
+  };
+
+  const downloadProof = async (fileID: string) => {
+    try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Sesi telah berakhir. Silakan masuk kembali.");
+      }
+      const response = await apiFetch<{ download_url: string }>(`files/${fileID}/download`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      window.open(response.download_url, "_blank", "noopener,noreferrer");
+    } catch (cause) {
+      setPaymentError(
+        cause instanceof ApiException || cause instanceof Error
+          ? cause.message
+          : "Gagal mengunduh bukti pembayaran.",
+      );
+    }
+  };
 
   const loadInvoices = useCallback(async () => {
     setLoading(true);
@@ -194,10 +283,7 @@ export default function TagihanWargaPage() {
                 {rupiah(item.amount - item.adjustment_amount)} · terbayar{" "}
                 {rupiah(item.paid_amount)}
               </span>
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedInvoice(item)}
-              >
+              <Button variant="secondary" onClick={() => openInvoiceDetail(item)}>
                 Lihat detail
               </Button>
             </article>
@@ -280,7 +366,149 @@ export default function TagihanWargaPage() {
                 {selectedInvoice.cancellation_reason ?? "Tidak tersedia"}
               </p>
             ) : null}
-            <Button onClick={() => setSelectedInvoice(null)}>Tutup</Button>
+
+            <hr
+              style={{
+                width: "100%",
+                border: 0,
+                borderTop: "1px solid var(--color-border)",
+                margin: "var(--space-2) 0",
+              }}
+            />
+
+            {showPaymentForm ? (
+              <PaymentForm
+                invoiceId={selectedInvoice.id}
+                maxAmount={
+                  selectedInvoice.amount -
+                  selectedInvoice.adjustment_amount -
+                  selectedInvoice.paid_amount
+                }
+                onCancel={() => setShowPaymentForm(false)}
+                onSuccess={() => {
+                  setShowPaymentForm(false);
+                  void loadInvoices();
+                  void loadPayments(selectedInvoice.id);
+                }}
+              />
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: "var(--space-3)",
+                  }}
+                >
+                  <h3 style={{ fontSize: "1.125rem", margin: 0 }}>Riwayat Pembayaran</h3>
+                  {selectedInvoice.status !== "paid" && selectedInvoice.status !== "cancelled" ? (
+                    <Button
+                      onClick={() => setShowPaymentForm(true)}
+                      style={{ minHeight: 36, padding: "var(--space-1) var(--space-3)" }}
+                    >
+                      Lapor bayar
+                    </Button>
+                  ) : null}
+                </div>
+
+                {paymentError ? (
+                  <p role="alert" style={{ color: "var(--color-danger)", margin: 0 }}>
+                    {paymentError}
+                  </p>
+                ) : null}
+
+                {loadingPayments ? (
+                  <p style={{ color: "var(--color-text-secondary)", margin: 0 }}>
+                    Memuat riwayat…
+                  </p>
+                ) : payments.length === 0 ? (
+                  <p style={{ color: "var(--color-text-secondary)", margin: 0 }}>
+                    Belum ada laporan pembayaran.
+                  </p>
+                ) : (
+                  <ul
+                    style={{
+                      display: "grid",
+                      gap: "var(--space-3)",
+                      listStyle: "none",
+                      margin: 0,
+                      padding: 0,
+                    }}
+                  >
+                    {payments.map((payment) => (
+                      <li
+                        key={payment.id}
+                        style={{
+                          display: "grid",
+                          gap: "var(--space-2)",
+                          padding: "var(--space-3)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "var(--radius-md)",
+                          background: "var(--color-surface-muted)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            justifyContent: "space-between",
+                            gap: "var(--space-2)",
+                          }}
+                        >
+                          <strong>{payment.payment_number}</strong>
+                          <StatusBadge variant={paymentStatus[payment.verification_status].variant}>
+                            {paymentStatus[payment.verification_status].label}
+                          </StatusBadge>
+                        </div>
+                        <p style={{ fontSize: "0.875rem", margin: 0 }}>
+                          {rupiah(payment.amount)} melalui{" "}
+                          {paymentMethod[payment.method] ?? payment.method} pada{" "}
+                          {new Date(payment.paid_at).toLocaleDateString("id-ID")}
+                        </p>
+                        {payment.rejection_reason ? (
+                          <p style={{ color: "var(--color-danger)", fontSize: "0.875rem", margin: 0 }}>
+                            Ditolak: {payment.rejection_reason}
+                          </p>
+                        ) : null}
+                        {payment.cancellation_reason ? (
+                          <p style={{ color: "var(--color-text-secondary)", fontSize: "0.875rem", margin: 0 }}>
+                            Dibatalkan: {payment.cancellation_reason}
+                          </p>
+                        ) : null}
+                        {payment.proof_file_id ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => void downloadProof(payment.proof_file_id as string)}
+                            style={{
+                              justifySelf: "start",
+                              minHeight: "auto",
+                              padding: 0,
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            Unduh bukti
+                          </Button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSelectedInvoice(null);
+                setPayments([]);
+                setPaymentError("");
+                setShowPaymentForm(false);
+              }}
+            >
+              Tutup
+            </Button>
           </section>
         </div>
       ) : null}

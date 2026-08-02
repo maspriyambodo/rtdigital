@@ -9,6 +9,8 @@ import { FormField } from "@/components/ui/FormField";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextInput } from "@/components/ui/TextInput";
 
+import { PaymentQueue } from "./PaymentQueue";
+
 type Frequency = "once" | "monthly" | "quarterly" | "yearly";
 type InvoiceStatus = "unpaid" | "pending_verification" | "partial" | "paid" | "cancelled";
 
@@ -156,6 +158,8 @@ export default function TagihanPengurusPage() {
     <header><h1 style={{ fontSize: "1.5rem", lineHeight: 1.2 }}>Iuran & Tagihan</h1><p style={{ color: "var(--color-text-secondary)", marginTop: "var(--space-2)" }}>Jenis iuran, penerbitan tagihan, dan tunggakan keluarga.</p></header>
     {message ? <p role="status" style={{ color: "var(--color-success-text)" }}>{message}</p> : null}
     {error ? <p role="alert" style={{ color: "var(--color-danger-text)" }}>{error}</p> : null}
+
+    <PaymentQueue onActionComplete={() => void load()} />
 
     <form onSubmit={(event) => void createDueType(event)} style={{ display: "grid", gap: "var(--space-3)", padding: "var(--space-4)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)" }}>
       <h2 style={{ fontSize: "1.125rem" }}>Tambah Jenis Iuran</h2>

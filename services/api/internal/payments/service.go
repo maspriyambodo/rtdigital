@@ -1,0 +1,580 @@
+package payments
+
+import (
+	"context"
+	"crypto/rand"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+)
+
+type Service struct {
+	db  *pgxpool.Pool
+	now func() time.Time
+}
+
+func NewService(db *pgxpool.Pool) *Service {
+	return &Service{
+		db:  db,
+		now: func() time.Time { return time.Now().UTC() },
+	}
+}
+
+func (s *Service) List(ctx context.Context, principal *auth.Principal, filter PaymentFilter) ([]Payment, error) {
+	if principal == nil {
+		return nil, ErrValidation
+	}
+
+	conditions := []string{"p.organization_id = $1"}
+	args := []any{principal.OrganizationID}
+	argument := 2
+
+	if filter.InvoiceID != "" {
+		conditions = append(conditions, fmt.Sprintf("p.invoice_id = $%d", argument))
+		args = append(args, filter.InvoiceID)
+		argument++
+	}
+	if filter.VerificationStatus != "" {
+		switch filter.VerificationStatus {
+		case "pending", "verified", "rejected", "cancelled":
+		default:
+			return nil, ErrValidation
+		}
+		conditions = append(conditions, fmt.Sprintf("p.verification_status = $%d", argument))
+		args = append(args, filter.VerificationStatus)
+		argument++
+	}
+	if !principal.HasPermission("payment.read") {
+		conditions = append(conditions, fmt.Sprintf(`
+			EXISTS (
+				SELECT 1
+				FROM household_members hm
+				JOIN users u
+				  ON u.organization_id = hm.organization_id
+				 AND u.resident_id = hm.resident_id
+				WHERE hm.organization_id = p.organization_id
+				  AND hm.household_id = i.household_id
+				  AND hm.is_active
+				  AND u.id = $%d
+			)`, argument))
+		args = append(args, principal.UserID)
+	}
+
+	query := fmt.Sprintf(`
+		SELECT p.id, p.invoice_id, i.invoice_number, p.payment_number, p.method, p.amount,
+		       p.paid_at, p.proof_file_id, p.verification_status, p.verified_by, p.verified_at,
+		       p.rejection_reason, p.cancelled_by, p.cancelled_at, p.cancellation_reason,
+		       p.created_by, p.created_at, p.updated_at, i.status
+		FROM payments p
+		JOIN invoices i
+		  ON i.organization_id = p.organization_id
+		 AND i.id = p.invoice_id
+		WHERE %s
+		ORDER BY p.created_at DESC`, strings.Join(conditions, " AND "))
+
+	rows, err := s.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list payments: %w", err)
+	}
+	defer rows.Close()
+
+	items := []Payment{}
+	for rows.Next() {
+		var item Payment
+		if err := rows.Scan(
+			&item.ID, &item.InvoiceID, &item.InvoiceNumber, &item.PaymentNumber,
+			&item.Method, &item.Amount, &item.PaidAt, &item.ProofFileID,
+			&item.VerificationStatus, &item.VerifiedBy, &item.VerifiedAt,
+			&item.RejectionReason, &item.CancelledBy, &item.CancelledAt,
+			&item.CancellationReason, &item.CreatedBy, &item.CreatedAt,
+			&item.UpdatedAt, &item.InvoiceStatus,
+		); err != nil {
+			return nil, fmt.Errorf("scan payment: %w", err)
+		}
+		items = append(items, item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate payments: %w", err)
+	}
+	return items, nil
+}
+
+func (s *Service) Get(ctx context.Context, principal *auth.Principal, paymentID string) (Payment, error) {
+	items, err := s.List(ctx, principal, PaymentFilter{})
+	if err != nil {
+		return Payment{}, err
+	}
+	for _, item := range items {
+		if item.ID == paymentID {
+			return item, nil
+		}
+	}
+	return Payment{}, ErrPaymentNotFound
+}
+
+func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempotencyKey string, request SubmitPaymentRequest) (SubmitPaymentResponse, error) {
+	now := s.now()
+	if principal == nil || strings.TrimSpace(idempotencyKey) == "" || request.Validate(now) != nil {
+		return SubmitPaymentResponse{}, ErrValidation
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return SubmitPaymentResponse{}, fmt.Errorf("begin payment submission: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var (
+		existingID, existingNumber, existingStatus, existingInvoiceStatus string
+		existingCreatedAt                                                 time.Time
+	)
+	err = tx.QueryRow(ctx, `
+		SELECT p.id, p.payment_number, p.verification_status, i.status, p.created_at
+		FROM payments p
+		JOIN invoices i
+		  ON i.organization_id = p.organization_id
+		 AND i.id = p.invoice_id
+		WHERE p.organization_id = $1
+		  AND p.idempotency_key = $2`,
+		principal.OrganizationID,
+		idempotencyKey,
+	).Scan(&existingID, &existingNumber, &existingStatus, &existingInvoiceStatus, &existingCreatedAt)
+	if err == nil {
+		if err := tx.Commit(ctx); err != nil {
+			return SubmitPaymentResponse{}, fmt.Errorf("commit idempotent payment: %w", err)
+		}
+		return SubmitPaymentResponse{
+			ID:                 existingID,
+			PaymentNumber:      existingNumber,
+			VerificationStatus: existingStatus,
+			InvoiceStatus:      existingInvoiceStatus,
+			CreatedAt:          existingCreatedAt,
+		}, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return SubmitPaymentResponse{}, fmt.Errorf("find idempotent payment: %w", err)
+	}
+
+	var (
+		householdID, invoiceStatus string
+		invoiceAmount, paidAmount  float64
+	)
+	err = tx.QueryRow(ctx, `
+		SELECT household_id, status, amount, paid_amount
+		FROM invoices
+		WHERE id = $1
+		  AND organization_id = $2
+		FOR UPDATE`,
+		request.InvoiceID,
+		principal.OrganizationID,
+	).Scan(&householdID, &invoiceStatus, &invoiceAmount, &paidAmount)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return SubmitPaymentResponse{}, ErrInvoiceNotFound
+	}
+	if err != nil {
+		return SubmitPaymentResponse{}, fmt.Errorf("lock invoice: %w", err)
+	}
+	if invoiceStatus == "paid" || invoiceStatus == "cancelled" {
+		return SubmitPaymentResponse{}, ErrInvalidInvoiceState
+	}
+	var pendingAmount float64
+	if err := tx.QueryRow(ctx, `
+		SELECT COALESCE(SUM(amount), 0)
+		FROM payments
+		WHERE organization_id = $1
+		  AND invoice_id = $2
+		  AND verification_status = 'pending'`,
+		principal.OrganizationID,
+		request.InvoiceID,
+	).Scan(&pendingAmount); err != nil {
+		return SubmitPaymentResponse{}, fmt.Errorf("sum pending payments: %w", err)
+	}
+	if request.Amount > invoiceAmount-paidAmount-pendingAmount {
+		return SubmitPaymentResponse{}, ErrConstraint
+	}
+
+	var belongsToHousehold bool
+	if err := tx.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM household_members hm
+			JOIN users u
+			  ON u.organization_id = hm.organization_id
+			 AND u.resident_id = hm.resident_id
+			WHERE hm.organization_id = $1
+			  AND hm.household_id = $2
+			  AND hm.is_active
+			  AND u.id = $3
+		)`,
+		principal.OrganizationID,
+		householdID,
+		principal.UserID,
+	).Scan(&belongsToHousehold); err != nil {
+		return SubmitPaymentResponse{}, fmt.Errorf("authorize invoice household: %w", err)
+	}
+	if !belongsToHousehold {
+		return SubmitPaymentResponse{}, ErrForbidden
+	}
+
+	if request.ProofFileID != nil {
+		var confirmed bool
+		if err := tx.QueryRow(ctx, `
+			SELECT confirmed_at IS NOT NULL
+			FROM file_objects
+			WHERE id = $1
+			  AND organization_id = $2
+			  AND uploaded_by = $3
+			  AND deleted_at IS NULL
+			FOR UPDATE`,
+			*request.ProofFileID,
+			principal.OrganizationID,
+			principal.UserID,
+		).Scan(&confirmed); errors.Is(err, pgx.ErrNoRows) {
+			return SubmitPaymentResponse{}, ErrFileNotFound
+		} else if err != nil {
+			return SubmitPaymentResponse{}, fmt.Errorf("lock proof file: %w", err)
+		} else if !confirmed {
+			return SubmitPaymentResponse{}, ErrFileNotConfirmed
+		}
+	}
+
+	paymentID := newUUID()
+	paymentNumber := fmt.Sprintf("PAY-%s-%s", now.Format("0601"), paymentID[:8])
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO payments (
+			id, organization_id, invoice_id, payment_number, method, amount, paid_at,
+			proof_file_id, verification_status, idempotency_key, created_by, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9, $10, $11, $11)`,
+		paymentID,
+		principal.OrganizationID,
+		request.InvoiceID,
+		paymentNumber,
+		request.Method,
+		request.Amount,
+		request.PaidAt,
+		request.ProofFileID,
+		idempotencyKey,
+		principal.UserID,
+		now,
+	); err != nil {
+		return SubmitPaymentResponse{}, mapDatabaseError(err, "insert payment")
+	}
+
+	if request.ProofFileID != nil {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO file_attachments (
+				id, organization_id, file_id, entity_type, entity_id, purpose
+			) VALUES ($1, $2, $3, 'payment', $4, 'payment_proof')`,
+			newUUID(),
+			principal.OrganizationID,
+			*request.ProofFileID,
+			paymentID,
+		); err != nil {
+			return SubmitPaymentResponse{}, mapDatabaseError(err, "attach payment proof")
+		}
+	}
+
+	invoiceStatus, err = s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, request.InvoiceID)
+	if err != nil {
+		return SubmitPaymentResponse{}, err
+	}
+	if err := s.audit(ctx, tx, principal, "payment.submit", paymentID); err != nil {
+		return SubmitPaymentResponse{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return SubmitPaymentResponse{}, fmt.Errorf("commit payment submission: %w", err)
+	}
+
+	return SubmitPaymentResponse{
+		ID:                 paymentID,
+		PaymentNumber:      paymentNumber,
+		VerificationStatus: "pending",
+		InvoiceStatus:      invoiceStatus,
+		CreatedAt:          now,
+	}, nil
+}
+
+func (s *Service) Verify(ctx context.Context, principal *auth.Principal, paymentID string, _ VerifyPaymentRequest) (PaymentActionResponse, error) {
+	if principal == nil {
+		return PaymentActionResponse{}, ErrValidation
+	}
+	return s.resolve(ctx, principal, paymentID, "verified", "")
+}
+
+func (s *Service) Reject(ctx context.Context, principal *auth.Principal, paymentID string, request RejectPaymentRequest) (PaymentActionResponse, error) {
+	if principal == nil || request.Validate() != nil {
+		return PaymentActionResponse{}, ErrValidation
+	}
+	return s.resolve(ctx, principal, paymentID, "rejected", strings.TrimSpace(request.Reason))
+}
+
+func (s *Service) Cancel(ctx context.Context, principal *auth.Principal, paymentID string, request CancelPaymentRequest) (PaymentActionResponse, error) {
+	if principal == nil || request.Validate() != nil {
+		return PaymentActionResponse{}, ErrValidation
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("begin payment cancellation: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var status, invoiceID string
+	var amount float64
+	err = tx.QueryRow(ctx, `
+		SELECT verification_status, invoice_id, amount
+		FROM payments
+		WHERE id = $1 AND organization_id = $2
+		FOR UPDATE`,
+		paymentID,
+		principal.OrganizationID,
+	).Scan(&status, &invoiceID, &amount)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return PaymentActionResponse{}, ErrPaymentNotFound
+	}
+	if err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("lock payment cancellation: %w", err)
+	}
+	if status == "cancelled" || status == "rejected" {
+		return PaymentActionResponse{}, ErrInvalidPaymentState
+	}
+
+	now := s.now()
+	if _, err := tx.Exec(ctx, `
+		UPDATE payments
+		SET verification_status = 'cancelled',
+		    cancelled_by = $1,
+		    cancelled_at = $2,
+		    cancellation_reason = $3
+		WHERE id = $4 AND organization_id = $5`,
+		principal.UserID,
+		now,
+		strings.TrimSpace(request.Reason),
+		paymentID,
+		principal.OrganizationID,
+	); err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("cancel payment: %w", err)
+	}
+	if status == "verified" {
+		if _, err := tx.Exec(ctx, `
+			UPDATE invoices
+			SET paid_amount = paid_amount - $1
+			WHERE id = $2 AND organization_id = $3`,
+			amount,
+			invoiceID,
+			principal.OrganizationID,
+		); err != nil {
+			return PaymentActionResponse{}, fmt.Errorf("reverse invoice payment: %w", err)
+		}
+	}
+
+	invoiceStatus, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, invoiceID)
+	if err != nil {
+		return PaymentActionResponse{}, err
+	}
+	if err := s.audit(ctx, tx, principal, "payment.cancel", paymentID); err != nil {
+		return PaymentActionResponse{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("commit payment cancellation: %w", err)
+	}
+	return PaymentActionResponse{
+		ID:                 paymentID,
+		VerificationStatus: "cancelled",
+		InvoiceStatus:      invoiceStatus,
+	}, nil
+}
+
+func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymentID, outcome, reason string) (PaymentActionResponse, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("begin payment resolution: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var status, createdBy, invoiceID string
+	var amount float64
+	err = tx.QueryRow(ctx, `
+		SELECT verification_status, created_by, invoice_id, amount
+		FROM payments
+		WHERE id = $1 AND organization_id = $2
+		FOR UPDATE`,
+		paymentID,
+		principal.OrganizationID,
+	).Scan(&status, &createdBy, &invoiceID, &amount)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return PaymentActionResponse{}, ErrPaymentNotFound
+	}
+	if err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("lock payment: %w", err)
+	}
+	if status != "pending" {
+		return PaymentActionResponse{}, ErrInvalidPaymentState
+	}
+	if createdBy == principal.UserID {
+		return PaymentActionResponse{}, ErrForbidden
+	}
+
+	now := s.now()
+	if outcome == "verified" {
+		if _, err := tx.Exec(ctx, `
+			UPDATE payments
+			SET verification_status = 'verified', verified_by = $1, verified_at = $2
+			WHERE id = $3 AND organization_id = $4`,
+			principal.UserID,
+			now,
+			paymentID,
+			principal.OrganizationID,
+		); err != nil {
+			return PaymentActionResponse{}, fmt.Errorf("verify payment: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `
+			UPDATE invoices
+			SET paid_amount = paid_amount + $1
+			WHERE id = $2 AND organization_id = $3`,
+			amount,
+			invoiceID,
+			principal.OrganizationID,
+		); err != nil {
+			return PaymentActionResponse{}, fmt.Errorf("update paid invoice amount: %w", err)
+		}
+	} else {
+		if _, err := tx.Exec(ctx, `
+			UPDATE payments
+			SET verification_status = 'rejected',
+			    verified_by = $1,
+			    verified_at = $2,
+			    rejection_reason = $3
+			WHERE id = $4 AND organization_id = $5`,
+			principal.UserID,
+			now,
+			reason,
+			paymentID,
+			principal.OrganizationID,
+		); err != nil {
+			return PaymentActionResponse{}, fmt.Errorf("reject payment: %w", err)
+		}
+	}
+
+	invoiceStatus, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, invoiceID)
+	if err != nil {
+		return PaymentActionResponse{}, err
+	}
+	action := "payment.verify"
+	if outcome == "rejected" {
+		action = "payment.reject"
+	}
+	if err := s.audit(ctx, tx, principal, action, paymentID); err != nil {
+		return PaymentActionResponse{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return PaymentActionResponse{}, fmt.Errorf("commit payment resolution: %w", err)
+	}
+
+	return PaymentActionResponse{
+		ID:                 paymentID,
+		VerificationStatus: outcome,
+		VerifiedAt:         &now,
+		InvoiceStatus:      invoiceStatus,
+	}, nil
+}
+
+func (s *Service) syncInvoiceStatus(ctx context.Context, tx pgx.Tx, organizationID, invoiceID string) (string, error) {
+	var (
+		currentStatus string
+		amount        float64
+		paidAmount    float64
+	)
+	err := tx.QueryRow(ctx, `
+		SELECT status, amount, paid_amount
+		FROM invoices
+		WHERE id = $1 AND organization_id = $2
+		FOR UPDATE`,
+		invoiceID,
+		organizationID,
+	).Scan(&currentStatus, &amount, &paidAmount)
+	if err != nil {
+		return "", fmt.Errorf("lock invoice status: %w", err)
+	}
+	if currentStatus == "cancelled" {
+		return currentStatus, nil
+	}
+
+	var pending bool
+	if err := tx.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			FROM payments
+			WHERE organization_id = $1
+			  AND invoice_id = $2
+			  AND verification_status = 'pending'
+		)`,
+		organizationID,
+		invoiceID,
+	).Scan(&pending); err != nil {
+		return "", fmt.Errorf("check pending payments: %w", err)
+	}
+
+	status := "unpaid"
+	switch {
+	case paidAmount >= amount:
+		status = "paid"
+	case pending:
+		status = "pending_verification"
+	case paidAmount > 0:
+		status = "partial"
+	}
+	if _, err := tx.Exec(ctx, `
+		UPDATE invoices
+		SET status = $1
+		WHERE id = $2 AND organization_id = $3`,
+		status,
+		invoiceID,
+		organizationID,
+	); err != nil {
+		return "", fmt.Errorf("sync invoice status: %w", err)
+	}
+	return status, nil
+}
+
+func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principal, action, paymentID string) error {
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+		VALUES ($1, $2, $3, 'payment', $4)`,
+		principal.OrganizationID,
+		principal.UserID,
+		action,
+		paymentID,
+	); err != nil {
+		return fmt.Errorf("audit %s: %w", action, err)
+	}
+	return nil
+}
+
+func mapDatabaseError(err error, operation string) error {
+	message := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(message, "unique"):
+		return ErrDuplicateData
+	case strings.Contains(message, "check"), strings.Contains(message, "foreign key"):
+		return ErrConstraint
+	default:
+		return fmt.Errorf("%s: %w", operation, err)
+	}
+}
+
+func newUUID() string {
+	bytes := make([]byte, 16)
+	if _, err := rand.Read(bytes); err != nil {
+		panic("secure random source unavailable")
+	}
+	bytes[6] = (bytes[6] & 0x0f) | 0x40
+	bytes[8] = (bytes[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", bytes[0:4], bytes[4:6], bytes[6:8], bytes[8:10], bytes[10:16])
+}

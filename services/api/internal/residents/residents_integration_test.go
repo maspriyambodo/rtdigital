@@ -48,7 +48,7 @@ func TestResidentsIntegration(t *testing.T) {
 	usersService := users.NewService(pool, auth.NoopMailer{}, "http://localhost:3000")
 	residentsService := residents.NewService(pool, crypter, "12345678901234567890123456789012")
 	invoicesService := invoices.NewService(pool)
-	server := httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, false)
+	server := httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, nil, nil, false)
 
 	suffix := time.Now().UnixNano() & 0xffffffff
 	orgID := fmt.Sprintf("%08x-3333-3333-3333-333333333333", suffix)

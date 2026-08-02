@@ -100,15 +100,15 @@ Tujuan: membuat jenis iuran serta menerbitkan tagihan individual atau massal.
 
 Tujuan: warga mengirim pembayaran manual; bendahara memverifikasi dengan alur aman dan dapat diaudit.
 
-- [ ] **Task 5.1:** Buat migration `file_objects`, `file_attachments`, dan `payments`.
-- [ ] **Task 5.2:** Implementasi endpoint presign upload, konfirmasi upload, validasi MIME/ukuran/purpose, dan signed download Cloudflare R2.
-- [ ] **Task 5.3:** Implementasi `FileUploader`: kamera/galeri, validasi lokal, progress, retry, hapus, dan fallback error.
-- [ ] **Task 5.4:** Implementasi API submit pembayaran tunai/transfer dengan `Idempotency-Key`.
-- [ ] **Task 5.5:** Implementasi API verifikasi, penolakan dengan alasan wajib, dan pembatalan pembayaran.
-- [ ] **Task 5.6:** Implementasi transaksi atomik: lock payment/invoice, update status invoice, audit, dan notifikasi.
-- [ ] **Task 5.7:** Buat UI warga untuk lapor pembayaran, unggah bukti, riwayat, status, dan tanda terima.
-- [ ] **Task 5.8:** Buat UI bendahara untuk antrean verifikasi, detail bukti, terima, tolak, dan batal.
-- [ ] **Task 5.9:** Tambahkan test concurrency, idempotency, pemisahan tugas, dan status pembayaran/tagihan.
+- [x] **Task 5.1:** Buat migration `file_objects`, `file_attachments`, dan `payments`.
+- [x] **Task 5.2:** Implementasi endpoint presign upload, konfirmasi upload, validasi MIME/ukuran/purpose, dan signed download Cloudflare R2.
+- [x] **Task 5.3:** Implementasi `FileUploader`: kamera/galeri, validasi lokal, progress, retry, hapus, dan fallback error.
+- [x] **Task 5.4:** Implementasi API submit pembayaran tunai/transfer dengan `Idempotency-Key`.
+- [x] **Task 5.5:** Implementasi API verifikasi, penolakan dengan alasan wajib, dan pembatalan pembayaran.
+- [x] **Task 5.6:** Implementasi transaksi atomik: lock payment/invoice, update status invoice, dan audit. *(Pengiriman notifikasi ditunda ke Epic 10 karena layanan notifikasi belum tersedia.)*
+- [x] **Task 5.7:** Buat UI warga untuk lapor pembayaran, unggah bukti, riwayat, status, dan tanda terima.
+- [x] **Task 5.8:** Buat UI bendahara untuk antrean verifikasi, detail bukti, terima, tolak, dan batal.
+- [x] **Task 5.9:** Tambahkan test concurrency, idempotency, pemisahan tugas, dan status pembayaran/tagihan.
 
 ---
 
