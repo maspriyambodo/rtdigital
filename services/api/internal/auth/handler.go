@@ -263,14 +263,14 @@ func ClaimsFromContext(ctx context.Context) *TokenClaims {
 
 func (h *Handler) setRefreshCookie(w http.ResponseWriter, token string, expires time.Time) {
 	http.SetCookie(w, &http.Cookie{
-		Name: "refresh_token", Value: token, Path: "/auth", Expires: expires,
+		Name: "refresh_token", Value: token, Path: "/api/v1/auth", Expires: expires,
 		HttpOnly: true, Secure: h.secureCookies, SameSite: http.SameSiteLaxMode,
 	})
 }
 
 func (h *Handler) clearRefreshCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
-		Name: "refresh_token", Value: "", Path: "/auth", MaxAge: -1,
+		Name: "refresh_token", Value: "", Path: "/api/v1/auth", MaxAge: -1,
 		HttpOnly: true, Secure: h.secureCookies, SameSite: http.SameSiteLaxMode,
 	})
 }
