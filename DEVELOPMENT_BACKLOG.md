@@ -205,14 +205,14 @@ Tujuan: ringkasan operasional yang relevan serta ekspor laporan sesuai permissio
 
 Tujuan: menyelesaikan kesiapan operasional, keamanan, observabilitas, serta UAT sebelum peluncuran.
 
-- [ ] **Task 12.1:** Implementasi pengaturan RT: identitas, logo, rekening, zona waktu, nomor surat, batas unggahan, dan template.
-- [ ] **Task 12.2:** Buat migration dan layanan `audit_logs` append-only untuk autentikasi, data sensitif, keuangan, surat, ekspor, peran, dan konfigurasi.
-- [ ] **Task 12.3:** Buat UI audit log dengan filter dan detail yang disanitasi.
-- [ ] **Task 12.4:** Terapkan CORS, CSRF sesuai mekanisme cookie, rate limit, security headers, body limit, dan sanitasi log.
-- [ ] **Task 12.5:** Konfigurasi monitoring: health/readiness, CloudWatch log/metric/alarm, request ID, serta error tracking yang lolos evaluasi privasi.
-- [ ] **Task 12.6:** Konfigurasi backup RDS, retensi/pemulihan R2, dan uji restore di staging.
-- [ ] **Task 12.7:** Jalankan responsive, accessibility, authorization, integration, E2E, security header, dan smoke test staging.
-- [ ] **Task 12.8:** Jalankan UAT pengurus, migrasi CSV final, pelatihan, runbook, kebijakan privasi, dan soft launch.
+- [x] **Task 12.1:** Implementasi pengaturan RT: identitas, logo, rekening, zona waktu, nomor surat, batas unggahan, dan template.
+- [x] **Task 12.2:** Buat migration dan layanan `audit_logs` append-only untuk autentikasi, data sensitif, keuangan, surat, ekspor, peran, dan konfigurasi.
+- [x] **Task 12.3:** Buat UI audit log dengan filter dan detail yang disanitasi.
+- [x] **Task 12.4:** Terapkan CORS, CSRF sesuai mekanisme cookie, rate limit, security headers, body limit, dan sanitasi log.
+- [ ] **Task 12.5:** Konfigurasi monitoring: health/readiness, CloudWatch log/metric/alarm, request ID, serta error tracking yang lolos evaluasi privasi. *(Health/readiness, request ID, log JSON, dan runbook alarm tersedia; konfigurasi CloudWatch produksi belum dapat divalidasi tanpa akun/infrastruktur target.)*
+- [ ] **Task 12.6:** Konfigurasi backup RDS, retensi/pemulihan R2, dan uji restore di staging. *(Prosedur dan checklist tersedia di `docs/RELEASE_RUNBOOK.md`; konfigurasi cloud serta restore staging membutuhkan akses lingkungan target.)*
+- [ ] **Task 12.7:** Jalankan responsive, accessibility, authorization, integration, E2E, security header, dan smoke test staging. *(Go test, lint, dan build lulus; pengujian viewport, E2E, serta staging belum dijalankan.)*
+- [ ] **Task 12.8:** Jalankan UAT pengurus, migrasi CSV final, pelatihan, runbook, kebijakan privasi, dan soft launch. *(Runbook tersedia; aktivitas operasional/UAT belum dapat dinyatakan selesai.)*
 
 ---
 

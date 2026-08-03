@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/maspriyambodo/rtdigital/services/api/internal/audit"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
@@ -23,6 +24,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/reports"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/settings"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
 
@@ -39,6 +41,8 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	var notificationsService *notifications.Service
 	var dashboardService *dashboard.Service
 	var reportsService *reports.Service
+	var settingsService *settings.Service
+	var auditService *audit.Service
 	var letterStorage letters.StorageClient
 	for _, service := range services {
 		switch value := service.(type) {
@@ -54,6 +58,10 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 			dashboardService = value
 		case *reports.Service:
 			reportsService = value
+		case *settings.Service:
+			settingsService = value
+		case *audit.Service:
+			auditService = value
 		case letters.StorageClient:
 			letterStorage = value
 		}
@@ -95,9 +103,39 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	if reportsService != nil {
 		reports.NewHandler(reportsService, tokens, authz).RegisterRoutes(api)
 	}
+	if settingsService != nil {
+		settings.NewHandler(settingsService, tokens, authz).RegisterRoutes(api)
+	}
+	if auditService != nil {
+		audit.NewHandler(auditService, tokens, authz).RegisterRoutes(api)
+	}
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 
-	return &Server{handler: withRequestID(withRecovery(logger, withLogging(logger, root)))}
+	origins := allowedOrigins()
+	limiter := newRateLimiter(60, time.Minute)
+	handler := withRequestID(
+		withRecovery(
+			logger,
+			withSanitizedLogging(
+				logger,
+				withSecurityHeaders(
+					production,
+					withCORS(
+						origins,
+						withCSRF(
+							origins,
+							withRateLimit(
+								limiter,
+								withBodyLimit(root),
+							),
+						),
+					),
+				),
+			),
+		),
+	)
+
+	return &Server{handler: handler}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -150,19 +188,6 @@ func withRecovery(logger *slog.Logger, next http.Handler) http.Handler {
 			}
 		}()
 		next.ServeHTTP(w, r)
-	})
-}
-
-func withLogging(logger *slog.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		next.ServeHTTP(w, r)
-		logger.InfoContext(r.Context(), "request completed",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"duration_ms", time.Since(start).Milliseconds(),
-			"request_id", RequestID(r.Context()),
-		)
 	})
 }
 

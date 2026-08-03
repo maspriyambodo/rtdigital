@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/maspriyambodo/rtdigital/services/api/internal/audit"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
@@ -25,6 +26,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/reports"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/settings"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
 
@@ -106,6 +108,8 @@ func main() {
 	notificationsService := notifications.NewService(pool)
 	dashboardService := dashboard.NewService(pool)
 	reportsService := reports.NewService(pool)
+	settingsService := settings.NewService(pool)
+	auditService := audit.NewService(pool)
 	dispatcher := notifications.NewDispatcher(pool, notificationsService, mailer, whatsapp, logger)
 	authService.SetNotificationDispatcher(dispatcher)
 	usersService.SetNotificationDispatcher(dispatcher)
@@ -118,7 +122,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, dashboardService, reportsService, storage),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, dashboardService, reportsService, settingsService, auditService, storage),
 	}
 
 	serverErr := make(chan error, 1)
