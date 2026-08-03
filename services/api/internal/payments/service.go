@@ -13,12 +13,14 @@ import (
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 )
 
 type Service struct {
-	db   *pgxpool.Pool
-	cash *cash.Service
-	now  func() time.Time
+	db         *pgxpool.Pool
+	cash       *cash.Service
+	dispatcher *notifications.Dispatcher
+	now        func() time.Time
 }
 
 func NewService(db *pgxpool.Pool, cashService *cash.Service) *Service {
@@ -27,6 +29,10 @@ func NewService(db *pgxpool.Pool, cashService *cash.Service) *Service {
 		cash: cashService,
 		now:  func() time.Time { return time.Now().UTC() },
 	}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher *notifications.Dispatcher) {
+	s.dispatcher = dispatcher
 }
 
 func (s *Service) List(ctx context.Context, principal *auth.Principal, filter PaymentFilter) ([]Payment, error) {
@@ -293,6 +299,13 @@ func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempot
 	if err := tx.Commit(ctx); err != nil {
 		return SubmitPaymentResponse{}, fmt.Errorf("commit payment submission: %w", err)
 	}
+	s.notifyTreasurers(principal.OrganizationID, notifications.DispatchJob{
+		Type:          "payment_submitted",
+		Title:         "Laporan pembayaran baru",
+		Body:          fmt.Sprintf("Pembayaran %s sebesar Rp%.0f menunggu verifikasi.", paymentNumber, request.Amount),
+		ReferenceType: "payment",
+		ReferenceID:   paymentID,
+	})
 
 	return SubmitPaymentResponse{
 		ID:                 paymentID,
@@ -486,6 +499,21 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 	if err := tx.Commit(ctx); err != nil {
 		return PaymentActionResponse{}, fmt.Errorf("commit payment resolution: %w", err)
 	}
+	title := "Pembayaran diverifikasi"
+	body := fmt.Sprintf("Pembayaran %s sebesar Rp%.0f telah diverifikasi.", paymentNumber, amount)
+	if outcome == "rejected" {
+		title = "Pembayaran ditolak"
+		body = fmt.Sprintf("Pembayaran %s ditolak: %s", paymentNumber, reason)
+	}
+	s.dispatchNotification(notifications.DispatchJob{
+		OrganizationID: principal.OrganizationID,
+		RecipientUserID: createdBy,
+		Type:           "payment_"+outcome,
+		Title:          title,
+		Body:           body,
+		ReferenceType:  "payment",
+		ReferenceID:    paymentID,
+	})
 
 	return PaymentActionResponse{
 		ID:                 paymentID,
@@ -493,6 +521,40 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 		VerifiedAt:         &now,
 		InvoiceStatus:      invoiceStatus,
 	}, nil
+}
+
+func (s *Service) notifyTreasurers(organizationID string, job notifications.DispatchJob) {
+	if s.dispatcher == nil {
+		return
+	}
+	rows, err := s.db.Query(context.Background(), `
+		SELECT DISTINCT u.id
+		FROM users u
+		JOIN user_roles ur ON ur.user_id = u.id
+		JOIN roles r ON r.id = ur.role_id
+		WHERE u.organization_id = $1
+		  AND u.status = 'active'
+		  AND r.code = 'bendahara'`,
+		organizationID,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var userID string
+		if rows.Scan(&userID) == nil {
+			job.OrganizationID = organizationID
+			job.RecipientUserID = userID
+			s.dispatchNotification(job)
+		}
+	}
+}
+
+func (s *Service) dispatchNotification(job notifications.DispatchJob) {
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(job)
+	}
 }
 
 func (s *Service) syncInvoiceStatus(ctx context.Context, tx pgx.Tx, organizationID, invoiceID string) (string, error) {

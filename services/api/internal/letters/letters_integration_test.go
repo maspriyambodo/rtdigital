@@ -83,9 +83,9 @@ func TestLettersWorkflowIntegration(t *testing.T) {
 		id := newID()
 		if _, err := pool.Exec(ctx, `
 			INSERT INTO residents (
-				id, organization_id, full_name, encrypted_nik, nik_hash, birth_date,
-				gender, religion, marital_status, occupation, status
-			) VALUES ($1, $2, $3, 'enc', $4, '1990-01-01', 'male', 'islam', 'married', 'swasta', 'verified')`,
+				id, organization_id, full_name, national_id_encrypted, national_id_blind_index, birth_date,
+				gender, marital_status, occupation, resident_status, verification_status
+			) VALUES ($1, $2, $3, 'enc', $4, '1990-01-01', 'male', 'married', 'swasta', 'active', 'verified')`,
 			id, organizationID, name, "nik-"+id); err != nil {
 			t.Fatalf("create resident: %v", err)
 		}

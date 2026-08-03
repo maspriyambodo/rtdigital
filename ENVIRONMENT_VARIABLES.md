@@ -50,8 +50,8 @@ Dokumen ini menetapkan konfigurasi runtime. Jangan commit `.env`, API key, passw
 | `R2_USE_PATH_STYLE` | Tidak | `true` | `true` untuk MinIO lokal; `false` untuk R2 production. |
 | `RESEND_API_KEY` | Ya | Kosong | API key Resend untuk environment terkait. |
 | `RESEND_FROM_EMAIL` | Staging/production | Kosong | Alamat/domain pengirim yang sudah diverifikasi Resend. |
-| `SAUNGWA_API_KEY` | Staging/production | Kosong | API key SaungWA. |
-| `SAUNGWA_ENDPOINT` | Tidak | Sesuai dokumentasi SaungWA | Endpoint API SaungWA. Jangan menebak atau hardcode endpoint tanpa verifikasi dokumentasi provider. |
+| `SAUNGWA_API_KEY` | Staging/production | Kosong | Kredensial SaungWA: `<appkey>:<authkey>`. |
+| `SAUNGWA_ENDPOINT` | Tidak | `https://app.saungwa.com/api/create-message` | Endpoint SaungWA pengiriman pesan WhatsApp. |
 
 ## 4. Frontend: Next.js
 
@@ -95,7 +95,9 @@ R2_USE_PATH_STYLE=true
 # Leave empty locally unless deliberately tested.
 RESEND_API_KEY=
 RESEND_FROM_EMAIL=
+# Format: <appkey>:<authkey>
 SAUNGWA_API_KEY=
+# Optional. Default: https://app.saungwa.com/api/create-message
 SAUNGWA_ENDPOINT=
 ```
 

@@ -123,7 +123,7 @@ WITH mappings(role_code, permission_code) AS (
         ('ketua_rt', 'due_type.read'), ('ketua_rt', 'invoice.read'), ('ketua_rt', 'invoice.export'),
         ('ketua_rt', 'payment.read'), ('ketua_rt', 'cash.read'), ('ketua_rt', 'finance.export'),
         ('ketua_rt', 'letter_type.read'), ('ketua_rt', 'letter_request.read'), ('ketua_rt', 'letter_request.approve'),
-        ('ketua_rt', 'complaint.read'), ('ketua_rt', 'complaint.comment'), ('ketua_rt', 'complaint.export'),
+        ('ketua_rt', 'complaint.read'), ('ketua_rt', 'complaint.assign'), ('ketua_rt', 'complaint.update_status'), ('ketua_rt', 'complaint.comment'), ('ketua_rt', 'complaint.export'),
 
         ('sekretaris', 'organization.read'), ('sekretaris', 'organization.update'),
         ('sekretaris', 'user.invite'), ('sekretaris', 'user.read'), ('sekretaris', 'user.update'), ('sekretaris', 'audit.read'),
@@ -149,6 +149,7 @@ WITH mappings(role_code, permission_code) AS (
 
         ('pengurus', 'organization.read'), ('pengurus', 'announcement.read'), ('pengurus', 'event.read'),
         ('pengurus', 'notification.read_self'), ('pengurus', 'notification.mark_read_self'),
+        ('pengurus', 'complaint.read'), ('pengurus', 'complaint.update_status'), ('pengurus', 'complaint.comment'),
 
         ('warga', 'organization.read'), ('warga', 'user.update'),
         ('warga', 'house_unit.read'), ('warga', 'household.read'), ('warga', 'resident.read'), ('warga', 'resident.correction.submit'),

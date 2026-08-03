@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 )
 
 func (s *Service) ListInvoices(ctx context.Context, principal *auth.Principal, filter InvoiceFilter) ([]Invoice, error) {
@@ -133,6 +134,13 @@ func (s *Service) CreateInvoice(ctx context.Context, principal *auth.Principal, 
 	if err := tx.Commit(ctx); err != nil {
 		return Invoice{}, fmt.Errorf("commit create invoice: %w", err)
 	}
+	s.notifyHousehold(ctx, principal.OrganizationID, req.HouseholdID, notifications.DispatchJob{
+		Type:          "invoice_created",
+		Title:         "Tagihan iuran baru",
+		Body:          fmt.Sprintf("Tagihan %s diterbitkan jatuh tempo %s.", item.InvoiceNumber, item.DueDate),
+		ReferenceType: "invoice",
+		ReferenceID:   item.ID,
+	})
 	return s.GetInvoice(ctx, principal, item.ID)
 }
 
@@ -212,6 +220,15 @@ func (s *Service) GenerateInvoices(ctx context.Context, principal *auth.Principa
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return GenerateInvoicesResult{}, fmt.Errorf("commit bulk generation: %w", err)
+	}
+	for _, invoice := range result.Invoices {
+		s.notifyHousehold(ctx, principal.OrganizationID, invoice.HouseholdID, notifications.DispatchJob{
+			Type:          "invoice_created",
+			Title:         "Tagihan iuran baru",
+			Body:          fmt.Sprintf("Tagihan %s diterbitkan jatuh tempo %s.", invoice.InvoiceNumber, invoice.DueDate),
+			ReferenceType: "invoice",
+			ReferenceID:   invoice.ID,
+		})
 	}
 	return result, nil
 }

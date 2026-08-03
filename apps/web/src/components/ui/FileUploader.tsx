@@ -18,7 +18,7 @@ interface PresignUploadResponse {
 }
 
 export interface FileUploaderProps {
-  entityType?: "payment" | "cash_transaction" | "announcement" | "event" | "letter_request";
+  entityType?: "payment" | "cash_transaction" | "announcement" | "event" | "letter_request" | "complaint";
   entityId: string;
   onChange: (fileId: string | undefined) => void;
   disabled?: boolean;

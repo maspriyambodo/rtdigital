@@ -12,15 +12,55 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 )
 
 type Service struct {
-	db  *pgxpool.Pool
-	now func() time.Time
+	db         *pgxpool.Pool
+	dispatcher *notifications.Dispatcher
+	now        func() time.Time
 }
 
 func NewService(db *pgxpool.Pool) *Service {
 	return &Service{db: db, now: func() time.Time { return time.Now().UTC() }}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher *notifications.Dispatcher) {
+	s.dispatcher = dispatcher
+}
+
+func (s *Service) notifyImportantAnnouncement(ctx context.Context, organizationID, announcementID, priority, title, content string) {
+	if s.dispatcher == nil || (priority != "important" && priority != "urgent") {
+		return
+	}
+
+	rows, err := s.db.Query(ctx, `
+		SELECT DISTINCT u.id
+		FROM users u
+		WHERE u.organization_id = $1
+		  AND u.status = 'active'
+		  AND `+userMatchesAnnouncementSQL("u"),
+		organizationID,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID string
+		if rows.Scan(&userID) == nil {
+			s.dispatcher.Dispatch(notifications.DispatchJob{
+				OrganizationID:  organizationID,
+				RecipientUserID: userID,
+				Type:            "announcement_published",
+				Title:           "Pengumuman penting: " + title,
+				Body:            content,
+				ReferenceType:   "announcement",
+				ReferenceID:     announcementID,
+			})
+		}
+	}
 }
 
 func (s *Service) CreateAnnouncement(ctx context.Context, principal *auth.Principal, req CreateAnnouncementRequest) (AnnouncementItem, error) {
@@ -59,6 +99,9 @@ func (s *Service) CreateAnnouncement(ctx context.Context, principal *auth.Princi
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return AnnouncementItem{}, fmt.Errorf("commit announcement: %w", err)
+	}
+	if req.Status == "published" {
+		s.notifyImportantAnnouncement(ctx, principal.OrganizationID, id, req.Priority, req.Title, req.Content)
 	}
 	return s.GetAnnouncement(ctx, principal, id)
 }
@@ -118,6 +161,9 @@ func (s *Service) UpdateAnnouncement(ctx context.Context, principal *auth.Princi
 	if err := tx.Commit(ctx); err != nil {
 		return AnnouncementItem{}, fmt.Errorf("commit update announcement: %w", err)
 	}
+	if req.Status == "published" && currentStatus != "published" {
+		s.notifyImportantAnnouncement(ctx, principal.OrganizationID, id, req.Priority, req.Title, req.Content)
+	}
 	return s.GetAnnouncement(ctx, principal, id)
 }
 
@@ -156,7 +202,11 @@ func (s *Service) PublishAnnouncement(ctx context.Context, principal *auth.Princ
 	if err := tx.Commit(ctx); err != nil {
 		return AnnouncementItem{}, fmt.Errorf("commit publish announcement: %w", err)
 	}
-	return s.GetAnnouncement(ctx, principal, id)
+	item, err := s.GetAnnouncement(ctx, principal, id)
+	if err == nil {
+		s.notifyImportantAnnouncement(ctx, principal.OrganizationID, id, item.Priority, item.Title, item.Content)
+	}
+	return item, err
 }
 
 func (s *Service) ArchiveAnnouncement(ctx context.Context, principal *auth.Principal, id string) (AnnouncementItem, error) {
@@ -175,9 +225,9 @@ func (s *Service) ArchiveAnnouncement(ctx context.Context, principal *auth.Princ
 		return AnnouncementItem{}, ErrAnnouncementNotFound
 	}
 	if _, err := s.db.Exec(ctx, `
-		INSERT INTO audit_logs (id, organization_id, actor_user_id, action, entity_type, entity_id)
-		VALUES ($1, $2, $3, 'announcement.archive', 'announcement', $4)`,
-		newUUID(), principal.OrganizationID, principal.UserID, id,
+		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+		VALUES ($1, $2, 'announcement.archive', 'announcement', $3)`,
+		principal.OrganizationID, principal.UserID, id,
 	); err != nil {
 		return AnnouncementItem{}, fmt.Errorf("audit archive announcement: %w", err)
 	}
@@ -381,9 +431,9 @@ func (s *Service) CancelEvent(ctx context.Context, principal *auth.Principal, id
 		return EventItem{}, ErrEventNotFound
 	}
 	if _, err := s.db.Exec(ctx, `
-		INSERT INTO audit_logs (id, organization_id, actor_user_id, action, entity_type, entity_id)
-		VALUES ($1, $2, $3, 'event.cancel', 'event', $4)`,
-		newUUID(), principal.OrganizationID, principal.UserID, id,
+		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+		VALUES ($1, $2, 'event.cancel', 'event', $3)`,
+		principal.OrganizationID, principal.UserID, id,
 	); err != nil {
 		return EventItem{}, fmt.Errorf("audit cancel event: %w", err)
 	}
@@ -613,9 +663,28 @@ func (s *Service) isAnnouncementVisible(ctx context.Context, principal *auth.Pri
 	err := s.db.QueryRow(ctx, `
 		SELECT EXISTS(
 			SELECT 1 FROM announcements a
-			WHERE a.organization_id = $1 AND a.id = $2 AND `+announcementVisibleSQL("a")+`
+			WHERE a.organization_id = $1 AND a.id = $2 AND (
+				EXISTS (SELECT 1 FROM announcement_targets t
+					WHERE t.organization_id = a.organization_id AND t.announcement_id = a.id AND t.target_type = 'all')
+				OR EXISTS (SELECT 1 FROM announcement_targets t JOIN user_roles ur ON ur.role_id = t.target_id
+					WHERE t.organization_id = a.organization_id AND t.announcement_id = a.id
+					  AND t.target_type = 'role' AND ur.user_id = $3)
+				OR EXISTS (SELECT 1 FROM announcement_targets t
+					JOIN households h ON h.organization_id = t.organization_id AND h.id = t.target_id
+					JOIN household_members hm ON hm.household_id = h.id AND hm.is_active
+					JOIN users u ON u.organization_id = hm.organization_id AND u.resident_id = hm.resident_id
+					WHERE t.organization_id = a.organization_id AND t.announcement_id = a.id
+					  AND t.target_type = 'household' AND u.id = $3)
+				OR EXISTS (SELECT 1 FROM announcement_targets t
+					JOIN house_units hu ON hu.organization_id = t.organization_id AND hu.id = t.target_id
+					JOIN households h ON h.organization_id = hu.organization_id AND h.house_unit_id = hu.id
+					JOIN household_members hm ON hm.household_id = h.id AND hm.is_active
+					JOIN users u ON u.organization_id = hm.organization_id AND u.resident_id = hm.resident_id
+					WHERE t.organization_id = a.organization_id AND t.announcement_id = a.id
+					  AND t.target_type = 'house_unit' AND u.id = $3)
+			)
 		)`,
-		principal.OrganizationID, id, nil, nil, nil, nil, nil, principal.UserID,
+		principal.OrganizationID, id, principal.UserID,
 	).Scan(&visible)
 	if err != nil {
 		return false, fmt.Errorf("check announcement visibility: %w", err)
@@ -682,9 +751,9 @@ func (s *Service) resolvePublishAt(status string, requested *time.Time) *time.Ti
 
 func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principal, action, entityType, entityID string) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO audit_logs (id, organization_id, actor_user_id, action, entity_type, entity_id)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
-		newUUID(), principal.OrganizationID, principal.UserID, action, entityType, entityID,
+		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5)`,
+		principal.OrganizationID, principal.UserID, action, entityType, entityID,
 	)
 	if err != nil {
 		return fmt.Errorf("audit %s: %w", action, err)

@@ -13,11 +13,13 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/complaints"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/config"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/letters"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
@@ -69,6 +71,20 @@ func main() {
 		mailer = auth.NewResendMailer(resendKey, resendFrom)
 	}
 
+	var whatsapp notifications.WhatsAppSender = notifications.NoopWhatsAppSender{}
+	if saungwaKey := os.Getenv("SAUNGWA_API_KEY"); saungwaKey != "" {
+		client, err := notifications.NewSaungWAClient(
+			saungwaKey,
+			os.Getenv("SAUNGWA_ENDPOINT"),
+			os.Getenv("APP_ENV") != "production",
+		)
+		if err != nil {
+			logger.Error("failed to configure SaungWA client", "error", err)
+		} else {
+			whatsapp = client
+		}
+	}
+
 	appBaseURL := os.Getenv("APP_URL")
 	if appBaseURL == "" {
 		appBaseURL = "http://localhost:3000"
@@ -84,11 +100,19 @@ func main() {
 	paymentsService := payments.NewService(pool, cashService)
 	communicationService := communication.NewService(pool)
 	lettersService := letters.NewService(pool)
+	complaintsService := complaints.NewService(pool)
+	notificationsService := notifications.NewService(pool)
+	dispatcher := notifications.NewDispatcher(pool, notificationsService, mailer, whatsapp, logger)
+	paymentsService.SetNotificationDispatcher(dispatcher)
+	invoicesService.SetNotificationDispatcher(dispatcher)
+	lettersService.SetNotificationDispatcher(dispatcher)
+	complaintsService.SetNotificationDispatcher(dispatcher)
+	communicationService.SetNotificationDispatcher(dispatcher)
 	production := os.Getenv("APP_ENV") == "production"
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, storage),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, storage),
 	}
 
 	serverErr := make(chan error, 1)

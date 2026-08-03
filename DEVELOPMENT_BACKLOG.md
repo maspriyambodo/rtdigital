@@ -156,18 +156,18 @@ Tujuan: pengajuan surat dari formulir sampai PDF terbit dan dapat diunduh.
 
 ---
 
-## Epic 9: Aduan Warga
+## [x] Epic 9: Aduan Warga
 
 Tujuan: tiket aduan dengan status, penanggung jawab, komentar, serta riwayat penyelesaian.
 
-- [ ] **Task 9.1:** Buat migration `complaints` dan `complaint_comments`.
-- [ ] **Task 9.2:** Implementasi API pembuatan aduan: kategori, lokasi umum, prioritas, lampiran, dan nomor tiket.
-- [ ] **Task 9.3:** Implementasi API daftar/detail aduan dengan scope warga, pengurus, serta petugas tertugaskan.
-- [ ] **Task 9.4:** Implementasi penugasan petugas, perubahan status, catatan resolusi, dan penutupan aduan.
-- [ ] **Task 9.5:** Implementasi komentar/pembaruan, pemisahan komentar internal, serta notifikasi perubahan status.
-- [ ] **Task 9.6:** Buat UI warga untuk buat aduan, timeline, komentar, dan status aduan saya.
-- [ ] **Task 9.7:** Buat UI pengurus untuk antrean aduan, filter, assignment, pembaruan status, dan resolusi.
-- [ ] **Task 9.8:** Tambahkan test scope pelapor, komentar internal, state transition, dan assignment.
+- [x] **Task 9.1:** Buat migration `complaints` dan `complaint_comments`.
+- [x] **Task 9.2:** Implementasi API pembuatan aduan: kategori, lokasi umum, prioritas, lampiran, dan nomor tiket.
+- [x] **Task 9.3:** Implementasi API daftar/detail aduan dengan scope warga, pengurus, serta petugas tertugaskan.
+- [x] **Task 9.4:** Implementasi penugasan petugas, perubahan status, catatan resolusi, dan penutupan aduan.
+- [x] **Task 9.5:** Implementasi komentar/pembaruan dan pemisahan komentar internal. *(Notifikasi perubahan status ditunda ke Epic 10.)*
+- [x] **Task 9.6:** Buat UI warga untuk buat aduan, timeline, komentar, dan status aduan saya.
+- [x] **Task 9.7:** Buat UI pengurus untuk antrean aduan, filter, assignment, pembaruan status, dan resolusi.
+- [x] **Task 9.8:** Tambahkan test scope pelapor, komentar internal, state transition, dan assignment.
 
 ---
 
@@ -175,14 +175,14 @@ Tujuan: tiket aduan dengan status, penanggung jawab, komentar, serta riwayat pen
 
 Tujuan: notifikasi dalam aplikasi, email Resend, dan WhatsApp SaungWA untuk aktivitas penting.
 
-- [ ] **Task 10.1:** Buat migration `notifications` dan API daftar notifikasi, tandai dibaca, serta tandai semua dibaca.
-- [ ] **Task 10.2:** Buat komponen notifikasi warga: indikator belum dibaca, daftar, detail, dan empty state.
-- [ ] **Task 10.3:** Implementasi adapter Resend untuk email transaksional dan template pesan dasar.
-- [ ] **Task 10.4:** Implementasi adapter SaungWA untuk notifikasi WhatsApp dan validasi konfigurasi provider.
-- [ ] **Task 10.5:** Tambahkan trigger notifikasi untuk undangan, reset password, tagihan, pembayaran, surat, aduan, dan pengumuman penting.
-- [ ] **Task 10.6:** Pastikan kegagalan provider dicatat tanpa membatalkan transaksi utama.
-- [ ] **Task 10.7:** Tambahkan mekanisme retry terkontrol jika kebutuhan reliabilitas terbukti.
-- [ ] **Task 10.8:** Tambahkan test payload provider, kegagalan provider, dan permission notifikasi.
+- [x] **Task 10.1:** Buat migration `notifications` dan API daftar notifikasi, tandai dibaca, serta tandai semua dibaca.
+- [x] **Task 10.2:** Buat komponen notifikasi warga: indikator belum dibaca, daftar, detail, dan empty state.
+- [x] **Task 10.3:** Implementasi adapter Resend untuk email transaksional dan template pesan dasar.
+- [x] **Task 10.4:** Implementasi adapter SaungWA untuk notifikasi WhatsApp dan validasi konfigurasi provider.
+- [ ] **Task 10.5:** Tambahkan trigger notifikasi untuk undangan, reset password, tagihan, pembayaran, surat, aduan, dan pengumuman penting. *(Tagihan, pembayaran, surat, aduan, dan pengumuman penting sudah terhubung; undangan, reset password, serta pengajuan surat awal masih memakai email autentikasi/harus disatukan ke dispatcher.)*
+- [x] **Task 10.6:** Pastikan kegagalan provider dicatat tanpa membatalkan transaksi utama.
+- [x] **Task 10.7:** Tambahkan mekanisme retry terkontrol jika kebutuhan reliabilitas terbukti. *(Belum terbukti diperlukan pada MVP; dispatcher best-effort mencatat kegagalan. Upgrade: durable outbox dengan retry terbatas.)*
+- [x] **Task 10.8:** Tambahkan test payload provider, kegagalan provider, dan permission notifikasi.
 
 ---
 

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 )
 
 var (
@@ -25,12 +26,50 @@ var (
 )
 
 type Service struct {
-	db  *pgxpool.Pool
-	now func() time.Time
+	db         *pgxpool.Pool
+	dispatcher *notifications.Dispatcher
+	now        func() time.Time
 }
 
 func NewService(db *pgxpool.Pool) *Service {
 	return &Service{db: db, now: func() time.Time { return time.Now().UTC() }}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher *notifications.Dispatcher) {
+	s.dispatcher = dispatcher
+}
+
+func (s *Service) notifyHousehold(ctx context.Context, organizationID, householdID string, job notifications.DispatchJob) {
+	if s.dispatcher == nil {
+		return
+	}
+
+	rows, err := s.db.Query(ctx, `
+		SELECT DISTINCT u.id
+		FROM household_members hm
+		JOIN users u
+		  ON u.organization_id = hm.organization_id
+		 AND u.resident_id = hm.resident_id
+		WHERE hm.organization_id = $1
+		  AND hm.household_id = $2
+		  AND hm.is_active
+		  AND u.status = 'active'`,
+		organizationID,
+		householdID,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID string
+		if rows.Scan(&userID) == nil {
+			job.OrganizationID = organizationID
+			job.RecipientUserID = userID
+			s.dispatcher.Dispatch(job)
+		}
+	}
 }
 
 func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principal, action, entityType, entityID string) error {

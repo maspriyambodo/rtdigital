@@ -251,8 +251,8 @@ func TestCommunicationIntegration(t *testing.T) {
 		}
 
 		res = request(http.MethodPost, "/api/v1/announcements/"+announcementID+"/publish", otherOrgToken, "")
-		if res.Code != http.StatusNotFound {
-			t.Fatalf("cross-tenant publish = %d, want 404", res.Code)
+		if res.Code != http.StatusForbidden {
+			t.Fatalf("cross-tenant publish by non-manager = %d, want 403", res.Code)
 		}
 
 		res = request(http.MethodPost, "/api/v1/announcements/"+announcementID+"/publish", sekretarisToken, "")

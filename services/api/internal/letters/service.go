@@ -14,15 +14,56 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 )
 
 type Service struct {
-	db  *pgxpool.Pool
-	now func() time.Time
+	db         *pgxpool.Pool
+	dispatcher *notifications.Dispatcher
+	now        func() time.Time
 }
 
 func NewService(db *pgxpool.Pool) *Service {
 	return &Service{db: db, now: func() time.Time { return time.Now().UTC() }}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher *notifications.Dispatcher) {
+	s.dispatcher = dispatcher
+}
+
+func (s *Service) notifySecretariesAndRT(organizationID string, job notifications.DispatchJob) {
+	if s.dispatcher == nil {
+		return
+	}
+	rows, err := s.db.Query(context.Background(), `
+		SELECT DISTINCT u.id
+		FROM users u
+		JOIN user_roles ur ON ur.user_id = u.id
+		JOIN roles r ON r.id = ur.role_id
+		WHERE u.organization_id = $1
+		  AND u.status = 'active'
+		  AND r.code IN ('sekretaris', 'ketua_rt')`,
+		organizationID,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userID string
+		if rows.Scan(&userID) == nil {
+			job.OrganizationID = organizationID
+			job.RecipientUserID = userID
+			s.dispatcher.Dispatch(job)
+		}
+	}
+}
+
+func (s *Service) dispatchNotification(job notifications.DispatchJob) {
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(job)
+	}
 }
 
 func (s *Service) CreateLetterType(ctx context.Context, principal *auth.Principal, req CreateLetterTypeRequest) (LetterTypeItem, error) {
@@ -359,6 +400,13 @@ func (s *Service) UpdateLetterRequest(ctx context.Context, principal *auth.Princ
 	if err := tx.Commit(ctx); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("commit update letter: %w", err)
 	}
+	s.notifySecretariesAndRT(principal.OrganizationID, notifications.DispatchJob{
+		Type:          "letter_request_submitted",
+		Title:         "Pengajuan surat pengantar baru",
+		Body:          "Pengajuan surat memerlukan pemeriksaan dan persetujuan.",
+		ReferenceType: "letter_request",
+		ReferenceID:   id,
+	})
 	return s.GetLetterRequest(ctx, principal, id)
 }
 
@@ -408,6 +456,40 @@ func (s *Service) transitionLetterRequest(ctx context.Context, principal *auth.P
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("commit %s: %w", action, err)
+	}
+	var title, body string
+	switch to {
+	case "under_review":
+		title = "Surat diproses"
+		body = "Pengajuan surat pengantar Anda sedang diperiksa oleh pengurus."
+	case "needs_revision":
+		title = "Revisi pengajuan surat"
+		if req.ResidentNote != nil {
+			body = fmt.Sprintf("Pengajuan surat pengantar memerlukan revisi: %s", *req.ResidentNote)
+		} else {
+			body = "Pengajuan surat pengantar Anda memerlukan revisi."
+		}
+	case "approved":
+		title = "Pengajuan surat disetujui"
+		body = "Pengajuan surat pengantar Anda disetujui dan siap diterbitkan."
+	case "rejected":
+		title = "Pengajuan surat ditolak"
+		if req.ResidentNote != nil {
+			body = fmt.Sprintf("Pengajuan surat pengantar ditolak: %s", *req.ResidentNote)
+		} else {
+			body = "Pengajuan surat pengantar Anda ditolak."
+		}
+	}
+	if title != "" {
+		s.dispatchNotification(notifications.DispatchJob{
+			OrganizationID:  principal.OrganizationID,
+			RecipientUserID: requesterID,
+			Type:            "letter_request_" + to,
+			Title:           title,
+			Body:            body,
+			ReferenceType:   "letter_request",
+			ReferenceID:     id,
+		})
 	}
 	return s.GetLetterRequest(ctx, principal, id)
 }
@@ -519,9 +601,9 @@ func validateForm(formData, requirements json.RawMessage, attachmentCount int) e
 
 func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principal, action, entityType, entityID string) error {
 	_, err := tx.Exec(ctx, `
-		INSERT INTO audit_logs (id, organization_id, actor_user_id, action, entity_type, entity_id)
-		VALUES ($1, $2, $3, $4, $5, $6)`,
-		newUUID(), principal.OrganizationID, principal.UserID, action, entityType, entityID,
+		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5)`,
+		principal.OrganizationID, principal.UserID, action, entityType, entityID,
 	)
 	if err != nil {
 		return fmt.Errorf("audit %s: %w", action, err)
