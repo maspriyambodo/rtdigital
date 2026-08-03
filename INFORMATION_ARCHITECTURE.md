@@ -279,8 +279,47 @@ Sidebar hanya menampilkan modul yang diizinkan bagi peran aktif. Pengurus yang m
 
 ## 6. Aturan Akses Navigasi
 
-1. Frontend menyembunyikan menu tanpa permission efektif untuk mengurangi kebingungan.
-2. Backend tetap memvalidasi permission dan scope setiap request.
-3. Rute `/admin/*` hanya tersedia bagi peran pengurus yang memiliki izin modul terkait.
-4. Warga hanya dapat membuka rute `/app/*` dalam scope diri atau keluarga sesuai perannya.
-5. Pengguna multi-peran dapat berpindah konteks Warga/Pengurus bila memiliki kedua akses; konteks aktif harus terlihat jelas.
+1. Frontend mengambil peran serta permission efektif dari `GET /me`; data ini menjadi sumber untuk visibilitas menu setelah autentikasi atau refresh sesi.
+2. Item navigasi dirender hanya bila pengguna memiliki sedikitnya satu permission pada daftar `anyOf` item tersebut. Item tanpa permission yang cocok tidak dirender.
+3. Permission dapat berubah tanpa token kedaluwarsa; frontend memuat ulang profil/permission saat inisialisasi sesi, setelah refresh sesi, serta setelah perubahan peran pada akun aktif.
+4. Backend tetap memvalidasi permission dan scope setiap request. Penyembunyian menu frontend bukan kontrol keamanan.
+5. Rute `/pengurus/*` hanya tersedia bagi pengguna dengan permission modul terkait. Rute `/warga/*` hanya tersedia dalam scope diri atau keluarga sesuai perannya.
+6. Pengguna multi-peran dapat berpindah konteks Warga/Pengurus bila memiliki kedua akses; konteks aktif harus terlihat jelas.
+
+### 6.1 Pemetaan Menu Dinamis Pengurus
+
+`PengurusNavigation` (sidebar dan menu mobile) memakai aturan `anyOf` berikut.
+
+| Menu | Rute | `anyOf` permission |
+|---|---|---|
+| Dashboard | `/pengurus` | Peran pengurus aktif |
+| Rumah & Unit | `/pengurus/rumah` | `house_unit.read` |
+| Data Keluarga | `/pengurus/keluarga` | `household.read` |
+| Data Warga | `/pengurus/warga` | `resident.read` |
+| Pengguna & Peran | `/pengurus/pengguna` | `user.read`, `role.assign`, `role.revoke` |
+| Pengumuman & Agenda | `/pengurus/pengumuman` | `announcement.read`, `event.read` |
+| Iuran | `/pengurus/tagihan` | `due_type.read`, `invoice.read`, `payment.read` |
+| Buku Kas | `/pengurus/kas` | `cash.read` |
+| Surat | `/pengurus/surat` | `letter_type.read`, `letter_request.read` |
+| Aduan | `/pengurus/aduan` | `complaint.read` |
+| Pengaturan RT | `/pengurus/pengaturan` | `organization.read`, `organization.update` |
+| Audit Log | `/pengurus/audit` | `audit.read` |
+
+Dashboard hanya tampil pada konteks Pengurus. Memiliki salah satu permission di atas tidak mengizinkan aksi tulis; tombol aksi tetap memakai permission spesifik masing-masing.
+
+### 6.2 Pemetaan Menu Dinamis Warga
+
+`WargaNavigation` menampilkan layanan sesuai permission efektif dan scope keluarga pengguna.
+
+| Menu | Rute | Syarat tampil |
+|---|---|---|
+| Beranda | `/warga` | Warga terautentikasi |
+| Keluarga | `/warga/keluarga` | `household.read` atau `resident.read` dalam scope sendiri/keluarga |
+| Informasi | `/warga/pengumuman` | `announcement.read` atau `event.read` |
+| Tagihan | `/warga/tagihan` | `invoice.read` atau `payment.read` dalam scope keluarga |
+| Surat | `/warga/surat` | `letter_request.read` atau `letter_request.submit` |
+| Aduan | `/warga/aduan` | `complaint.read` atau `complaint.submit` |
+| Notifikasi | `/warga/notifikasi` | `notification.read_self` |
+| Profil | `/warga/profil` | Warga terautentikasi |
+
+Hak akses berbasis scope, seperti Kepala Keluarga dibanding Anggota Keluarga, tetap diputuskan backend. Menu dapat disembunyikan saat layanan tidak tersedia bagi pengguna, tetapi frontend tidak menyimpulkan scope dari role saja.

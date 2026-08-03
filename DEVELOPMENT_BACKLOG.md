@@ -63,6 +63,7 @@ Tujuan: mengelola pengguna, peran, permission, serta scope akses organisasi.
 - [x] **Task 2.6:** Implementasi API tambah/cabut peran dengan larangan eskalasi hak akses sendiri serta guard MFA.
 - [x] **Task 2.7:** Buat UI daftar pengguna, detail akun, undang pengguna, ubah status, dan pengelolaan peran.
 - [x] **Task 2.8:** Tambahkan authorization test untuk peran utama, isolasi tenant, MFA, dan separation of duties.
+- [ ] **Task 2.9:** Implementasi menu navigasi dinamis berbasis permission di frontend: muat permission efektif dari `GET /me`, simpan pada `AuthProvider`, filter `PengurusNavigation` dan `WargaNavigation`, serta lindungi rute modul sesuai `INFORMATION_ARCHITECTURE.md`.
 
 ---
 
