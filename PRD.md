@@ -6,7 +6,7 @@
 |---|---|
 | Nama sementara | RT Digital |
 | Dokumen | Product Requirements Document |
-| Versi | 1.2 |
+| Versi | 1.3 |
 | Status | Draft untuk validasi |
 | Tanggal | 8 Agustus 2026 |
 | Pemilik produk | Pengurus RT |
@@ -144,6 +144,14 @@ Prioritas ini mengubah modul yang telah ada dari CRUD reaktif menjadi bantuan op
 7. **Serah-terima pengurus**
    - Checklist terpandu mencakup role, akses, rekening, tagihan terbuka, kas, surat, aduan, dan dokumen.
    - Akses pengurus lama diturunkan/dinonaktifkan secara terkontrol; riwayat audit tidak dihapus.
+
+8. **Tabungan warga: dana titipan non-kas**
+   - Master data jenis tabungan per organisasi, misalnya Tabungan Qurban/Idul Adha, sosial, atau kegiatan.
+   - Setiap warga/keluarga memiliki akun tabungan terpisah per jenis tabungan dan dapat melihat saldo serta riwayat mutasinya.
+   - Mutasi append-only: setoran, penarikan, pengembalian, dan alokasi untuk tujuan program; pembatalan menggunakan mutasi pembalik, bukan perubahan saldo historis.
+   - Setoran, penarikan, dan alokasi memerlukan verifikasi serta audit; otorisasi pemilik saldo diperlukan untuk tindakan yang mengurangi saldo.
+   - Saldo titipan direkonsiliasi dengan kas/rekening penampungan khusus. Dana titipan tidak diakui sebagai pendapatan, pengeluaran, atau saldo kas operasional RT.
+   - Aturan produk mencakup periode, sasaran, minimum setoran bila ada, batas penarikan, tujuan alokasi, dan status aktif/nonaktif.
 
 ### 5.3 Fitur Lain Setelah MVP
 
@@ -1103,6 +1111,44 @@ Monorepo dapat digunakan, tetapi deployment frontend dan backend harus tetap ind
 - `verified_at`
 - `proof_file_id`
 
+### SavingsProduct
+
+- `id`
+- `organization_id`
+- `code`
+- `name`
+- `description`
+- `period_start`
+- `period_end`
+- `minimum_deposit`
+- `withdrawal_policy`
+- `status`
+
+### SavingsAccount
+
+- `id`
+- `organization_id`
+- `savings_product_id`
+- `household_id`
+- `status`
+- `opened_at`
+- `closed_at`
+
+### SavingsTransaction
+
+- `id`
+- `organization_id`
+- `savings_account_id`
+- `type`
+- `amount`
+- `transaction_date`
+- `reference_type`
+- `reference_id`
+- `verification_status`
+- `verified_by`
+- `created_by`
+- `reversal_of_id`
+
 ### CashTransaction
 
 - `id`
@@ -1205,6 +1251,7 @@ Index minimum direkomendasikan untuk:
 - Nomor internal keluarga.
 - Nomor rumah atau unit.
 - Status dan jatuh tempo tagihan.
+- Status produk, akun, dan waktu mutasi tabungan.
 - Waktu transaksi pembayaran.
 - Status pengajuan surat.
 - Status dan penanggung jawab aduan.
@@ -1756,6 +1803,7 @@ Sebuah fitur dianggap selesai apabila:
 
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.3 | 8 Agustus 2026 | Menambahkan tabungan warga sebagai dana titipan non-kas dan master data jenis tabungan |
 | 1.2 | 8 Agustus 2026 | Menambahkan prioritas otomatisasi dan layanan operasional proaktif pasca-MVP |
 | 1.1 | 1 Agustus 2026 | Memperkuat kebutuhan mobile-first, PWA dasar, UX seluler, ketahanan koneksi, dan pengujian perangkat seluler |
 | 1.0 | 1 Agustus 2026 | Draft awal PRD aplikasi manajemen RT digital |

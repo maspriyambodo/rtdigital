@@ -14,6 +14,7 @@ Backlog ini memecah MVP menjadi epic dan task yang dapat dikerjakan bertahap. Se
 4. Epic 10–12: notifikasi, dashboard/laporan, hardening rilis.
 5. Epic 13: master data.
 6. Epic 14: otomatisasi dan layanan operasional proaktif.
+7. Epic 15: tabungan warga (dana titipan non-kas).
 
 ---
 
@@ -253,6 +254,24 @@ Tujuan: mengubah data dan transaksi menjadi pengingat, antrean kerja, kepastian 
 - [ ] **Task 14.12:** Tambahkan QR dan halaman verifikasi publik surat yang hanya menampilkan nomor, jenis, tanggal terbit, dan status valid/dibatalkan; tanpa data pribadi atau URL dokumen privat.
 - [ ] **Task 14.13:** Implementasi serah-terima jabatan: checklist role, akses, rekening, tagihan terbuka, kas, surat, aduan, dokumen; penurunan akses pengurus lama; audit historis tetap utuh.
 - [ ] **Task 14.14:** Tambahkan integration test scheduler/idempotensi, alokasi rapel, SLA, isolasi tenant, otorisasi, privasi kas/QR, dan serah-terima akses.
+
+---
+
+## Epic 15: Tabungan Warga (Dana Titipan Non-Kas)
+
+Tujuan: memfasilitasi tabungan terarah warga, misalnya Qurban/Idul Adha, tanpa mencampurkan dana titipan dengan kas operasional RT.
+
+- [ ] **Task 15.1:** Buat migration `savings_products`, `savings_accounts`, dan `savings_transactions` dengan index tenant, FK komposit, constraint saldo, serta mutasi append-only.
+- [ ] **Task 15.2:** Implementasi API CRUD `savings_products` sebagai master jenis tabungan per organisasi: kode, periode, sasaran, setoran minimum, aturan penarikan, tujuan alokasi, dan status; penonaktifan tanpa penghapusan.
+- [ ] **Task 15.3:** Implementasi pembukaan/penutupan akun tabungan per keluarga pada produk aktif; satu akun aktif per keluarga dan produk.
+- [ ] **Task 15.4:** Implementasi setoran: laporan setoran, unggah bukti, idempotensi, verifikasi bendahara, dan mutasi kredit setelah verifikasi.
+- [ ] **Task 15.5:** Implementasi penarikan atau pengembalian: permintaan, persetujuan pemilik saldo, verifikasi bendahara, bukti, batas saldo, mutasi debit, dan audit log.
+- [ ] **Task 15.6:** Implementasi alokasi dana untuk tujuan produk, misalnya pembelian hewan qurban, dengan persetujuan kebijakan yang jelas dan jejak mutasi; tidak menjadi pendapatan/pengeluaran kas operasional RT.
+- [ ] **Task 15.7:** Implementasi koreksi melalui mutasi pembalik; larang `UPDATE` nominal dan penghapusan mutasi historis.
+- [ ] **Task 15.8:** Buat UI warga untuk memilih produk, melihat saldo dan riwayat mutasi, melapor setoran, serta mengajukan penarikan bila diizinkan.
+- [ ] **Task 15.9:** Buat UI bendahara untuk master produk, akun, antrean verifikasi, persetujuan mutasi debit, dan rekonsiliasi rekening penampungan.
+- [ ] **Task 15.10:** Tambahkan laporan dana titipan per produk/per keluarga dan rekonsiliasi saldo sistem dengan kas fisik atau rekening penampungan khusus; pisahkan dari laporan kas operasional.
+- [ ] **Task 15.11:** Tambahkan integration test perhitungan saldo dari mutasi, idempotensi setoran, pencegahan saldo negatif, otorisasi debit, append-only, rekonsiliasi, dan isolasi tenant.
 
 ---
 

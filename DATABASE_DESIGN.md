@@ -45,6 +45,7 @@ erDiagram
     organizations ||--o{ letter_requests : receives
     organizations ||--o{ complaint_categories : defines
     organizations ||--o{ complaints : receives
+    organizations ||--o{ savings_products : defines
     organizations ||--o{ notifications : sends
     organizations ||--o{ file_objects : owns
     organizations ||--o{ audit_logs : records
@@ -73,6 +74,11 @@ erDiagram
     users ||--o{ complaints : reports
     users ||--o{ complaints : assigned
     complaints ||--o{ complaint_comments : has
+
+    savings_products ||--o{ savings_accounts : defines
+    households ||--o{ savings_accounts : owns
+    savings_accounts ||--o{ savings_transactions : has
+    users ||--o{ savings_transactions : creates
     users ||--o{ complaint_comments : writes
 
     users ||--o{ notifications : receives
@@ -473,9 +479,76 @@ erDiagram
 
 ---
 
-## 8. Tabel File dan Audit
+## 8. Tabel Tabungan Warga (Dana Titipan Non-Kas)
 
-### 8.1 `file_objects`
+*(Direncanakan pada Epic 15. Dana titipan tidak dicampurkan dengan pendapatan, pengeluaran, atau saldo kas operasional RT.)*
+
+### 8.1 `savings_products`
+
+| Kolom | Tipe | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `organization_id` | UUID | FK, NOT NULL | |
+| `code` | VARCHAR(50) | NOT NULL | Kode stabil; contoh: `qurban_iduladha` |
+| `name` | VARCHAR(100) | NOT NULL | Contoh: Tabungan Qurban Idul Adha 2026 |
+| `description` | TEXT | NULL | |
+| `period_start` | DATE | NULL | Awal periode |
+| `period_end` | DATE | NULL | Tenggat program/setoran |
+| `minimum_deposit` | NUMERIC(15,2) | NULL CHECK (`minimum_deposit > 0`) | Opsional |
+| `withdrawal_policy` | TEXT | NULL | Aturan penarikan/pengembalian |
+| `allocation_purpose` | TEXT | NULL | Contoh: pembelian hewan qurban |
+| `status` | VARCHAR(20) | NOT NULL DEFAULT `'active'` | `active`, `inactive` |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+
+**Unique:** `(organization_id, code)`.
+**Constraint:** `period_end IS NULL OR period_start IS NULL OR period_end >= period_start`.
+
+### 8.2 `savings_accounts`
+
+| Kolom | Tipe | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `organization_id` | UUID | FK, NOT NULL | |
+| `savings_product_id` | UUID | FK, NOT NULL | |
+| `household_id` | UUID | FK, NOT NULL | Pemilik dana titipan |
+| `status` | VARCHAR(20) | NOT NULL DEFAULT `'active'` | `active`, `closed` |
+| `opened_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| `closed_at` | TIMESTAMPTZ | NULL | |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+
+**Unique partial:** satu akun `active` per `(organization_id, savings_product_id, household_id)`.
+
+### 8.3 `savings_transactions`
+
+| Kolom | Tipe | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `organization_id` | UUID | FK, NOT NULL | |
+| `savings_account_id` | UUID | FK, NOT NULL | |
+| `type` | VARCHAR(20) | NOT NULL | `deposit`, `withdrawal`, `refund`, `allocation`, `reversal` |
+| `amount` | NUMERIC(15,2) | NOT NULL CHECK (`amount > 0`) | Nominal absolut |
+| `transaction_date` | DATE | NOT NULL | Tanggal kejadian |
+| `description` | TEXT | NULL | |
+| `proof_file_id` | UUID | NULL, FK | Bukti mutasi |
+| `reference_type` | VARCHAR(50) | NULL | Entitas terkait |
+| `reference_id` | UUID | NULL | ID entitas terkait |
+| `verification_status` | VARCHAR(20) | NOT NULL | `pending`, `verified`, `rejected`, `cancelled` |
+| `verified_by` | UUID | NULL, FK | Verifikator |
+| `verified_at` | TIMESTAMPTZ | NULL | |
+| `created_by` | UUID | FK, NOT NULL | Pembuat |
+| `reversal_of_id` | UUID | NULL, FK | Mutasi yang dibalik |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+
+**Aturan:** tabel append-only. Saldo dihitung dari mutasi `verified`: `deposit` dan `reversal` kredit/debit sesuai mutasi asal; `withdrawal`, `refund`, dan `allocation` mengurangi saldo. Service mengunci akun saat memverifikasi mutasi debit agar saldo tidak negatif. Koreksi hanya memakai `reversal`, bukan `UPDATE` nominal atau penghapusan.
+
+---
+
+## 9. Tabel File dan Audit
+
+### 9.1 `file_objects`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
@@ -493,7 +566,7 @@ erDiagram
 
 Lampiran dapat dihubungkan melalui tabel `file_attachments` agar satu pola berlaku untuk pengumuman, surat, aduan, dan bukti transaksi.
 
-### 8.2 `file_attachments`
+### 9.2 `file_attachments`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
@@ -505,7 +578,7 @@ Lampiran dapat dihubungkan melalui tabel `file_attachments` agar satu pola berla
 | `purpose` | VARCHAR(50) | NOT NULL | Contoh: `attachment`, `payment_proof`, `issued_letter` |
 | `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
 
-### 8.3 `audit_logs`
+### 9.3 `audit_logs`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
@@ -527,7 +600,7 @@ Lampiran dapat dihubungkan melalui tabel `file_attachments` agar satu pola berla
 
 ---
 
-## 9. Constraint Bisnis Penting
+## 10. Constraint Bisnis Penting
 
 1. FK lintas tabel tenant harus memiliki `organization_id` yang sama.
 2. Satu warga aktif hanya boleh memiliki satu `household_members` aktif.
@@ -541,10 +614,12 @@ Lampiran dapat dihubungkan melalui tabel `file_attachments` agar satu pola berla
 10. Nomor surat tidak boleh diubah atau digunakan ulang setelah status `issued`.
 11. Penghapusan organisasi tidak memakai cascade ke data operasional.
 12. File privat tidak menyimpan URL publik permanen; URL bertanda tangan dibuat oleh aplikasi saat akses.
+13. Mutasi tabungan hanya memengaruhi saldo setelah `verified`; transaksi debit tidak boleh membuat saldo akun negatif.
+14. Dana titipan dilaporkan dan direkonsiliasi terpisah dari buku kas operasional.
 
 ---
 
-## 10. Indeks Minimum
+## 11. Indeks Minimum
 
 Selain primary key dan unique index:
 
@@ -581,6 +656,10 @@ CREATE INDEX idx_payments_org_verification_created_at
 CREATE INDEX idx_cash_transactions_org_date
     ON cash_transactions (organization_id, transaction_date DESC);
 
+-- Dana titipan
+CREATE INDEX idx_savings_transactions_org_account_verified_date
+    ON savings_transactions (organization_id, savings_account_id, verification_status, transaction_date DESC);
+
 -- Pelayanan
 CREATE INDEX idx_letter_requests_org_status_created_at
     ON letter_requests (organization_id, status, created_at DESC);
@@ -604,7 +683,7 @@ Gunakan `pg_trgm` dan GIN index untuk pencarian nama warga yang toleran typo han
 
 ---
 
-## 11. Keamanan dan Retensi
+## 12. Keamanan dan Retensi
 
 - `password_hash` memakai Argon2id; tidak pernah dicatat ke audit log.
 - NIK, nomor KK, bukti pembayaran, dan dokumen surat tidak boleh masuk log aplikasi, analytics, atau notifikasi.
