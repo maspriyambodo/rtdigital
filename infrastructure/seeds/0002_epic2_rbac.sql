@@ -105,14 +105,15 @@ DELETE FROM role_permissions rp
 USING roles r
 WHERE rp.role_id = r.id AND r.organization_id IS NULL;
 
+-- Seluruh permission saat ini dan yang ditambahkan di masa depan.
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.code = 'super_admin' AND r.organization_id IS NULL;
+
 WITH mappings(role_code, permission_code) AS (
     VALUES
-        ('super_admin', 'organization.create'), ('super_admin', 'organization.read'),
-        ('super_admin', 'organization.update'), ('super_admin', 'organization.deactivate'),
-        ('super_admin', 'user.invite'), ('super_admin', 'user.read'), ('super_admin', 'user.update'),
-        ('super_admin', 'user.deactivate'), ('super_admin', 'role.assign'), ('super_admin', 'role.revoke'),
-        ('super_admin', 'audit.read'), ('super_admin', 'audit.export'),
-
         ('ketua_rt', 'organization.read'), ('ketua_rt', 'organization.update'),
         ('ketua_rt', 'user.read'), ('ketua_rt', 'role.assign'), ('ketua_rt', 'role.revoke'),
         ('ketua_rt', 'audit.read'), ('ketua_rt', 'audit.export'),

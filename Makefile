@@ -21,3 +21,5 @@ seed: migrate
 		echo "Seeding $$file"; \
 		docker compose exec -T postgres psql -v ON_ERROR_STOP=1 -U rtdigital -d rtdigital -f - < "$$file"; \
 	done
+	@echo "Seeding development super admin"
+	@docker compose exec -T api go run ./cmd/seed-super-admin
