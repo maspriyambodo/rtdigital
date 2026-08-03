@@ -218,4 +218,23 @@ func TestReportsIntegration(t *testing.T) {
 			t.Errorf("expected 400, got %d: %s", response.Code, response.Body.String())
 		}
 	})
+
+	t.Run("PDF export filters tenant and records audit", func(t *testing.T) {
+		response := request(token, "/api/v1/reports/residents?format=pdf&status=active")
+		if response.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", response.Code, response.Body.String())
+		}
+		if contentType := response.Header().Get("Content-Type"); contentType != "application/pdf" {
+			t.Errorf("expected PDF content type, got %q", contentType)
+		}
+		if !strings.HasPrefix(response.Body.String(), "%PDF-1.4") {
+			t.Error("PDF signature missing")
+		}
+		if !strings.Contains(response.Body.String(), "Warga Aktif Laporan") {
+			t.Error("PDF missing current tenant resident")
+		}
+		if strings.Contains(response.Body.String(), "Warga Tenant Lain") {
+			t.Error("PDF leaked another tenant resident")
+		}
+	})
 }

@@ -159,7 +159,9 @@ Status HTTP minimum:
 | `POST` | `/resident-corrections/{id}/reject` | Tolak koreksi; alasan wajib | `resident.correction.review` |
 | `POST` | `/resident-corrections/{id}/request-revision` | Minta perbaikan koreksi | `resident.correction.review` |
 | `POST` | `/residents/import` | Validasi/impor CSV warga | `resident.create` |
-| `GET` | `/reports/residents` | Ekspor laporan warga | `resident.export` |
+| `GET` | `/reports/residents` | Ekspor laporan warga CSV/PDF | `resident.export` |
+| `GET` | `/reports/mutations` | Laporan mutasi warga CSV/PDF | `resident.export` |
+| `GET` | `/reports/households` | Laporan keluarga CSV/PDF | `household.export` |
 
 ## 2.4 Pengumuman, Agenda, dan Notifikasi
 
@@ -206,7 +208,10 @@ Status HTTP minimum:
 | `POST` | `/cash-transactions` | Catat kas manual non-iuran | `cash.create` |
 | `GET` | `/cash-transactions/{id}` | Detail transaksi kas | `cash.read` |
 | `POST` | `/cash-transactions/{id}/reverse` | Buat transaksi pembalik | `cash.reverse` |
-| `GET` | `/reports/finance` | Rekap keuangan PDF/CSV | `finance.export` |
+| `GET` | `/reports/invoices` | Laporan tagihan CSV/PDF | `invoice.export` |
+| `GET` | `/reports/payments` | Laporan pembayaran CSV/PDF | `finance.export` |
+| `GET` | `/reports/arrears` | Laporan tunggakan CSV/PDF | `finance.export` |
+| `GET` | `/reports/cash` | Laporan buku kas CSV/PDF | `finance.export` |
 
 **Aturan:**
 - `POST /payments` dan `POST /cash-transactions` wajib memakai `Idempotency-Key`.
@@ -245,7 +250,8 @@ Status HTTP minimum:
 | `POST` | `/complaints/{id}/assign` | Tetapkan penanggung jawab | `complaint.assign` |
 | `POST` | `/complaints/{id}/status` | Ubah status aduan | `complaint.update_status` + scope |
 | `POST` | `/complaints/{id}/comments` | Tambah komentar atau perkembangan | `complaint.comment` + scope |
-| `GET` | `/reports/complaints` | Rekap aduan PDF/CSV | `complaint.export` |
+| `GET` | `/reports/letters` | Laporan pengajuan surat CSV/PDF | `letter_request.export` |
+| `GET` | `/reports/complaints` | Rekap aduan CSV/PDF | `complaint.export` |
 
 ## 2.8 File, Dashboard, dan Audit
 
