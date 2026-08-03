@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/lib/auth-context";
 import { AuthGuard } from "@/components/layout/AuthGuard";
+import { DynamicTitle } from "@/components/layout/DynamicTitle";
 import { OfflineNotice } from "@/components/layout/OfflineNotice";
 import "./globals.css";
 
@@ -35,6 +36,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body>
+        <DynamicTitle />
         <AuthProvider>
           <AuthGuard>{children}</AuthGuard>
         </AuthProvider>
