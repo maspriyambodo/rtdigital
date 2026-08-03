@@ -179,7 +179,7 @@ Tujuan: notifikasi dalam aplikasi, email Resend, dan WhatsApp SaungWA untuk akti
 - [x] **Task 10.2:** Buat komponen notifikasi warga: indikator belum dibaca, daftar, detail, dan empty state.
 - [x] **Task 10.3:** Implementasi adapter Resend untuk email transaksional dan template pesan dasar.
 - [x] **Task 10.4:** Implementasi adapter SaungWA untuk notifikasi WhatsApp dan validasi konfigurasi provider.
-- [ ] **Task 10.5:** Tambahkan trigger notifikasi untuk undangan, reset password, tagihan, pembayaran, surat, aduan, dan pengumuman penting. *(Tagihan, pembayaran, surat, aduan, dan pengumuman penting sudah terhubung; undangan, reset password, serta pengajuan surat awal masih memakai email autentikasi/harus disatukan ke dispatcher.)*
+- [x] **Task 10.5:** Tambahkan trigger notifikasi untuk undangan, reset password, tagihan, pembayaran, surat, aduan, dan pengumuman penting. *(Tagihan, pembayaran, surat, aduan, dan pengumuman penting sudah terhubung; undangan, reset password, serta pengajuan surat awal kini melalui dispatcher.)*
 - [x] **Task 10.6:** Pastikan kegagalan provider dicatat tanpa membatalkan transaksi utama.
 - [x] **Task 10.7:** Tambahkan mekanisme retry terkontrol jika kebutuhan reliabilitas terbukti. *(Belum terbukti diperlukan pada MVP; dispatcher best-effort mencatat kegagalan. Upgrade: durable outbox dengan retry terbatas.)*
 - [x] **Task 10.8:** Tambahkan test payload provider, kegagalan provider, dan permission notifikasi.

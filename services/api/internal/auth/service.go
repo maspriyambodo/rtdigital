@@ -30,11 +30,16 @@ const (
 	lockoutDuration   = 15 * time.Minute
 )
 
+type NotificationDispatcher interface {
+	DispatchNotification(organizationID, recipientUserID, notificationType, title, body, referenceType, referenceID string)
+}
+
 type Service struct {
 	db         *pgxpool.Pool
 	tokens     *TokenManager
 	crypter    Crypter
 	mailer     Mailer
+	dispatcher NotificationDispatcher
 	appBaseURL string
 	now        func() time.Time
 }
@@ -51,6 +56,10 @@ func NewService(db *pgxpool.Pool, tokens *TokenManager, crypter Crypter, mailer 
 		appBaseURL: strings.TrimRight(appBaseURL, "/"),
 		now:        func() time.Time { return time.Now().UTC() },
 	}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher NotificationDispatcher) {
+	s.dispatcher = dispatcher
 }
 
 func (s *Service) Login(ctx context.Context, identifier, password, userAgent, ipAddress string) (LoginResult, error) {
@@ -260,8 +269,13 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email string) error 
 		return nil // Prevent account enumeration.
 	}
 
-	var userID string
-	err = s.db.QueryRow(ctx, `SELECT id FROM users WHERE lower(email) = $1 AND status = 'active'`, email).Scan(&userID)
+	var userID, organizationID string
+	err = s.db.QueryRow(ctx, `
+		SELECT id, organization_id
+		FROM users
+		WHERE lower(email) = $1 AND status = 'active'`,
+		email,
+	).Scan(&userID, &organizationID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil
 	}
@@ -280,8 +294,16 @@ func (s *Service) RequestPasswordReset(ctx context.Context, email string) error 
 	}
 
 	link := fmt.Sprintf("%s/reset-password?token=%s", s.appBaseURL, raw)
-	_ = s.mailer.SendEmail(ctx, email, "Reset Kata Sandi RT Digital",
-		fmt.Sprintf(`<p>Atur ulang kata sandi melalui <a href="%s">tautan ini</a>.</p>`, link))
+	if s.dispatcher != nil {
+		s.dispatcher.DispatchNotification(
+			organizationID, userID, "password_reset", "Reset Kata Sandi RT Digital",
+			fmt.Sprintf("Atur ulang kata sandi melalui tautan ini:\n%s", link),
+			"user", userID,
+		)
+	} else {
+		_ = s.mailer.SendEmail(ctx, email, "Reset Kata Sandi RT Digital",
+			fmt.Sprintf(`<p>Atur ulang kata sandi melalui <a href="%s">tautan ini</a>.</p>`, link))
+	}
 	return nil
 }
 

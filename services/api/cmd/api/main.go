@@ -107,6 +107,8 @@ func main() {
 	dashboardService := dashboard.NewService(pool)
 	reportsService := reports.NewService(pool)
 	dispatcher := notifications.NewDispatcher(pool, notificationsService, mailer, whatsapp, logger)
+	authService.SetNotificationDispatcher(dispatcher)
+	usersService.SetNotificationDispatcher(dispatcher)
 	paymentsService.SetNotificationDispatcher(dispatcher)
 	invoicesService.SetNotificationDispatcher(dispatcher)
 	lettersService.SetNotificationDispatcher(dispatcher)

@@ -24,9 +24,14 @@ var (
 	ErrMFAEnrollmentRequired = errors.New("MFA enrollment required")
 )
 
+type NotificationDispatcher interface {
+	DispatchNotification(organizationID, recipientUserID, notificationType, title, body, referenceType, referenceID string)
+}
+
 type Service struct {
 	db         *pgxpool.Pool
 	mailer     auth.Mailer
+	dispatcher NotificationDispatcher
 	appBaseURL string
 	now        func() time.Time
 }
@@ -41,6 +46,10 @@ func NewService(db *pgxpool.Pool, mailer auth.Mailer, appBaseURL string) *Servic
 		appBaseURL: strings.TrimRight(appBaseURL, "/"),
 		now:        func() time.Time { return time.Now().UTC() },
 	}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher NotificationDispatcher) {
+	s.dispatcher = dispatcher
 }
 
 func (s *Service) ListRoles(ctx context.Context, principal *auth.Principal) ([]RoleInfo, error) {
@@ -186,7 +195,13 @@ func (s *Service) InviteUser(ctx context.Context, principal *auth.Principal, req
 	}
 
 	activationURL := fmt.Sprintf("%s/activate?token=%s", s.appBaseURL, rawToken)
-	if email != "" {
+	if s.dispatcher != nil {
+		s.dispatcher.DispatchNotification(
+			principal.OrganizationID, userID, "account_invitation", "Undangan Akun RT Digital",
+			fmt.Sprintf("Aktifkan akun RT Digital melalui tautan ini:\n%s", activationURL),
+			"user", userID,
+		)
+	} else if email != "" {
 		_ = s.mailer.SendEmail(ctx, email, "Undangan Akun RT Digital",
 			fmt.Sprintf(`<p>Aktifkan akun RT Digital melalui <a href="%s">tautan ini</a>.</p>`, activationURL))
 	}

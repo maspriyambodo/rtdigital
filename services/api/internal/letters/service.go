@@ -251,6 +251,13 @@ func (s *Service) SubmitLetterRequest(ctx context.Context, principal *auth.Princ
 	if err := tx.Commit(ctx); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("commit submit letter: %w", err)
 	}
+	s.notifySecretariesAndRT(principal.OrganizationID, notifications.DispatchJob{
+		Type:          "letter_request_submitted",
+		Title:         "Pengajuan surat pengantar baru",
+		Body:          "Pengajuan surat memerlukan pemeriksaan dan persetujuan.",
+		ReferenceType: "letter_request",
+		ReferenceID:   id,
+	})
 	return s.GetLetterRequest(ctx, principal, id)
 }
 

@@ -64,6 +64,19 @@ func NewDispatcher(
 	}
 }
 
+// DispatchNotification adapts domain services without creating package dependencies.
+func (d *Dispatcher) DispatchNotification(organizationID, recipientUserID, notificationType, title, body, referenceType, referenceID string) {
+	d.Dispatch(DispatchJob{
+		OrganizationID:  organizationID,
+		RecipientUserID: recipientUserID,
+		Type:            notificationType,
+		Title:           title,
+		Body:            body,
+		ReferenceType:   referenceType,
+		ReferenceID:     referenceID,
+	})
+}
+
 // Dispatch schedules in-app and provider delivery after the caller's main transaction commits.
 // ponytail: in-process best-effort only; replace with a durable outbox when delivery reliability is required.
 func (d *Dispatcher) Dispatch(job DispatchJob) {
@@ -85,7 +98,7 @@ func (d *Dispatcher) Dispatch(job DispatchJob) {
 			FROM users
 			WHERE organization_id = $1
 			  AND id = $2
-			  AND status = 'active'`,
+			  AND status IN ('active', 'invited')`,
 			job.OrganizationID,
 			job.RecipientUserID,
 		).Scan(&email, &phone); err != nil {
