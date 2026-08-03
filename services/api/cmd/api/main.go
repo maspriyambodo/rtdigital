@@ -15,6 +15,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/complaints"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/config"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/dashboard"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/httpapi"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
@@ -22,6 +23,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/reports"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
@@ -102,6 +104,8 @@ func main() {
 	lettersService := letters.NewService(pool)
 	complaintsService := complaints.NewService(pool)
 	notificationsService := notifications.NewService(pool)
+	dashboardService := dashboard.NewService(pool)
+	reportsService := reports.NewService(pool)
 	dispatcher := notifications.NewDispatcher(pool, notificationsService, mailer, whatsapp, logger)
 	paymentsService.SetNotificationDispatcher(dispatcher)
 	invoicesService.SetNotificationDispatcher(dispatcher)
@@ -112,7 +116,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, storage),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, dashboardService, reportsService, storage),
 	}
 
 	serverErr := make(chan error, 1)

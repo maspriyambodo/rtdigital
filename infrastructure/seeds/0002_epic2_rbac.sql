@@ -74,6 +74,7 @@ WITH definitions(code, description) AS (
         ('letter_request.approve', 'Menyetujui surat'),
         ('letter_request.issue', 'Menerbitkan surat'),
         ('letter_request.download', 'Mengunduh surat'),
+        ('letter_request.export', 'Mengekspor laporan surat'),
         ('complaint.read', 'Melihat aduan'),
         ('complaint.submit', 'Mengajukan aduan'),
         ('complaint.assign', 'Menugaskan aduan'),
@@ -122,7 +123,7 @@ WITH mappings(role_code, permission_code) AS (
         ('ketua_rt', 'notification.read_self'), ('ketua_rt', 'notification.mark_read_self'),
         ('ketua_rt', 'due_type.read'), ('ketua_rt', 'invoice.read'), ('ketua_rt', 'invoice.export'),
         ('ketua_rt', 'payment.read'), ('ketua_rt', 'cash.read'), ('ketua_rt', 'finance.export'),
-        ('ketua_rt', 'letter_type.read'), ('ketua_rt', 'letter_request.read'), ('ketua_rt', 'letter_request.approve'),
+        ('ketua_rt', 'letter_type.read'), ('ketua_rt', 'letter_request.read'), ('ketua_rt', 'letter_request.approve'), ('ketua_rt', 'letter_request.export'),
         ('ketua_rt', 'complaint.read'), ('ketua_rt', 'complaint.assign'), ('ketua_rt', 'complaint.update_status'), ('ketua_rt', 'complaint.comment'), ('ketua_rt', 'complaint.export'),
 
         ('sekretaris', 'organization.read'), ('sekretaris', 'organization.update'),
@@ -135,7 +136,7 @@ WITH mappings(role_code, permission_code) AS (
         ('sekretaris', 'notification.read_self'), ('sekretaris', 'notification.mark_read_self'),
         ('sekretaris', 'due_type.read'), ('sekretaris', 'invoice.read'), ('sekretaris', 'payment.read'), ('sekretaris', 'cash.read'),
         ('sekretaris', 'letter_type.read'), ('sekretaris', 'letter_type.create'), ('sekretaris', 'letter_type.update'), ('sekretaris', 'letter_type.deactivate'),
-        ('sekretaris', 'letter_request.read'), ('sekretaris', 'letter_request.process'), ('sekretaris', 'letter_request.request_revision'), ('sekretaris', 'letter_request.issue'), ('sekretaris', 'letter_request.download'),
+        ('sekretaris', 'letter_request.read'), ('sekretaris', 'letter_request.process'), ('sekretaris', 'letter_request.request_revision'), ('sekretaris', 'letter_request.issue'), ('sekretaris', 'letter_request.download'), ('sekretaris', 'letter_request.export'),
         ('sekretaris', 'complaint.read'), ('sekretaris', 'complaint.assign'), ('sekretaris', 'complaint.update_status'), ('sekretaris', 'complaint.comment'),
 
         ('bendahara', 'organization.read'), ('bendahara', 'user.read'), ('bendahara', 'audit.read'),

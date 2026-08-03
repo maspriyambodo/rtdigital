@@ -190,14 +190,14 @@ Tujuan: notifikasi dalam aplikasi, email Resend, dan WhatsApp SaungWA untuk akti
 
 Tujuan: ringkasan operasional yang relevan serta ekspor laporan sesuai permission.
 
-- [ ] **Task 11.1:** Implementasi API dashboard warga: tagihan aktif, pembayaran terbaru, surat, aduan, pengumuman, agenda.
-- [ ] **Task 11.2:** Implementasi API dashboard pengurus: keluarga/warga aktif, tagihan, pembayaran, tunggakan, kas, surat, aduan.
-- [ ] **Task 11.3:** Implementasi endpoint laporan keluarga/warga, mutasi warga, tagihan, tunggakan, pembayaran, kas, surat, dan aduan.
-- [ ] **Task 11.4:** Implementasi ekspor CSV sesuai filter, permission, scope, dan audit log.
-- [ ] **Task 11.5:** Implementasi ekspor PDF laporan formal bila formatnya telah disetujui.
-- [ ] **Task 11.6:** Buat UI dashboard warga mobile-first.
-- [ ] **Task 11.7:** Buat UI dashboard pengurus, laporan, filter periode, dan ekspor.
-- [ ] **Task 11.8:** Tambahkan test akurasi agregat, scope ekspor, dan audit ekspor.
+- [x] **Task 11.1:** Implementasi API dashboard warga: tagihan aktif, pembayaran terbaru, surat, aduan, pengumuman, agenda.
+- [x] **Task 11.2:** Implementasi API dashboard pengurus: keluarga/warga aktif, tagihan, pembayaran, tunggakan, kas, surat, aduan.
+- [x] **Task 11.3:** Implementasi endpoint laporan keluarga/warga, mutasi warga, tagihan, tunggakan, pembayaran, kas, surat, dan aduan.
+- [x] **Task 11.4:** Implementasi ekspor CSV sesuai filter, permission, scope, dan audit log.
+- [ ] **Task 11.5:** Implementasi ekspor PDF laporan formal bila formatnya telah disetujui. *(Tunda: format formal belum disetujui; CSV tersedia. Upgrade: template PDF setelah format disahkan.)*
+- [x] **Task 11.6:** Buat UI dashboard warga mobile-first.
+- [x] **Task 11.7:** Buat UI dashboard pengurus, laporan, filter periode, dan ekspor.
+- [x] **Task 11.8:** Tambahkan test akurasi agregat, scope ekspor, dan audit ekspor.
 
 ---
 

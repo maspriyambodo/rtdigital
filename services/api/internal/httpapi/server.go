@@ -15,11 +15,13 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/communication"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/complaints"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/dashboard"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/files"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/invoices"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/letters"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/payments"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/reports"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
@@ -35,6 +37,8 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	var lettersService *letters.Service
 	var complaintsService *complaints.Service
 	var notificationsService *notifications.Service
+	var dashboardService *dashboard.Service
+	var reportsService *reports.Service
 	var letterStorage letters.StorageClient
 	for _, service := range services {
 		switch value := service.(type) {
@@ -46,6 +50,10 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 			complaintsService = value
 		case *notifications.Service:
 			notificationsService = value
+		case *dashboard.Service:
+			dashboardService = value
+		case *reports.Service:
+			reportsService = value
 		case letters.StorageClient:
 			letterStorage = value
 		}
@@ -80,6 +88,12 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	}
 	if notificationsService != nil {
 		notifications.NewHandler(notificationsService, tokens, authz).RegisterRoutes(api)
+	}
+	if dashboardService != nil {
+		dashboard.NewHandler(dashboardService, tokens, authz).RegisterRoutes(api)
+	}
+	if reportsService != nil {
+		reports.NewHandler(reportsService, tokens, authz).RegisterRoutes(api)
 	}
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 
