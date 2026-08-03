@@ -33,7 +33,10 @@ export default function LoginPage() {
 
     try {
       if (mfaToken) {
-        const result = await apiFetch<{ access_token: string; expires_at: string }>("auth/mfa/verify", {
+        const result = await apiFetch<{
+          access_token: string;
+          expires_at: string;
+        }>("auth/mfa/verify", {
           method: "POST",
           headers: { Authorization: `Bearer ${mfaToken}` },
           body: JSON.stringify({ code: mfaCode }),
@@ -73,7 +76,13 @@ export default function LoginPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const isPengurus = principal.roles.some((role) =>
-        ["super_admin", "ketua_rt", "sekretaris", "bendahara", "pengurus"].includes(role),
+        [
+          "super_admin",
+          "ketua_rt",
+          "sekretaris",
+          "bendahara",
+          "pengurus",
+        ].includes(role),
       );
       router.replace(isPengurus ? "/pengurus" : "/warga");
     } catch {
@@ -85,45 +94,66 @@ export default function LoginPage() {
     <main
       style={{
         alignItems: "center",
-        background: "var(--color-surface-muted)",
+        background: "var(--color-bg)",
         display: "flex",
         justifyContent: "center",
         minHeight: "100vh",
-        padding: "var(--space-4)",
+        padding: "var(--space-6) var(--space-4)",
       }}
     >
       <section
         aria-labelledby="login-title"
         style={{
           background: "var(--color-surface)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "0 4px 12px rgb(0 0 0 / 0.1)",
-          maxWidth: 400,
-          padding: "var(--space-6)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-xl)",
+          boxShadow: "var(--shadow-lg)",
+          maxWidth: 420,
+          padding: "var(--space-8) var(--space-6)",
           width: "100%",
         }}
       >
         <div
           style={{
+            alignItems: "center",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            gap: "var(--space-2)",
-            marginBottom: "var(--space-6)",
+            gap: "var(--space-3)",
+            marginBottom: "var(--space-8)",
           }}
         >
           <Image
             src="/logo.png"
             alt=""
-            width={64}
-            height={64}
+            width={56}
+            height={56}
             priority
-            style={{ flexShrink: 0, width: "auto", height: "4rem", maxWidth: "100%", objectFit: "contain" }}
+            style={{
+              flexShrink: 0,
+              width: "auto",
+              height: "3.5rem",
+              maxWidth: "100%",
+              objectFit: "contain",
+            }}
           />
-          <h1 id="login-title" style={{ fontSize: "1.5rem", textAlign: "center" }}>
+          <h1
+            id="login-title"
+            style={{
+              fontSize: "1.375rem",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              textAlign: "center",
+            }}
+          >
             {mfaToken ? "Verifikasi MFA" : "Masuk RT Digital"}
           </h1>
-          <p style={{ color: "var(--color-text-secondary)", textAlign: "center" }}>
+          <p
+            style={{
+              color: "var(--color-text-secondary)",
+              fontSize: "0.875rem",
+              textAlign: "center",
+            }}
+          >
             {mfaToken
               ? "Masukkan kode dari aplikasi authenticator."
               : "Akses layanan warga dan pengurus RT."}
@@ -131,23 +161,37 @@ export default function LoginPage() {
         </div>
 
         {error ? (
-          <p
+          <div
             role="alert"
             style={{
-              background: "var(--color-danger)",
+              background: "var(--color-danger-bg)",
+              border: "1px solid rgb(185 28 28 / 0.15)",
               borderRadius: "var(--radius-md)",
-              color: "#ffffff",
-              marginBottom: "var(--space-4)",
-              padding: "var(--space-3)",
+              color: "var(--color-danger)",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              marginBottom: "var(--space-5)",
+              padding: "var(--space-3) var(--space-4)",
             }}
           >
             {error}
-          </p>
+          </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+        <form
+          onSubmit={handleSubmit}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "var(--space-5)",
+          }}
+        >
           {mfaToken ? (
-            <FormField label="Kode autentikasi" hint="Enam digit, berlaku singkat." required>
+            <FormField
+              label="Kode autentikasi"
+              hint="Enam digit, berlaku singkat."
+              required
+            >
               {(props) => (
                 <TextInput
                   {...props}
@@ -155,7 +199,9 @@ export default function LoginPage() {
                   autoFocus
                   inputMode="numeric"
                   maxLength={6}
-                  onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, ""))}
+                  onChange={(event) =>
+                    setMfaCode(event.target.value.replace(/\D/g, ""))
+                  }
                   pattern="[0-9]{6}"
                   required
                   value={mfaCode}
@@ -192,14 +238,23 @@ export default function LoginPage() {
 
               <Link
                 href="/forgot-password"
-                style={{ alignSelf: "flex-end", color: "var(--color-primary-600)", fontSize: "0.875rem" }}
+                style={{
+                  alignSelf: "flex-end",
+                  color: "var(--color-primary-600)",
+                  fontSize: "0.8125rem",
+                  fontWeight: 600,
+                }}
               >
                 Lupa kata sandi?
               </Link>
             </>
           )}
 
-          <Button loading={loading} type="submit">
+          <Button
+            loading={loading}
+            type="submit"
+            style={{ width: "100%", marginTop: "var(--space-1)" }}
+          >
             {mfaToken ? "Verifikasi & masuk" : "Masuk"}
           </Button>
         </form>

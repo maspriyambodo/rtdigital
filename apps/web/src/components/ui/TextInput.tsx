@@ -21,8 +21,10 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           borderRadius: "var(--radius-md)",
           background: "var(--color-surface)",
           color: "var(--color-text)",
-          fontSize: "1rem",
-          boxShadow: isInvalid ? "0 0 0 1px var(--color-danger)" : "var(--shadow-sm)",
+          fontSize: "0.9375rem",
+          boxShadow: isInvalid
+            ? "0 0 0 1px var(--color-danger)"
+            : "var(--shadow-sm)",
           ...style,
         }}
         {...props}

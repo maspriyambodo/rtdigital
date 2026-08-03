@@ -25,10 +25,7 @@ export function FormField({
   const id = explicitId ?? generatedId;
   const hintId = `${id}-hint`;
   const errorId = `${id}-error`;
-  const describedBy = [
-    hint ? hintId : undefined,
-    error ? errorId : undefined,
-  ]
+  const describedBy = [hint ? hintId : undefined, error ? errorId : undefined]
     .filter(Boolean)
     .join(" ");
 
@@ -40,12 +37,23 @@ export function FormField({
         gap: "var(--space-2)",
       }}
     >
-      <label htmlFor={id} style={{ color: "var(--color-text)", fontWeight: 600 }}>
+      <label
+        htmlFor={id}
+        style={{
+          color: "var(--color-text)",
+          fontSize: "0.875rem",
+          fontWeight: 600,
+          letterSpacing: "0.01em",
+        }}
+      >
         {label}
         {required ? (
           <span
             aria-hidden="true"
-            style={{ marginLeft: "var(--space-1)", color: "var(--color-danger)" }}
+            style={{
+              marginLeft: "var(--space-1)",
+              color: "var(--color-danger-600)",
+            }}
           >
             *
           </span>
@@ -55,7 +63,11 @@ export function FormField({
       {hint ? (
         <p
           id={hintId}
-          style={{ color: "var(--color-text-secondary)", fontSize: "0.875rem" }}
+          style={{
+            color: "var(--color-text-secondary)",
+            fontSize: "0.8125rem",
+            lineHeight: 1.4,
+          }}
         >
           {hint}
         </p>
@@ -72,9 +84,10 @@ export function FormField({
           id={errorId}
           role="alert"
           style={{
-            color: "var(--color-danger)",
-            fontSize: "0.875rem",
+            color: "var(--color-danger-600)",
+            fontSize: "0.8125rem",
             fontWeight: 500,
+            lineHeight: 1.4,
           }}
         >
           {error}

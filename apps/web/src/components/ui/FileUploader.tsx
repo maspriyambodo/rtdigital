@@ -191,14 +191,38 @@ export function FileUploader({
       />
 
       {status === "success" && fileID ? (
-        <>
-          <p style={{ margin: 0, color: "var(--color-success)", fontSize: "0.875rem" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "var(--space-3)",
+            padding: "var(--space-3)",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid rgb(22 101 52 / 0.2)",
+            background: "var(--color-success-bg)",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              color: "var(--color-success)",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+            }}
+          >
             Bukti terunggah: {file?.name}
           </p>
-          <Button type="button" variant="outline" disabled={disabled} onClick={remove}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            onClick={remove}
+            style={{ minHeight: 36, padding: "var(--space-1) var(--space-3)" }}
+          >
             Hapus bukti
           </Button>
-        </>
+        </div>
       ) : (
         <Button
           type="button"
@@ -225,9 +249,9 @@ export function FileUploader({
           aria-valuenow={progress}
           role="progressbar"
           style={{
-            background: "var(--color-surface-muted)",
-            borderRadius: "var(--radius-sm)",
-            height: 8,
+            background: "var(--color-border)",
+            borderRadius: "var(--radius-full)",
+            height: 6,
             overflow: "hidden",
           }}
         >
@@ -235,6 +259,7 @@ export function FileUploader({
             style={{
               background: "var(--color-primary-600)",
               height: "100%",
+              borderRadius: "var(--radius-full)",
               transition: "width 150ms ease",
               width: `${progress}%`,
             }}
@@ -243,7 +268,17 @@ export function FileUploader({
       )}
 
       {status === "error" && (
-        <div role="alert" style={{ color: "var(--color-danger)", fontSize: "0.875rem" }}>
+        <div
+          role="alert"
+          style={{
+            padding: "var(--space-3)",
+            borderRadius: "var(--radius-md)",
+            border: "1px solid rgb(185 28 28 / 0.2)",
+            background: "var(--color-danger-bg)",
+            color: "var(--color-danger)",
+            fontSize: "0.875rem",
+          }}
+        >
           <p style={{ margin: 0 }}>{message}</p>
           {file && (
             <Button
@@ -251,7 +286,11 @@ export function FileUploader({
               variant="ghost"
               disabled={disabled}
               onClick={() => void upload(file)}
-              style={{ marginTop: "var(--space-1)", padding: "var(--space-1) 0" }}
+              style={{
+                minHeight: 32,
+                marginTop: "var(--space-2)",
+                padding: "var(--space-1) 0",
+              }}
             >
               Coba lagi
             </Button>
@@ -259,7 +298,7 @@ export function FileUploader({
         </div>
       )}
 
-      <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem", margin: 0 }}>
+      <p style={{ color: "var(--color-text-muted)", fontSize: "0.8125rem", margin: 0 }}>
         JPG, PNG, atau PDF. Maksimal {maxSizeMB} MB. Kamera tersedia pada perangkat yang mendukung.
       </p>
     </div>

@@ -12,7 +12,8 @@ export default function WargaLayout({
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
-        paddingBottom: "calc(60px + env(safe-area-inset-bottom))",
+        background: "var(--color-bg)",
+        paddingBottom: "calc(104px + env(safe-area-inset-bottom))",
       }}
     >
       <header
@@ -22,21 +23,37 @@ export default function WargaLayout({
           zIndex: 20,
           display: "flex",
           alignItems: "center",
-          gap: "var(--space-2)",
+          gap: "var(--space-3)",
           padding: "var(--space-3) var(--space-4)",
           borderBottom: "1px solid var(--color-border)",
           background: "var(--color-surface)",
+          boxShadow: "var(--shadow-sm)",
         }}
       >
         <Image
           src="/logo.png"
           alt=""
-          width={40}
-          height={40}
+          width={36}
+          height={36}
           priority
-          style={{ flexShrink: 0, width: "auto", height: "2.5rem", maxWidth: "100%", objectFit: "contain" }}
+          style={{
+            flexShrink: 0,
+            width: "auto",
+            height: "2.25rem",
+            maxWidth: "100%",
+            objectFit: "contain",
+          }}
         />
-        <span style={{ overflow: "hidden", fontWeight: 700, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span
+          style={{
+            overflow: "hidden",
+            fontSize: "1rem",
+            fontWeight: 700,
+            letterSpacing: "-0.01em",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
           RT Digital
         </span>
       </header>
@@ -44,9 +61,9 @@ export default function WargaLayout({
         style={{
           flex: 1,
           width: "100%",
-          maxWidth: "1280px",
+          maxWidth: "768px",
           margin: "0 auto",
-          padding: "var(--space-4)",
+          padding: "var(--space-6) var(--space-4)",
         }}
       >
         {children}

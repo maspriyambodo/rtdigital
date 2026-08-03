@@ -14,7 +14,8 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        padding: "var(--space-8) var(--space-4)",
+        gap: "var(--space-3)",
+        padding: "var(--space-10) var(--space-6)",
         textAlign: "center",
         border: "1px dashed var(--color-border-strong)",
         borderRadius: "var(--radius-lg)",
@@ -24,10 +25,10 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
       <h3
         style={{
           margin: 0,
-          marginBottom: description || action ? "var(--space-2)" : 0,
           color: "var(--color-text)",
           fontSize: "1.125rem",
           fontWeight: 600,
+          letterSpacing: "-0.01em",
         }}
       >
         {title}
@@ -37,14 +38,14 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
           style={{
             maxWidth: "32rem",
             margin: 0,
-            marginBottom: action ? "var(--space-6)" : 0,
             color: "var(--color-text-secondary)",
+            fontSize: "0.9375rem",
           }}
         >
           {description}
         </p>
       ) : null}
-      {action ? <div>{action}</div> : null}
+      {action ? <div style={{ marginTop: "var(--space-2)" }}>{action}</div> : null}
     </section>
   );
 }

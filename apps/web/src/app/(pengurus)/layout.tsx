@@ -11,6 +11,7 @@ export default function PengurusLayout({
       style={{
         minHeight: "100vh",
         display: "flex",
+        background: "var(--color-bg)",
       }}
     >
       <div className="pengurus-desktop-sidebar" style={{ display: "none" }}>
@@ -31,9 +32,10 @@ export default function PengurusLayout({
             position: "sticky",
             top: 0,
             zIndex: 20,
-            padding: "var(--space-4)",
+            padding: "var(--space-3) var(--space-4)",
             borderBottom: "1px solid var(--color-border)",
             background: "var(--color-surface)",
+            boxShadow: "var(--shadow-sm)",
           }}
         >
           <div
@@ -45,16 +47,38 @@ export default function PengurusLayout({
               gap: "var(--space-3)",
             }}
           >
-            <div style={{ display: "flex", minWidth: 0, alignItems: "center", gap: "var(--space-2)" }}>
+            <div
+              style={{
+                display: "flex",
+                minWidth: 0,
+                alignItems: "center",
+                gap: "var(--space-2)",
+              }}
+            >
               <Image
                 src="/logo.png"
                 alt=""
-                width={40}
-                height={40}
+                width={36}
+                height={36}
                 priority
-                style={{ flexShrink: 0, width: "auto", height: "2.5rem", maxWidth: "100%", objectFit: "contain" }}
+                style={{
+                  flexShrink: 0,
+                  width: "auto",
+                  height: "2.25rem",
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                }}
               />
-              <span style={{ overflow: "hidden", fontWeight: 700, textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span
+                style={{
+                  overflow: "hidden",
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  letterSpacing: "-0.01em",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 RT Digital
               </span>
             </div>
@@ -68,8 +92,8 @@ export default function PengurusLayout({
             width: "100%",
             maxWidth: "1280px",
             margin: "0 auto",
-            padding: "var(--space-4)",
-            paddingBottom: "calc(var(--space-4) + env(safe-area-inset-bottom))",
+            padding: "var(--space-6) var(--space-4)",
+            paddingBottom: "calc(var(--space-8) + env(safe-area-inset-bottom))",
           }}
         >
           {children}

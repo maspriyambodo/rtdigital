@@ -11,22 +11,22 @@ const styles: Record<
   success: {
     background: "var(--color-success-bg)",
     color: "var(--color-success)",
-    borderColor: "var(--color-success)",
+    borderColor: "rgb(22 101 52 / 0.15)",
   },
   warning: {
     background: "var(--color-warning-bg)",
     color: "var(--color-warning)",
-    borderColor: "var(--color-warning)",
+    borderColor: "rgb(154 52 18 / 0.15)",
   },
   danger: {
     background: "var(--color-danger-bg)",
     color: "var(--color-danger)",
-    borderColor: "var(--color-danger)",
+    borderColor: "rgb(185 28 28 / 0.15)",
   },
   info: {
     background: "var(--color-info-bg)",
     color: "var(--color-info)",
-    borderColor: "var(--color-info)",
+    borderColor: "rgb(7 89 133 / 0.15)",
   },
   neutral: {
     background: "var(--color-surface-muted)",
@@ -46,12 +46,13 @@ export function StatusBadge({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        padding: "2px var(--space-2)",
+        padding: "4px var(--space-3)",
         border: "1px solid",
         borderRadius: "var(--radius-full)",
         fontSize: "0.75rem",
         fontWeight: 600,
-        lineHeight: 1.4,
+        letterSpacing: "0.02em",
+        lineHeight: 1.2,
         whiteSpace: "nowrap",
         ...styles[variant],
         ...style,

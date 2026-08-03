@@ -36,12 +36,13 @@ export function PengurusNavigation({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "var(--space-2)",
+        gap: "var(--space-1)",
       }}
     >
       {items.map((item) => {
         const isActive =
-          pathname === item.href || pathname.startsWith(`${item.href}/`);
+          pathname === item.href ||
+          (item.href !== "/pengurus" && pathname.startsWith(`${item.href}/`));
 
         return (
           <Link
@@ -52,17 +53,25 @@ export function PengurusNavigation({
             style={{
               display: "flex",
               alignItems: "center",
-              minHeight: 44,
+              minHeight: 40,
               padding: "var(--space-2) var(--space-3)",
+              border: isActive
+                ? "1px solid var(--color-primary-100)"
+                : "1px solid transparent",
               borderRadius: "var(--radius-md)",
-              color: isActive
-                ? "var(--color-primary-700)"
-                : "var(--color-text-secondary)",
               background: isActive
                 ? "var(--color-primary-50)"
                 : "transparent",
+              color: isActive
+                ? "var(--color-primary-700)"
+                : "var(--color-text-secondary)",
+              fontSize: "0.875rem",
               fontWeight: isActive ? 600 : 500,
-              transition: "background-color var(--transition-fast), color var(--transition-fast)",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              transition:
+                "background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast)",
             }}
           >
             {item.label}
@@ -77,19 +86,24 @@ export function PengurusNavigation({
       <aside
         aria-label="Panel pengurus"
         style={{
-          width: 250,
+          position: "sticky",
+          top: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-5)",
+          width: 260,
+          height: "100vh",
           flexShrink: 0,
+          padding: "var(--space-5)",
           borderRight: "1px solid var(--color-border)",
-          background: "var(--color-surface-muted)",
-          padding: "var(--space-4)",
+          background: "var(--color-surface)",
         }}
       >
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "var(--space-2)",
-            marginBottom: "var(--space-4)",
+            gap: "var(--space-3)",
             paddingBottom: "var(--space-4)",
             borderBottom: "1px solid var(--color-border)",
           }}
@@ -97,14 +111,40 @@ export function PengurusNavigation({
           <Image
             src="/logo.png"
             alt=""
-            width={40}
-            height={40}
+            width={36}
+            height={36}
             priority
-            style={{ flexShrink: 0, width: "auto", height: "2.5rem", maxWidth: "100%", objectFit: "contain" }}
+            style={{
+              flexShrink: 0,
+              width: "auto",
+              height: "2.25rem",
+              maxWidth: "100%",
+              objectFit: "contain",
+            }}
           />
-          <span style={{ fontWeight: 700 }}>RT Digital</span>
+          <div>
+            <span
+              style={{
+                display: "block",
+                fontSize: "1rem",
+                fontWeight: 700,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              RT Digital
+            </span>
+            <span
+              style={{
+                display: "block",
+                color: "var(--color-text-muted)",
+                fontSize: "0.75rem",
+              }}
+            >
+              Portal Pengurus
+            </span>
+          </div>
         </div>
-        {nav}
+        <div style={{ flex: 1, overflowY: "auto" }}>{nav}</div>
       </aside>
     );
   }
@@ -117,13 +157,15 @@ export function PengurusNavigation({
         aria-controls="pengurus-mobile-navigation"
         onClick={() => setIsOpen((open) => !open)}
         style={{
-          minHeight: 44,
+          minHeight: 40,
           padding: "var(--space-2) var(--space-3)",
           border: "1px solid var(--color-border-strong)",
           borderRadius: "var(--radius-md)",
           background: "var(--color-surface)",
           color: "var(--color-text)",
+          fontSize: "0.875rem",
           fontWeight: 600,
+          boxShadow: "var(--shadow-sm)",
         }}
       >
         Menu pengurus
@@ -138,11 +180,13 @@ export function PengurusNavigation({
             right: 0,
             left: 0,
             zIndex: 30,
-            padding: "var(--space-4)",
+            maxHeight: "75vh",
+            overflowY: "auto",
+            padding: "var(--space-3)",
             border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-md)",
+            borderRadius: "var(--radius-lg)",
             background: "var(--color-surface)",
-            boxShadow: "var(--shadow-md)",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           {nav}

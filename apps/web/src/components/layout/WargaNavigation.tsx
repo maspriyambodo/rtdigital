@@ -52,14 +52,18 @@ export function WargaNavigation() {
         left: 0,
         zIndex: 40,
         display: "grid",
-        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
+        gridTemplateColumns: "repeat(4, 1fr)",
+        gridAutoRows: "1fr",
         borderTop: "1px solid var(--color-border)",
         background: "var(--color-surface)",
         paddingBottom: "env(safe-area-inset-bottom)",
+        boxShadow: "0 -4px 12px rgb(15 23 42 / 0.05)",
       }}
     >
       {items.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive =
+          pathname === item.href ||
+          (item.href !== "/warga" && pathname.startsWith(`${item.href}/`));
 
         return (
           <Link
@@ -67,11 +71,15 @@ export function WargaNavigation() {
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             style={{
+              position: "relative",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              minHeight: 44,
+              minHeight: 48,
               padding: "var(--space-2) 2px",
+              borderTop: isActive
+                ? "2px solid var(--color-primary-600)"
+                : "2px solid transparent",
               color: isActive
                 ? "var(--color-primary-700)"
                 : "var(--color-text-secondary)",
@@ -79,32 +87,33 @@ export function WargaNavigation() {
               fontWeight: isActive ? 600 : 500,
               textAlign: "center",
               whiteSpace: "nowrap",
-              position: "relative",
-              transition: "color var(--transition-fast)",
+              transition:
+                "border-color var(--transition-fast), color var(--transition-fast)",
             }}
           >
             {item.label}
-            {item.href === "/warga/notifikasi" && unreadCount > 0 && (
+            {item.href === "/warga/notifikasi" && unreadCount > 0 ? (
               <span
                 aria-label={`${unreadCount} notifikasi belum dibaca`}
                 style={{
                   position: "absolute",
-                  top: 2,
-                  right: 2,
+                  top: 4,
+                  right: 4,
                   minWidth: 16,
                   height: 16,
                   padding: "0 4px",
-                  borderRadius: 8,
+                  borderRadius: "var(--radius-full)",
                   background: "var(--color-danger-600)",
-                  color: "var(--color-surface)",
+                  color: "#ffffff",
                   fontSize: "0.625rem",
                   fontWeight: 700,
                   lineHeight: "16px",
+                  boxShadow: "0 0 0 2px var(--color-surface)",
                 }}
               >
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
-            )}
+            ) : null}
           </Link>
         );
       })}
