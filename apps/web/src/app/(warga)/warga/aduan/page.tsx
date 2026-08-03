@@ -8,6 +8,7 @@ import { FileUploader } from "../../../../components/ui/FileUploader";
 import { FormField } from "../../../../components/ui/FormField";
 import { Select } from "../../../../components/ui/Select";
 import { StatusBadge, type StatusBadgeProps } from "../../../../components/ui/StatusBadge";
+import { TextArea } from "../../../../components/ui/TextArea";
 import { TextInput } from "../../../../components/ui/TextInput";
 import { useAuth } from "../../../../lib/auth-context";
 import {
@@ -221,7 +222,7 @@ export default function WargaAduanPage() {
             <form onSubmit={submitComplaint} style={{ display: "grid", gap: "var(--space-3)" }}>
               <FormField label="Kategori" required>{(props) => <Select {...props} required value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Pilih kategori</option><option value="keamanan">Keamanan</option><option value="kebersihan">Kebersihan</option><option value="infrastruktur">Infrastruktur</option><option value="fasilitas_umum">Fasilitas umum</option><option value="lainnya">Lainnya</option></Select>}</FormField>
               <FormField label="Judul" required>{(props) => <TextInput {...props} required value={title} onChange={(event) => setTitle(event.target.value)} />}</FormField>
-              <FormField label="Deskripsi" required>{(props) => <textarea {...props} required rows={4} value={description} onChange={(event) => setDescription(event.target.value)} style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", padding: "var(--space-2)", width: "100%" }} />}</FormField>
+              <FormField label="Deskripsi" required>{(props) => <TextArea {...props} required rows={4} value={description} onChange={(event) => setDescription(event.target.value)} style={{ minHeight: 96 }} />}</FormField>
               <FormField label="Lokasi umum">{(props) => <TextInput {...props} value={locationDescription} onChange={(event) => setLocationDescription(event.target.value)} />}</FormField>
               <FormField label="Prioritas">{(props) => <Select {...props} value={priority} onChange={(event) => setPriority(event.target.value as ComplaintPriority)}><option value="low">Rendah</option><option value="normal">Normal</option><option value="high">Tinggi</option></Select>}</FormField>
               <div><strong>Lampiran opsional</strong><FileUploader entityType="complaint" entityId={editing?.id ?? "new-complaint"} onChange={(fileID) => fileID && setAttachmentIDs((current) => current.includes(fileID) ? current : [...current, fileID])} /></div>

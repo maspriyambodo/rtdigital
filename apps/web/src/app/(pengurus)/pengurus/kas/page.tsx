@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FileUploader } from "@/components/ui/FileUploader";
 import { FormField } from "@/components/ui/FormField";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextInput } from "@/components/ui/TextInput";
 
@@ -199,7 +200,7 @@ export default function BukuKasPengurusPage() {
           <h2 style={{ fontSize: "1.125rem" }}>Catat Transaksi</h2>
           <FormField label="Jenis transaksi">
             {({ id }) => (
-              <select
+              <Select
                 id={id}
                 value={transaction.type}
                 onChange={(event) =>
@@ -212,12 +213,12 @@ export default function BukuKasPengurusPage() {
               >
                 <option value="expense">Pengeluaran</option>
                 <option value="income">Pemasukan manual</option>
-              </select>
+              </Select>
             )}
           </FormField>
           <FormField label="Kategori">
             {({ id }) => (
-              <select
+              <Select
                 id={id}
                 value={transaction.categoryId}
                 onChange={(event) => setTransaction((current) => ({ ...current, categoryId: event.target.value }))}
@@ -227,7 +228,7 @@ export default function BukuKasPengurusPage() {
                 {activeCategories.map((category) => (
                   <option key={category.id} value={category.id}>{category.name}</option>
                 ))}
-              </select>
+              </Select>
             )}
           </FormField>
           <FormField label="Nominal">
@@ -285,10 +286,10 @@ export default function BukuKasPengurusPage() {
             </FormField>
             <FormField label="Jenis kategori">
               {({ id }) => (
-                <select id={id} value={categoryType} onChange={(event) => setCategoryType(event.target.value as CashType)}>
+                <Select id={id} value={categoryType} onChange={(event) => setCategoryType(event.target.value as CashType)}>
                   <option value="expense">Pengeluaran</option>
                   <option value="income">Pemasukan</option>
-                </select>
+                </Select>
               )}
             </FormField>
             <Button type="submit" variant="secondary" disabled={saving}>Tambah kategori</Button>
@@ -312,8 +313,8 @@ export default function BukuKasPengurusPage() {
         <form onSubmit={(event) => { event.preventDefault(); void load(); }} style={{ display: "grid", gap: "var(--space-3)", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))" }}>
           <FormField label="Dari">{({ id }) => <TextInput id={id} type="date" value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} />}</FormField>
           <FormField label="Sampai">{({ id }) => <TextInput id={id} type="date" value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} />}</FormField>
-          <FormField label="Jenis">{({ id }) => <select id={id} value={filters.type} onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value as CashType | "" }))}><option value="">Semua</option><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select>}</FormField>
-          <FormField label="Kategori">{({ id }) => <select id={id} value={filters.categoryId} onChange={(event) => setFilters((current) => ({ ...current, categoryId: event.target.value }))}><option value="">Semua</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select>}</FormField>
+          <FormField label="Jenis">{({ id }) => <Select id={id} value={filters.type} onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value as CashType | "" }))}><option value="">Semua</option><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></Select>}</FormField>
+          <FormField label="Kategori">{({ id }) => <Select id={id} value={filters.categoryId} onChange={(event) => setFilters((current) => ({ ...current, categoryId: event.target.value }))}><option value="">Semua</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>}</FormField>
           <Button type="submit" disabled={loading}>Terapkan filter</Button>
         </form>
       </section>

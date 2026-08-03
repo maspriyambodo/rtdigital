@@ -60,6 +60,23 @@ export interface ReadStats {
   read_count: number;
 }
 
+export interface RoleInfo {
+  id: string;
+  name: string;
+}
+
+export interface HouseholdInfo {
+  id: string;
+  internal_number: string;
+  head_resident_name?: string;
+}
+
+export interface HouseUnitInfo {
+  id: string;
+  code: string;
+  address_detail?: string;
+}
+
 export interface EventItem {
   id: string;
   title: string;
@@ -131,6 +148,15 @@ export const archiveAnnouncement = (token: string, id: string) =>
 
 export const getAnnouncementReadStats = (token: string, id: string) =>
   apiFetch<ReadStats>(`announcements/${id}/read-stats`, options(token));
+
+export const listRoles = (token: string) =>
+  apiFetch<RoleInfo[]>("roles", options(token));
+
+export const listHouseholds = (token: string) =>
+  apiFetch<HouseholdInfo[]>("households", options(token));
+
+export const listHouseUnits = (token: string) =>
+  apiFetch<HouseUnitInfo[]>("house-units", options(token));
 
 export const listEvents = (token: string, filter: EventFilter = {}) =>
   apiFetch<EventItem[]>(queryPath("events", filter), options(token));

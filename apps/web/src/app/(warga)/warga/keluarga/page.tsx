@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormField } from "@/components/ui/FormField";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextInput } from "@/components/ui/TextInput";
 
@@ -154,13 +155,13 @@ export default function KeluargaPage() {
           <h2 style={{ fontSize: "1.125rem" }}>Formulir Koreksi Data</h2>
           <FormField label="Bidang Data">
             {({ id, "aria-describedby": ariaDescribedBy }) => (
-              <select id={id} aria-describedby={ariaDescribedBy} value={field} onChange={(event) => setField(event.target.value)} style={{ minHeight: 44, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "var(--color-surface)", color: "var(--color-text)", padding: "0 var(--space-3)" }}>
+              <Select id={id} aria-describedby={ariaDescribedBy} value={field} onChange={(event) => setField(event.target.value)}>
                 <option value="phone">Nomor Telepon</option>
                 <option value="email">Email</option>
                 <option value="occupation">Pekerjaan</option>
                 <option value="education">Pendidikan</option>
                 <option value="marital_status">Status Perkawinan</option>
-              </select>
+              </Select>
             )}
           </FormField>
           <FormField label="Nilai Baru">

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormField } from "@/components/ui/FormField";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextInput } from "@/components/ui/TextInput";
 
@@ -109,12 +110,12 @@ export default function RumahPage() {
         </FormField>
         <FormField label="Status Hunian">
           {({ id, "aria-describedby": ariaDescribedBy }) => (
-            <select id={id} aria-describedby={ariaDescribedBy} value={occupancyStatus} onChange={(event) => setOccupancyStatus(event.target.value as HouseUnit["occupancy_status"])} style={{ minHeight: 44, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "var(--color-surface)", color: "var(--color-text)", padding: "0 var(--space-3)" }}>
+            <Select id={id} aria-describedby={ariaDescribedBy} value={occupancyStatus} onChange={(event) => setOccupancyStatus(event.target.value as HouseUnit["occupancy_status"])}>
               <option value="owned">Milik Sendiri</option>
               <option value="rented">Sewa/Kost</option>
               <option value="contract">Kontrak</option>
               <option value="empty">Kosong</option>
-            </select>
+            </Select>
           )}
         </FormField>
         <Button type="submit" disabled={creating}>{creating ? "Menyimpan…" : "Tambah unit"}</Button>

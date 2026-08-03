@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FileUploader } from "@/components/ui/FileUploader";
 import { FormField } from "@/components/ui/FormField";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
+import { TextArea } from "@/components/ui/TextArea";
 import { TextInput } from "@/components/ui/TextInput";
 import { ApiException } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
@@ -17,6 +19,9 @@ import {
   type AnnouncementStatus,
   type EventItem,
   type EventStatus,
+  type HouseholdInfo,
+  type HouseUnitInfo,
+  type RoleInfo,
   archiveAnnouncement,
   cancelEvent,
   createAnnouncement,
@@ -24,6 +29,9 @@ import {
   getAnnouncementReadStats,
   listAnnouncements,
   listEvents,
+  listHouseholds,
+  listHouseUnits,
+  listRoles,
   publishAnnouncement,
   updateAnnouncement,
   updateEvent,
@@ -69,6 +77,9 @@ export default function PengumumanAgendaPengurusPage() {
   const [tab, setTab] = useState<"announcements" | "events">("announcements");
   const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
   const [events, setEvents] = useState<EventItem[]>([]);
+  const [roles, setRoles] = useState<RoleInfo[]>([]);
+  const [households, setHouseholds] = useState<HouseholdInfo[]>([]);
+  const [houseUnits, setHouseUnits] = useState<HouseUnitInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -108,12 +119,18 @@ export default function PengumumanAgendaPengurusPage() {
     try {
       const token = await getAccessToken();
       if (!token) throw new Error("Sesi telah berakhir. Silakan masuk kembali.");
-      const [announcementList, eventList] = await Promise.all([
+      const [announcementList, eventList, roleList, householdList, houseUnitList] = await Promise.all([
         listAnnouncements(token),
         listEvents(token),
+        listRoles(token).catch(() => []),
+        listHouseholds(token).catch(() => []),
+        listHouseUnits(token).catch(() => []),
       ]);
       setAnnouncements(announcementList);
       setEvents(eventList);
+      setRoles(roleList);
+      setHouseholds(householdList);
+      setHouseUnits(houseUnitList);
     } catch (cause) {
       setError(cause instanceof ApiException || cause instanceof Error ? cause.message : "Gagal memuat komunikasi.");
     } finally {
@@ -311,18 +328,20 @@ export default function PengumumanAgendaPengurusPage() {
           <h2 style={{ fontSize: "1.125rem" }}>{editingAnnouncement ? "Ubah Pengumuman" : "Buat Pengumuman"}</h2>
           <FormField label="Judul">{({ id }) => <TextInput id={id} value={announcement.title} onChange={(event) => setAnnouncement((current) => ({ ...current, title: event.target.value }))} required />}</FormField>
           <FormField label="Isi pengumuman">
-            {({ id }) => <textarea id={id} value={announcement.content} onChange={(event) => setAnnouncement((current) => ({ ...current, content: event.target.value }))} required style={{ minHeight: 120 }} />}
+            {({ id }) => <TextArea id={id} value={announcement.content} onChange={(event) => setAnnouncement((current) => ({ ...current, content: event.target.value }))} required style={{ minHeight: 120 }} />}
           </FormField>
           <div style={formGrid}>
-            <FormField label="Kategori">{({ id }) => <select id={id} value={announcement.category} onChange={(event) => setAnnouncement((current) => ({ ...current, category: event.target.value as AnnouncementCategory }))}>{Object.entries(announcementCategories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}</FormField>
-            <FormField label="Prioritas">{({ id }) => <select id={id} value={announcement.priority} onChange={(event) => setAnnouncement((current) => ({ ...current, priority: event.target.value as AnnouncementPriority }))}><option value="normal">Normal</option><option value="important">Penting</option></select>}</FormField>
-            <FormField label="Status">{({ id }) => <select id={id} value={announcement.status} onChange={(event) => setAnnouncement((current) => ({ ...current, status: event.target.value as Exclude<AnnouncementStatus, "archived"> }))}><option value="draft">Draft</option><option value="scheduled">Terjadwal</option><option value="published">Terbit sekarang</option></select>}</FormField>
+            <FormField label="Kategori">{({ id }) => <Select id={id} value={announcement.category} onChange={(event) => setAnnouncement((current) => ({ ...current, category: event.target.value as AnnouncementCategory }))}>{Object.entries(announcementCategories).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>}</FormField>
+            <FormField label="Prioritas">{({ id }) => <Select id={id} value={announcement.priority} onChange={(event) => setAnnouncement((current) => ({ ...current, priority: event.target.value as AnnouncementPriority }))}><option value="normal">Normal</option><option value="important">Penting</option></Select>}</FormField>
+            <FormField label="Status">{({ id }) => <Select id={id} value={announcement.status} onChange={(event) => setAnnouncement((current) => ({ ...current, status: event.target.value as Exclude<AnnouncementStatus, "archived"> }))}><option value="draft">Draft</option><option value="scheduled">Terjadwal</option><option value="published">Terbit sekarang</option></Select>}</FormField>
           </div>
           {announcement.status === "scheduled" ? <FormField label="Jadwal terbit">{({ id }) => <TextInput id={id} type="datetime-local" value={announcement.publishAt} onChange={(event) => setAnnouncement((current) => ({ ...current, publishAt: event.target.value }))} required />}</FormField> : null}
           <FormField label="Kedaluwarsa (opsional)">{({ id }) => <TextInput id={id} type="datetime-local" value={announcement.expireAt} onChange={(event) => setAnnouncement((current) => ({ ...current, expireAt: event.target.value }))} />}</FormField>
           <div style={formGrid}>
-            <FormField label="Target">{({ id }) => <select id={id} value={announcement.targetType} onChange={(event) => setAnnouncement((current) => ({ ...current, targetType: event.target.value as typeof current.targetType, targetID: "" }))}><option value="all">Semua warga</option><option value="role">Peran</option><option value="household">Keluarga</option><option value="house_unit">Rumah/unit</option></select>}</FormField>
-            {announcement.targetType !== "all" ? <FormField label="ID target">{({ id }) => <TextInput id={id} value={announcement.targetID} onChange={(event) => setAnnouncement((current) => ({ ...current, targetID: event.target.value }))} required />}</FormField> : null}
+            <FormField label="Target">{({ id }) => <Select id={id} value={announcement.targetType} onChange={(event) => setAnnouncement((current) => ({ ...current, targetType: event.target.value as typeof current.targetType, targetID: "" }))}><option value="all">Semua warga</option><option value="role">Peran</option><option value="household">Keluarga</option><option value="house_unit">Rumah/unit</option></Select>}</FormField>
+            {announcement.targetType === "role" ? <FormField label="Pilih peran">{({ id }) => <Select id={id} value={announcement.targetID} onChange={(event) => setAnnouncement((current) => ({ ...current, targetID: event.target.value }))} required><option value="">Pilih peran penerima</option>{roles.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select>}</FormField> : null}
+            {announcement.targetType === "household" ? <FormField label="Pilih keluarga">{({ id }) => <Select id={id} value={announcement.targetID} onChange={(event) => setAnnouncement((current) => ({ ...current, targetID: event.target.value }))} required><option value="">Pilih keluarga penerima</option>{households.map((item) => <option key={item.id} value={item.id}>{item.internal_number}{item.head_resident_name ? ` — ${item.head_resident_name}` : ""}</option>)}</Select>}</FormField> : null}
+            {announcement.targetType === "house_unit" ? <FormField label="Pilih rumah/unit">{({ id }) => <Select id={id} value={announcement.targetID} onChange={(event) => setAnnouncement((current) => ({ ...current, targetID: event.target.value }))} required><option value="">Pilih rumah/unit penerima</option>{houseUnits.map((item) => <option key={item.id} value={item.id}>{item.code}{item.address_detail ? ` — ${item.address_detail}` : ""}</option>)}</Select>}</FormField> : null}
           </div>
           <FormField label="Lampiran (opsional)">
             {() => <FileUploader entityType="announcement" entityId={announcementUploadID} disabled={saving} onChange={(fileID) => fileID && setAnnouncement((current) => ({ ...current, attachmentIDs: [...current.attachmentIDs, fileID] }))} />}
@@ -336,10 +355,10 @@ export default function PengumumanAgendaPengurusPage() {
         <form onSubmit={(formEvent) => void saveEvent(formEvent)} style={cardStyle}>
           <h2 style={{ fontSize: "1.125rem" }}>{editingEvent ? "Ubah Agenda" : "Buat Agenda"}</h2>
           <FormField label="Nama kegiatan">{({ id }) => <TextInput id={id} value={event.title} onChange={(inputEvent) => setEvent((current) => ({ ...current, title: inputEvent.target.value }))} required />}</FormField>
-          <FormField label="Deskripsi (opsional)">{({ id }) => <textarea id={id} value={event.description} onChange={(inputEvent) => setEvent((current) => ({ ...current, description: inputEvent.target.value }))} style={{ minHeight: 96 }} />}</FormField>
+          <FormField label="Deskripsi (opsional)">{({ id }) => <TextArea id={id} value={event.description} onChange={(inputEvent) => setEvent((current) => ({ ...current, description: inputEvent.target.value }))} style={{ minHeight: 96 }} />}</FormField>
           <div style={formGrid}>
             <FormField label="Lokasi">{({ id }) => <TextInput id={id} value={event.location} onChange={(inputEvent) => setEvent((current) => ({ ...current, location: inputEvent.target.value }))} />}</FormField>
-            <FormField label="Status">{({ id }) => <select id={id} value={event.status} onChange={(inputEvent) => setEvent((current) => ({ ...current, status: inputEvent.target.value as EventStatus }))}>{Object.entries(eventStatuses).filter(([value]) => value !== "cancelled").map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>}</FormField>
+            <FormField label="Status">{({ id }) => <Select id={id} value={event.status} onChange={(inputEvent) => setEvent((current) => ({ ...current, status: inputEvent.target.value as EventStatus }))}>{Object.entries(eventStatuses).filter(([value]) => value !== "cancelled").map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>}</FormField>
             <FormField label="Mulai">{({ id }) => <TextInput id={id} type="datetime-local" value={event.startsAt} onChange={(inputEvent) => setEvent((current) => ({ ...current, startsAt: inputEvent.target.value }))} required />}</FormField>
             <FormField label="Selesai">{({ id }) => <TextInput id={id} type="datetime-local" value={event.endsAt} onChange={(inputEvent) => setEvent((current) => ({ ...current, endsAt: inputEvent.target.value }))} />}</FormField>
           </div>

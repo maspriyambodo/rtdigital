@@ -6,6 +6,7 @@ import { ApiException, apiFetch } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextInput } from "@/components/ui/TextInput";
 
@@ -70,12 +71,12 @@ export default function WargaPage() {
 
       <div style={{ display: "grid", gap: "var(--space-3)", gridTemplateColumns: "minmax(0, 1fr) minmax(9rem, 12rem)" }}>
         <TextInput name="q" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Cari nama atau NIK…" />
-        <select aria-label="Filter status warga" value={status} onChange={(event) => setStatus(event.target.value)} style={{ minHeight: 44, border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", background: "var(--color-surface)", color: "var(--color-text)", padding: "0 var(--space-3)" }}>
+        <Select aria-label="Filter status warga" value={status} onChange={(event) => setStatus(event.target.value)}>
           <option value="">Semua status</option>
           <option value="active">Aktif</option>
           <option value="moved_out">Pindah</option>
           <option value="deceased">Meninggal</option>
-        </select>
+        </Select>
       </div>
 
       {loading ? (

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FormField } from "@/components/ui/FormField";
+import { Select } from "@/components/ui/Select";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { TextInput } from "@/components/ui/TextInput";
 
@@ -165,7 +166,7 @@ export default function TagihanPengurusPage() {
       <h2 style={{ fontSize: "1.125rem" }}>Tambah Jenis Iuran</h2>
       <FormField label="Nama iuran">{({ id }) => <TextInput id={id} value={dueName} onChange={(event) => setDueName(event.target.value)} required />}</FormField>
       <FormField label="Nominal tetap (opsional)">{({ id }) => <TextInput id={id} type="number" min="1" value={dueAmount} onChange={(event) => setDueAmount(event.target.value)} />}</FormField>
-      <FormField label="Frekuensi">{({ id }) => <select id={id} value={dueFrequency} onChange={(event) => setDueFrequency(event.target.value as Frequency)}><option value="monthly">Bulanan</option><option value="quarterly">Triwulan</option><option value="yearly">Tahunan</option><option value="once">Sekali bayar</option></select>}</FormField>
+      <FormField label="Frekuensi">{({ id }) => <Select id={id} value={dueFrequency} onChange={(event) => setDueFrequency(event.target.value as Frequency)}><option value="monthly">Bulanan</option><option value="quarterly">Triwulan</option><option value="yearly">Tahunan</option><option value="once">Sekali bayar</option></Select>}</FormField>
       <FormField label="Tanggal jatuh tempo 1–31 (opsional)">{({ id }) => <TextInput id={id} type="number" min="1" max="31" value={dueDay} onChange={(event) => setDueDay(event.target.value)} />}</FormField>
       <Button type="submit" disabled={saving}>{saving ? "Menyimpan…" : "Simpan iuran"}</Button>
     </form>
@@ -173,7 +174,7 @@ export default function TagihanPengurusPage() {
     <section style={{ display: "grid", gap: "var(--space-3)", padding: "var(--space-4)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)" }}>
       <h2 style={{ fontSize: "1.125rem" }}>Terbitkan Tagihan</h2>
       <form onSubmit={(event) => void createInvoice(event, false)} style={{ display: "grid", gap: "var(--space-3)" }}>
-        <FormField label="Keluarga">{({ id }) => <select id={id} value={householdID} onChange={(event) => setHouseholdID(event.target.value)} required><option value="">Pilih keluarga</option>{households.map((item) => <option key={item.id} value={item.id}>{item.internal_number}</option>)}</select>}</FormField>
+        <FormField label="Keluarga">{({ id }) => <Select id={id} value={householdID} onChange={(event) => setHouseholdID(event.target.value)} required><option value="">Pilih keluarga</option>{households.map((item) => <option key={item.id} value={item.id}>{item.internal_number}</option>)}</Select>}</FormField>
         <InvoiceFields dueTypes={activeTypes} dueTypeID={dueTypeID} setDueTypeID={setDueTypeID} periodStart={periodStart} setPeriodStart={setPeriodStart} periodEnd={periodEnd} setPeriodEnd={setPeriodEnd} dueDate={dueDate} setDueDate={setDueDate} amount={amount} setAmount={setAmount} />
         <Button type="submit" disabled={saving}>Buat individual</Button>
       </form>
@@ -198,5 +199,5 @@ export default function TagihanPengurusPage() {
 }
 
 function InvoiceFields(props: { dueTypes: DueType[]; dueTypeID: string; setDueTypeID: (value: string) => void; periodStart: string; setPeriodStart: (value: string) => void; periodEnd: string; setPeriodEnd: (value: string) => void; dueDate: string; setDueDate: (value: string) => void; amount: string; setAmount: (value: string) => void }) {
-  return <><FormField label="Jenis iuran">{({ id }) => <select id={id} value={props.dueTypeID} onChange={(event) => props.setDueTypeID(event.target.value)} required><option value="">Pilih iuran</option>{props.dueTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select>}</FormField><FormField label="Awal periode">{({ id }) => <TextInput id={id} type="date" value={props.periodStart} onChange={(event) => props.setPeriodStart(event.target.value)} required />}</FormField><FormField label="Akhir periode">{({ id }) => <TextInput id={id} type="date" value={props.periodEnd} onChange={(event) => props.setPeriodEnd(event.target.value)} required />}</FormField><FormField label="Jatuh tempo">{({ id }) => <TextInput id={id} type="date" value={props.dueDate} onChange={(event) => props.setDueDate(event.target.value)} required />}</FormField><FormField label="Nominal khusus (opsional)">{({ id }) => <TextInput id={id} type="number" min="1" value={props.amount} onChange={(event) => props.setAmount(event.target.value)} />}</FormField></>;
+  return <><FormField label="Jenis iuran">{({ id }) => <Select id={id} value={props.dueTypeID} onChange={(event) => props.setDueTypeID(event.target.value)} required><option value="">Pilih iuran</option>{props.dueTypes.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select>}</FormField><FormField label="Awal periode">{({ id }) => <TextInput id={id} type="date" value={props.periodStart} onChange={(event) => props.setPeriodStart(event.target.value)} required />}</FormField><FormField label="Akhir periode">{({ id }) => <TextInput id={id} type="date" value={props.periodEnd} onChange={(event) => props.setPeriodEnd(event.target.value)} required />}</FormField><FormField label="Jatuh tempo">{({ id }) => <TextInput id={id} type="date" value={props.dueDate} onChange={(event) => props.setDueDate(event.target.value)} required />}</FormField><FormField label="Nominal khusus (opsional)">{({ id }) => <TextInput id={id} type="number" min="1" value={props.amount} onChange={(event) => props.setAmount(event.target.value)} />}</FormField></>;
 }

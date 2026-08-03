@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
+import { Select } from "@/components/ui/Select";
 import { TextInput } from "@/components/ui/TextInput";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -137,11 +138,11 @@ export default function PengaturanRTPage() {
             </FormField>
             <FormField label="Zona waktu" id="timezone" required>
               {(props) => (
-                <select {...props} value={timezone} onChange={(event) => setTimezone(event.target.value)}>
+                <Select {...props} value={timezone} onChange={(event) => setTimezone(event.target.value)}>
                   <option value="Asia/Jakarta">WIB — Asia/Jakarta</option>
                   <option value="Asia/Makassar">WITA — Asia/Makassar</option>
                   <option value="Asia/Jayapura">WIT — Asia/Jayapura</option>
-                </select>
+                </Select>
               )}
             </FormField>
             <FormField label="ID file logo" id="logo-file-id">
