@@ -6,9 +6,9 @@
 |---|---|
 | Nama sementara | RT Digital |
 | Dokumen | Product Requirements Document |
-| Versi | 1.0 |
+| Versi | 1.2 |
 | Status | Draft untuk validasi |
-| Tanggal | 1 Agustus 2026 |
+| Tanggal | 8 Agustus 2026 |
 | Pemilik produk | Pengurus RT |
 | Target platform | Web responsif mobile-first / Progressive Web App (PWA) |
 | Bahasa utama | Bahasa Indonesia |
@@ -62,6 +62,7 @@ RT Digital menyelesaikan masalah tersebut melalui alur kerja digital dengan kont
 - Menyediakan kanal pengumuman dan aduan yang terstruktur.
 - Menghasilkan laporan operasional secara otomatis.
 - Menjaga keamanan dan riwayat perubahan data.
+- Mengubah pencatatan pasif menjadi layanan proaktif: sistem memberi pengingat, membentuk antrean kerja, dan menunjukkan kepastian hasil kepada warga.
 
 ### 4.2 Indikator Keberhasilan Awal
 
@@ -74,6 +75,8 @@ Dalam tiga bulan setelah peluncuran MVP:
 - Waktu pemrosesan surat standar berkurang minimal 50%.
 - Seluruh perubahan penting pada data dan transaksi memiliki audit log.
 - Minimal 80% pengumuman resmi RT dipublikasikan melalui aplikasi.
+- Minimal 90% pengajuan surat dan aduan yang memiliki SLA diselesaikan sesuai target layanan yang disepakati pengurus.
+- Status domisili seluruh warga sementara dikonfirmasi sebelum tanggal evaluasinya.
 
 ---
 
@@ -106,7 +109,43 @@ MVP mencakup:
 21. Pengaturan profil RT.
 22. Dukungan PWA dasar: installable, app manifest, dan halaman utama yang tetap dapat dibuka dari perangkat seluler pada koneksi tidak stabil.
 
-### 5.2 Fitur Setelah MVP
+### 5.2 Prioritas Implementasi Pasca-MVP: Otomatisasi dan Layanan Proaktif
+
+Prioritas ini mengubah modul yang telah ada dari CRUD reaktif menjadi bantuan operasional terukur. Implementasi dilakukan setelah fondasi MVP stabil dan parameter bisnisnya divalidasi pengurus.
+
+1. **Pengingat iuran, pembayaran rapel, antrean verifikasi**
+   - Tagihan rutin diterbitkan terjadwal dengan idempotensi per periode.
+   - Pengingat jatuh tempo/tunggakan dikirim melalui kanal yang disetujui, sesuai preferensi dan batas frekuensi.
+   - Satu pembayaran dapat dialokasikan atomik ke beberapa tagihan menurut aturan alokasi yang transparan.
+   - Antrean bendahara memperlihatkan bukti, nominal, sisa tagihan, dan riwayat relevan dalam satu layar; pemisahan tugas tetap berlaku.
+
+2. **Validasi pra-pengajuan surat dan SLA antrean**
+   - Sistem memeriksa data wajib, formulir, dan lampiran sebelum warga dapat mengajukan surat.
+   - Setiap jenis surat dapat memiliki target waktu layanan; pengurus melihat antrean jatuh tempo/terlambat, warga melihat status dan estimasi.
+
+3. **Timeline aduan, kategori dengan SLA, konfirmasi penyelesaian**
+   - Kategori aduan memuat target respons awal dan penyelesaian.
+   - Warga melihat kronologi tindak lanjut; pengurus melihat tiket yang melampaui SLA.
+   - Pelapor mengonfirmasi hasil penyelesaian atau tiket ditutup otomatis setelah tenggat yang disetujui, dengan alasan dan audit log.
+
+4. **Health score keluarga dan pengingat domisili sementara**
+   - Sistem menandai data keluarga yang tidak lengkap, belum terverifikasi, kontak bermasalah, atau lama tidak diperbarui.
+   - Warga sementara/kontrak memiliki tanggal evaluasi dan pengingat konfirmasi tinggal, perpanjangan, atau pindah.
+   - Health score adalah daftar kerja sekretaris, bukan dasar penolakan layanan atau penilaian sosial warga.
+
+5. **Transparansi kas agregat**
+   - Warga melihat saldo, rekap pemasukan/pengeluaran per kategori dan periode, serta bukti yang memang boleh dipublikasikan.
+   - Nama penunggak, nominal pembayaran individu, dan detail transaksi pribadi tidak ditampilkan.
+
+6. **QR verifikasi surat**
+   - Surat terbit memuat QR menuju halaman verifikasi publik berisi nomor surat, jenis, tanggal terbit, dan status valid/dibatalkan.
+   - Halaman publik tidak menampilkan data pribadi maupun URL dokumen privat.
+
+7. **Serah-terima pengurus**
+   - Checklist terpandu mencakup role, akses, rekening, tagihan terbuka, kas, surat, aduan, dan dokumen.
+   - Akses pengurus lama diturunkan/dinonaktifkan secara terkontrol; riwayat audit tidak dihapus.
+
+### 5.3 Fitur Lain Setelah MVP
 
 - Integrasi payment gateway dan virtual account.
 - Tanda tangan elektronik tersertifikasi.
@@ -121,7 +160,7 @@ MVP mencakup:
 - Aplikasi mobile native.
 - Dukungan banyak RT dalam satu platform.
 
-### 5.3 Di Luar Ruang Lingkup MVP
+### 5.4 Di Luar Ruang Lingkup MVP
 
 - Sistem kependudukan resmi pemerintah.
 - Verifikasi identitas langsung ke Dukcapil.
@@ -1576,7 +1615,6 @@ NIK dan nomor KK dapat dilengkapi setelah alur keamanan dan persetujuan telah di
 
 ### Could Have
 
-- QR verifikasi surat.
 - Konfirmasi kehadiran kegiatan.
 - Pemindaian malware file.
 - Dashboard statistik tambahan.
@@ -1718,5 +1756,6 @@ Sebuah fitur dianggap selesai apabila:
 
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.2 | 8 Agustus 2026 | Menambahkan prioritas otomatisasi dan layanan operasional proaktif pasca-MVP |
 | 1.1 | 1 Agustus 2026 | Memperkuat kebutuhan mobile-first, PWA dasar, UX seluler, ketahanan koneksi, dan pengujian perangkat seluler |
 | 1.0 | 1 Agustus 2026 | Draft awal PRD aplikasi manajemen RT digital |

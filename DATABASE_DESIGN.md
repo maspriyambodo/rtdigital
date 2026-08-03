@@ -21,6 +21,8 @@
 - `updated_at` diperbarui melalui trigger database atau aplikasi secara konsisten.
 - Status disimpan sebagai `VARCHAR` dengan `CHECK` constraint pada migration awal. PostgreSQL enum dapat dipertimbangkan setelah status stabil.
 - NIK dan nomor KK disimpan terenkripsi. Pencarian memakai blind index, bukan ciphertext.
+- Master data per organisasi wajib memakai `organization_id`; penonaktifan, bukan penghapusan, bila sudah direferensikan transaksi.
+- Lookup global seperti pendidikan dan status perkawinan bersifat read-only bagi organisasi.
 
 ---
 
@@ -41,6 +43,7 @@ erDiagram
     organizations ||--o{ cash_transactions : records
     organizations ||--o{ letter_types : defines
     organizations ||--o{ letter_requests : receives
+    organizations ||--o{ complaint_categories : defines
     organizations ||--o{ complaints : receives
     organizations ||--o{ notifications : sends
     organizations ||--o{ file_objects : owns
@@ -66,6 +69,7 @@ erDiagram
     residents ||--o{ letter_requests : concerns
     letter_types ||--o{ letter_requests : categorizes
 
+    complaint_categories ||--o{ complaints : categorizes
     users ||--o{ complaints : reports
     users ||--o{ complaints : assigned
     complaints ||--o{ complaint_comments : has
@@ -416,7 +420,23 @@ erDiagram
 
 **Unique:** `(organization_id, request_number)` dan unique partial `(organization_id, letter_number)` saat diterbitkan.
 
-### 7.3 `complaints`
+### 7.3 `complaint_categories`
+
+*(Direncanakan pada Epic 13; kategori aduan saat ini masih teks bebas.)*
+
+| Kolom | Tipe | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `organization_id` | UUID | FK, NOT NULL | |
+| `code` | VARCHAR(50) | NOT NULL | Kode stabil, contoh: `kebersihan` |
+| `name` | VARCHAR(100) | NOT NULL | Label kategori |
+| `status` | VARCHAR(20) | NOT NULL DEFAULT `'active'` | `active`, `inactive` |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+| `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+
+**Unique:** `(organization_id, code)`.
+
+### 7.4 `complaints`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
@@ -424,7 +444,8 @@ erDiagram
 | `organization_id` | UUID | FK, NOT NULL | |
 | `reporter_user_id` | UUID | FK, NOT NULL | Pelapor |
 | `ticket_number` | VARCHAR(50) | NOT NULL | Nomor tiket |
-| `category` | VARCHAR(50) | NOT NULL | |
+| `complaint_category_id` | UUID | FK, NULL selama migrasi | Ke `complaint_categories.id`; menjadi `NOT NULL` setelah data lama dimigrasikan |
+| `category` | VARCHAR(50) | NOT NULL saat ini | Kolom legacy; dihapus setelah seluruh data memakai `complaint_category_id` |
 | `title` | VARCHAR(255) | NOT NULL | |
 | `description` | TEXT | NOT NULL | |
 | `location_description` | TEXT | NULL | Lokasi umum, tanpa koordinat presisi |
@@ -439,7 +460,7 @@ erDiagram
 
 **Unique:** `(organization_id, ticket_number)`.
 
-### 7.4 `complaint_comments`
+### 7.5 `complaint_comments`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|

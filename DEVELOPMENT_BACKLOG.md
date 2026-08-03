@@ -12,6 +12,8 @@ Backlog ini memecah MVP menjadi epic dan task yang dapat dikerjakan bertahap. Se
 2. Epic 4–6: iuran, pembayaran, buku kas.
 3. Epic 7–9: komunikasi, surat, aduan.
 4. Epic 10–12: notifikasi, dashboard/laporan, hardening rilis.
+5. Epic 13: master data.
+6. Epic 14: otomatisasi dan layanan operasional proaktif.
 
 ---
 
@@ -213,6 +215,44 @@ Tujuan: menyelesaikan kesiapan operasional, keamanan, observabilitas, serta UAT 
 - [ ] **Task 12.6:** Konfigurasi backup RDS, retensi/pemulihan R2, dan uji restore di staging. *(Prosedur dan checklist tersedia di `docs/RELEASE_RUNBOOK.md`; konfigurasi cloud serta restore staging membutuhkan akses lingkungan target.)*
 - [ ] **Task 12.7:** Jalankan responsive, accessibility, authorization, integration, E2E, security header, dan smoke test staging. *(Go test, lint, dan build lulus; pengujian viewport, E2E, serta staging belum dijalankan.)*
 - [ ] **Task 12.8:** Jalankan UAT pengurus, migrasi CSV final, pelatihan, runbook, kebijakan privasi, dan soft launch. *(Runbook tersedia; aktivitas operasional/UAT belum dapat dinyatakan selesai.)*
+
+---
+
+## Epic 13: Master Data
+
+Tujuan: memformalkan data referensi yang saat ini berupa teks bebas agar input konsisten dan laporan akurat.
+
+- [ ] **Task 13.1:** Buat migration `complaint_categories` per organisasi: `id`, `organization_id`, `code`, `name`, `status`, timestamps; unique `(organization_id, code)`.
+- [ ] **Task 13.2:** Seed kategori aduan awal per organisasi dan migrasikan nilai `complaints.category` historis ke `complaint_categories`.
+- [ ] **Task 13.3:** Tambahkan `complaint_category_id` pada `complaints`, validasi tenant melalui FK komposit, ubah API/daftar/filter/laporan, lalu hapus kolom teks lama pada migration lanjutan.
+- [ ] **Task 13.4:** Implementasi API CRUD kategori aduan, RBAC pengurus, penonaktifan tanpa menghapus kategori yang telah dipakai, serta audit log.
+- [ ] **Task 13.5:** Perbarui UI pengurus pengelolaan kategori aduan dan form/filter aduan agar memakai data master.
+- [ ] **Task 13.6:** Buat lookup global read-only `education_levels` dan `marital_statuses`; seed nilai standar nasional; migrasikan nilai teks warga ke FK.
+- [ ] **Task 13.7:** Evaluasi normalisasi `occupations` dari data produksi. Buat master global hanya bila variasi penulisan mengganggu laporan; jangan blokir input pekerjaan bebas pada MVP.
+- [ ] **Task 13.8:** Perbarui API, UI, import CSV, serta laporan warga untuk memakai lookup pendidikan/status perkawinan; pekerjaan tetap teks sampai Task 13.7 disetujui.
+- [ ] **Task 13.9:** Tambahkan integration test FK, isolasi tenant, kategori nonaktif, migrasi data lama, RBAC, dan konsistensi filter/laporan.
+- [ ] **Task 13.10:** Evaluasi kebutuhan `announcement_categories`. Pertahankan `CHECK` global saat kategori seragam; buat master per organisasi hanya bila ada kebutuhan kategori kustom yang disetujui.
+
+---
+
+## Epic 14: Otomatisasi dan Layanan Operasional Proaktif
+
+Tujuan: mengubah data dan transaksi menjadi pengingat, antrean kerja, kepastian status warga, serta transparansi yang aman.
+
+- [ ] **Task 14.1:** Implementasi penerbitan tagihan rutin terjadwal untuk `due_types` aktif, target keluarga yang sah, idempotensi periode, ringkasan hasil, dan audit.
+- [ ] **Task 14.2:** Implementasi pengingat iuran melalui dispatcher sesuai preferensi kanal, jadwal yang dapat dikonfigurasi, pembatasan frekuensi, dan pencatatan kegagalan tanpa menggagalkan transaksi utama.
+- [ ] **Task 14.3:** Implementasi pembayaran rapel: satu pelaporan pembayaran dialokasikan atomik ke beberapa invoice menurut aturan alokasi yang eksplisit, dengan perlindungan overpayment dan audit.
+- [ ] **Task 14.4:** Buat antrean verifikasi bendahara satu layar: bukti, nominal, invoice, sisa tagihan, riwayat relevan, alasan penolakan standar, dan separation of duties.
+- [ ] **Task 14.5:** Implementasi validasi pra-pengajuan surat untuk data formulir, persyaratan lampiran, dan status data yang diwajibkan oleh jenis surat; tampilkan kekurangan sebelum pengajuan.
+- [ ] **Task 14.6:** Tambahkan SLA antrean surat per jenis surat, indikator jatuh tempo/terlambat bagi pengurus, estimasi status bagi warga, dan notifikasi eskalasi yang tidak berlebihan.
+- [ ] **Task 14.7:** Perluas `complaint_categories` dengan target respons dan penyelesaian; buat timeline aduan, indikator SLA, serta pengelompokan/dukungan aduan serupa bila kebutuhan volume terbukti.
+- [ ] **Task 14.8:** Implementasi konfirmasi penyelesaian aduan oleh pelapor, tenggat penutupan otomatis yang dapat dikonfigurasi, alasan penutupan, dan jejak audit.
+- [ ] **Task 14.9:** Implementasi health score keluarga berbasis kelengkapan, verifikasi, usia pembaruan, dan kontak; tampilkan daftar kerja sekretaris tanpa menghukum warga.
+- [ ] **Task 14.10:** Tambahkan tanggal evaluasi domisili sementara/kontrak dan pengingat konfirmasi tinggal/pindah bagi warga serta sekretaris.
+- [ ] **Task 14.11:** Buat transparansi kas agregat untuk warga: saldo, pemasukan/pengeluaran per kategori dan periode, bukti yang diizinkan, tanpa nama penunggak atau detail transaksi pribadi.
+- [ ] **Task 14.12:** Tambahkan QR dan halaman verifikasi publik surat yang hanya menampilkan nomor, jenis, tanggal terbit, dan status valid/dibatalkan; tanpa data pribadi atau URL dokumen privat.
+- [ ] **Task 14.13:** Implementasi serah-terima jabatan: checklist role, akses, rekening, tagihan terbuka, kas, surat, aduan, dokumen; penurunan akses pengurus lama; audit historis tetap utuh.
+- [ ] **Task 14.14:** Tambahkan integration test scheduler/idempotensi, alokasi rapel, SLA, isolasi tenant, otorisasi, privasi kas/QR, dan serah-terima akses.
 
 ---
 
