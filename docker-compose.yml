@@ -8,9 +8,9 @@ services:
       dockerfile: ../../infrastructure/docker/web/Dockerfile.dev
     command: sh -c "pnpm install --frozen-lockfile; pnpm dev --hostname 0.0.0.0"
     ports:
-      - "3000:3000"
+      - "13000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+      NEXT_PUBLIC_API_URL: http://localhost:13001/api/v1
     volumes:
       - ./apps/web:/app
       - web_node_modules:/app/node_modules
@@ -23,10 +23,11 @@ services:
       context: ./services/api
       dockerfile: ../../infrastructure/docker/api/Dockerfile.dev
     ports:
-      - "8080:8080"
+      - "13001:8080"
     environment:
       APP_ENV: development
       PORT: "8080"
+      APP_URL: http://localhost:13000
       DATABASE_URL: postgres://rtdigital:rtdigital_local_only@postgres:5432/rtdigital?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
@@ -58,7 +59,7 @@ services:
   postgres:
     image: postgres:18.4-alpine
     ports:
-      - "5432:5432"
+      - "15432:5432"
     environment:
       POSTGRES_USER: rtdigital
       POSTGRES_PASSWORD: rtdigital_local_only
@@ -74,7 +75,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "16379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -87,8 +88,8 @@ services:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "19000:9000"
+      - "19001:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
