@@ -46,9 +46,10 @@ export default function AuditLogsPage() {
         limit: 20,
       });
 
-      setLogs((current) => (cursor ? [...current, ...result.data] : result.data));
-      setNextCursor(result.meta.next_cursor);
-      setHasMore(result.meta.has_more);
+      const data = Array.isArray(result?.data) ? result.data : [];
+      setLogs((current) => (cursor ? [...current, ...data] : data));
+      setNextCursor(result?.meta?.next_cursor);
+      setHasMore(result?.meta?.has_more ?? false);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal memuat audit log.");
     } finally {
