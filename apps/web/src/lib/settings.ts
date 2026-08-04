@@ -96,9 +96,13 @@ export async function getAuditLogs(
   if (params?.cursor) search.set("cursor", params.cursor.toString());
 
   const query = search.toString();
-  return apiFetch<AuditLogListResult>(`audit-logs${query ? `?${query}` : ""}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  return apiFetch<AuditLogListResult>(
+    `audit-logs${query ? `?${query}` : ""}`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    },
+    false,
+  );
 }
 
 export async function getAuditLog(
