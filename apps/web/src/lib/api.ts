@@ -28,7 +28,7 @@ export class ApiException extends Error {
 
 const apiBase = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/+$/, "");
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(path: string, options: RequestInit = {}, unwrapData = true): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.body && typeof options.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
@@ -57,5 +57,5 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     );
   }
 
-  return (payload.data ?? payload) as T;
+  return (unwrapData ? payload.data ?? payload : payload) as T;
 }
