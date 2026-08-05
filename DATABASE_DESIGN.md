@@ -59,6 +59,8 @@ erDiagram
     households ||--o{ household_members : has
     residents ||--o{ household_members : belongs_to
     residents |o--o| users : linked_account
+    residents }o--|| education_levels : has
+    residents }o--|| marital_statuses : has
 
     due_types ||--o{ invoices : classifies
     households ||--o{ invoices : receives
@@ -167,9 +169,9 @@ erDiagram
 | `birth_place` | VARCHAR(100) | NULL | |
 | `birth_date` | DATE | NULL | |
 | `gender` | VARCHAR(20) | NULL | `male`, `female` |
-| `marital_status` | VARCHAR(30) | NULL | |
-| `occupation` | VARCHAR(100) | NULL | |
-| `education` | VARCHAR(100) | NULL | Opsional |
+| `marital_status_id` | UUID | FK, NULL | `marital_statuses.id` |
+| `occupation` | VARCHAR(100) | NULL | Teks bebas pada MVP |
+| `education_level_id` | UUID | FK, NULL | `education_levels.id` |
 | `phone` | VARCHAR(30) | NULL | |
 | `email` | VARCHAR(255) | NULL | |
 | `resident_status` | VARCHAR(20) | NOT NULL | `active`, `moved`, `deceased`, `inactive` |
@@ -179,7 +181,29 @@ erDiagram
 
 **Unique partial:** `(organization_id, national_id_blind_index)` ketika nilai tidak `NULL`.
 
-### 4.3 `households`
+### 4.3 `education_levels` (global, read-only)
+
+| Kolom | Tipe | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `code` | VARCHAR(50) | UNIQUE, NOT NULL | Kode stabil, contoh: `sma` |
+| `name` | VARCHAR(100) | UNIQUE, NOT NULL | Label, contoh: `SMA/Sederajat` |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+
+Nilai standar: `none`, `sd`, `smp`, `sma`, `diploma`, `s1`, `s2`, `s3`.
+
+### 4.4 `marital_statuses` (global, read-only)
+
+| Kolom | Tipe | Constraint | Keterangan |
+|---|---|---|---|
+| `id` | UUID | PK | |
+| `code` | VARCHAR(50) | UNIQUE, NOT NULL | Kode stabil, contoh: `married` |
+| `name` | VARCHAR(100) | UNIQUE, NOT NULL | Label, contoh: `Kawin` |
+| `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
+
+Nilai standar: `single`, `married`, `divorced`, `widowed`.
+
+### 4.5 `households`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
@@ -199,7 +223,7 @@ erDiagram
 
 **Unique:** `(organization_id, internal_number)` dan unique partial blind index nomor KK.
 
-### 4.4 `household_members`
+### 4.6 `household_members`
 
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
@@ -428,19 +452,17 @@ erDiagram
 
 ### 7.3 `complaint_categories`
 
-*(Direncanakan pada Epic 13; kategori aduan saat ini masih teks bebas.)*
-
 | Kolom | Tipe | Constraint | Keterangan |
 |---|---|---|---|
 | `id` | UUID | PK | |
-| `organization_id` | UUID | FK, NOT NULL | |
+| `organization_id` | UUID | FK, NOT NULL | `organizations.id` |
 | `code` | VARCHAR(50) | NOT NULL | Kode stabil, contoh: `kebersihan` |
 | `name` | VARCHAR(100) | NOT NULL | Label kategori |
 | `status` | VARCHAR(20) | NOT NULL DEFAULT `'active'` | `active`, `inactive` |
 | `created_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
 | `updated_at` | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
 
-**Unique:** `(organization_id, code)`.
+**Unique:** `(organization_id, code)` dan `(organization_id, id)` untuk FK komposit.
 
 ### 7.4 `complaints`
 
@@ -450,8 +472,7 @@ erDiagram
 | `organization_id` | UUID | FK, NOT NULL | |
 | `reporter_user_id` | UUID | FK, NOT NULL | Pelapor |
 | `ticket_number` | VARCHAR(50) | NOT NULL | Nomor tiket |
-| `complaint_category_id` | UUID | FK, NULL selama migrasi | Ke `complaint_categories.id`; menjadi `NOT NULL` setelah data lama dimigrasikan |
-| `category` | VARCHAR(50) | NOT NULL saat ini | Kolom legacy; dihapus setelah seluruh data memakai `complaint_category_id` |
+| `complaint_category_id` | UUID | FK, NOT NULL | FK komposit `(organization_id, complaint_category_id)` ke `complaint_categories` |
 | `title` | VARCHAR(255) | NOT NULL | |
 | `description` | TEXT | NOT NULL | |
 | `location_description` | TEXT | NULL | Lokasi umum, tanpa koordinat presisi |
@@ -666,6 +687,17 @@ CREATE INDEX idx_letter_requests_org_status_created_at
 
 CREATE INDEX idx_complaints_org_status_assigned_to
     ON complaints (organization_id, status, assigned_to);
+
+CREATE INDEX idx_complaints_organization_category_created_at
+    ON complaints (organization_id, complaint_category_id, created_at DESC);
+
+CREATE INDEX idx_residents_education_level_id
+    ON residents (education_level_id)
+    WHERE education_level_id IS NOT NULL;
+
+CREATE INDEX idx_residents_marital_status_id
+    ON residents (marital_status_id)
+    WHERE marital_status_id IS NOT NULL;
 
 CREATE INDEX idx_notifications_user_unread
     ON notifications (user_id, created_at DESC)

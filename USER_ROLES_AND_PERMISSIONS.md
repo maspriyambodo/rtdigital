@@ -68,6 +68,7 @@ Dokumen ini melengkapi `PRD.md` dan `SCOPE.md`. Hak akses selalu diperiksa oleh 
 | Warga | - | R, E | C, R, U, A, V, E | R terbatas | R* data minimum bila ditugaskan | R* diri/keluarga sesuai izin; U pengajuan koreksi |
 | Koreksi data warga | - | R | R, U, V | - | - | C, R* |
 | Impor CSV | - | R | C, R, V | - | - | - |
+| Lookup pendidikan/status perkawinan | - | R | R | R | R | R |
 | Ekspor data kependudukan | - | R, E | R, E | - | - | - |
 
 ### 3.3 Pengumuman, Agenda, dan Notifikasi
@@ -103,6 +104,7 @@ Dokumen ini melengkapi `PRD.md` dan `SCOPE.md`. Hak akses selalu diperiksa oleh 
 | Jenis/template surat | - | R | C, R, U, A | - | - | - |
 | Pengajuan surat | - | R, V | R, U, V proses | - | R* bila ditugaskan | C, R* sendiri |
 | Surat terbit/PDF | - | R | C, R | - | - | R, E* sendiri |
+| Kategori aduan | - | R | C, R, U, A | - | - | - |
 | Aduan | - | R, E | R, U penugasan | R terbatas bila terkait | R, U* bila ditugaskan | C, R, U* milik sendiri |
 | Komentar/pembaruan aduan | - | C, R | C, R, U | R terbatas | C, R, U* | C, R* pada aduan sendiri |
 
@@ -217,6 +219,9 @@ complaint.assign
 complaint.update_status
 complaint.comment
 complaint.export
+complaint_category.read
+complaint_category.create
+complaint_category.update
 ```
 
 ---
@@ -230,4 +235,6 @@ complaint.export
 5. Pengurus tidak memiliki izin bawaan selain autentikasi, profil sendiri, pengumuman/agenda yang diterbitkan, serta izin eksplisit dari Ketua RT.
 6. Perubahan peran, ekspor, pembukaan data sensitif, persetujuan surat, dan tindakan keuangan menghasilkan audit log berisi pelaku, peran aktif, objek, waktu, IP yang diperlakukan sesuai kebijakan privasi, user agent, dan request ID.
 7. Akun nonaktif kehilangan seluruh akses baru, tetapi riwayat aktivitasnya tetap tersimpan.
-8. Izin frontend harus mengikuti izin backend, tetapi backend tetap menjadi sumber keputusan akhir.
+8. Lookup pendidikan dan status perkawinan memakai `resident.read`; keduanya global serta read-only, tanpa permission CRUD terpisah.
+9. Kategori aduan tidak dihapus; `complaint_category.update` dapat mengubah status menjadi `inactive`.
+10. Izin frontend harus mengikuti izin backend, tetapi backend tetap menjadi sumber keputusan akhir.

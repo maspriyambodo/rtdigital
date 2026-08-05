@@ -76,11 +76,11 @@ services/api/
 │   │   └── middleware/              # Recover, CORS, auth, RBAC, rate limit
 │   ├── modules/
 │   │   ├── identity/                # User, role, permission, session
-│   │   ├── resident/                # Rumah, keluarga, warga, koreksi data
+│   │   ├── resident/                # Rumah, keluarga, warga, koreksi, lookup global
 │   │   ├── communication/           # Pengumuman, agenda, notifikasi
 │   │   ├── finance/                 # Iuran, tagihan, payment, kas
 │   │   ├── letter/                  # Jenis surat dan pengajuan
-│   │   ├── complaint/               # Aduan dan komentar
+│   │   ├── complaint/               # Aduan, komentar, kategori aduan
 │   │   ├── file/                    # Metadata file dan signed URL
 │   │   └── audit/                   # Audit log
 │   └── infrastructure/
@@ -239,7 +239,7 @@ Setiap endpoint privat memeriksa:
 1. Access token valid dan belum kedaluwarsa.
 2. User serta organization masih aktif.
 3. Permission code yang dibutuhkan.
-4. `organization_id` objek sama dengan organization session.
+4. `organization_id` objek sama dengan organization session. Lookup global read-only seperti `education_levels` dan `marital_statuses` tidak memiliki scope tenant.
 5. Scope kepemilikan/penugasan.
 6. Aturan pemisahan tugas dan transisi status.
 
@@ -502,6 +502,7 @@ Pengiriman email melalui Resend dan notifikasi WhatsApp melalui SaungWA terjadi 
 - API container tidak menjalankan auto-migrate saat startup.
 - Migration additive lebih dahulu: tambah tabel/kolom/index, deploy kode kompatibel, migrasikan data, baru hapus kolom lama pada rilis berikutnya.
 - Migration destruktif memerlukan snapshot RDS, rehearsal staging, review, serta rollback procedure.
+- Untuk Epic 13: migration `0016` menambah master data dan memigrasikan nilai legacy; `0017` menolak penghapusan kolom teks bila masih ada nilai warga yang belum dipetakan ke lookup global.
 - Jangan mengandalkan migration down untuk memulihkan data yang sudah berubah; gunakan backup/restore atau migration kompensasi.
 
 ---

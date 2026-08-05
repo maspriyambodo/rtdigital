@@ -138,7 +138,7 @@ flowchart TD
 | Aspek | Keputusan |
 |---|---|
 | Layanan | Amazon RDS for PostgreSQL |
-| Fungsi | Sumber data utama untuk data warga, keuangan, surat, aduan, RBAC, notifikasi, dan audit |
+| Fungsi | Sumber data utama untuk data warga, keuangan, surat, aduan, RBAC, notifikasi, audit, serta master data |
 | Akses publik | Dinonaktifkan |
 | Akses aplikasi | Hanya security group ECS Fargate |
 | Enkripsi | Encryption at-rest dan koneksi TLS |

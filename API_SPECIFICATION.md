@@ -243,17 +243,28 @@ Status HTTP minimum:
 
 | Method | Endpoint | Keterangan | Otorisasi |
 |---|---|---|---|
-| `GET` | `/complaints` | Daftar aduan sesuai scope | `complaint.read` + scope |
-| `POST` | `/complaints` | Buat aduan | `complaint.submit` |
+| `GET` | `/complaint-categories` | Daftar kategori aduan per organisasi | `complaint_category.read` |
+| `POST` | `/complaint-categories` | Buat kategori aduan baru | `complaint_category.create` |
+| `GET` | `/complaint-categories/{id}` | Detail kategori aduan | `complaint_category.read` |
+| `PATCH` | `/complaint-categories/{id}` | Ubah nama, kode, atau status kategori aduan | `complaint_category.update` |
+| `GET` | `/complaints` | Daftar aduan sesuai scope; filter `complaint_category_id` tersedia | `complaint.read` + scope |
+| `POST` | `/complaints` | Buat aduan dengan `complaint_category_id` | `complaint.submit` |
 | `GET` | `/complaints/{id}` | Detail aduan dan komentar | `complaint.read` + scope |
 | `PATCH` | `/complaints/{id}` | Ubah aduan milik sendiri sebelum diproses | `complaint.submit` + scope |
 | `POST` | `/complaints/{id}/assign` | Tetapkan penanggung jawab | `complaint.assign` |
 | `POST` | `/complaints/{id}/status` | Ubah status aduan | `complaint.update_status` + scope |
 | `POST` | `/complaints/{id}/comments` | Tambah komentar atau perkembangan | `complaint.comment` + scope |
 | `GET` | `/reports/letters` | Laporan pengajuan surat CSV/PDF | `letter_request.export` |
-| `GET` | `/reports/complaints` | Rekap aduan CSV/PDF | `complaint.export` |
+| `GET` | `/reports/complaints` | Rekap aduan CSV/PDF, termasuk kategori master | `complaint.export` |
 
-## 2.8 File, Dashboard, dan Audit
+## 2.8 Master Data Global
+
+| Method | Endpoint | Keterangan | Otorisasi |
+|---|---|---|---|
+| `GET` | `/education-levels` | Daftar tingkat pendidikan standar read-only | `resident.read` |
+| `GET` | `/marital-statuses` | Daftar status perkawinan standar read-only | `resident.read` |
+
+## 2.9 File, Dashboard, dan Audit
 
 | Method | Endpoint | Keterangan | Otorisasi |
 |---|---|---|---|
