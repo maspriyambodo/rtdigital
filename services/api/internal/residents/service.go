@@ -34,6 +34,48 @@ func NewService(db *pgxpool.Pool, crypter auth.Crypter, blindKey string) *Servic
 	return &Service{db: db, crypter: crypter, blindKey: blindKey, now: func() time.Time { return time.Now().UTC() }}
 }
 
+func (s *Service) ListEducationLevels(ctx context.Context) ([]EducationLevel, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, code, name, created_at
+		FROM education_levels
+		ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("list education levels: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]EducationLevel, 0)
+	for rows.Next() {
+		var item EducationLevel
+		if err := rows.Scan(&item.ID, &item.Code, &item.Name, &item.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan education level: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (s *Service) ListMaritalStatuses(ctx context.Context) ([]MaritalStatus, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, code, name, created_at
+		FROM marital_statuses
+		ORDER BY id`)
+	if err != nil {
+		return nil, fmt.Errorf("list marital statuses: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]MaritalStatus, 0)
+	for rows.Next() {
+		var item MaritalStatus
+		if err := rows.Scan(&item.ID, &item.Code, &item.Name, &item.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan marital status: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (s *Service) CreateHouseUnit(ctx context.Context, principal *auth.Principal, req CreateHouseUnitRequest) (HouseUnit, error) {
 	req.Code = strings.TrimSpace(req.Code)
 	if req.Code == "" || !validOccupancyStatus(req.OccupancyStatus) {

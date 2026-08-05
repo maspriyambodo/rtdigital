@@ -44,9 +44,12 @@ func (s *Service) Residents(ctx context.Context, principal *auth.Principal, filt
 	}
 
 	rows, err := s.db.Query(ctx, fmt.Sprintf(`
-		SELECT r.id, r.full_name, r.gender, r.birth_date, r.resident_status, r.verification_status,
+		SELECT r.id, r.full_name, r.gender, r.birth_date, ms.name, el.name, r.occupation,
+		       r.resident_status, r.verification_status,
 		       hu.code, h.internal_number, hm.relationship, r.created_at
 		FROM residents r
+		LEFT JOIN marital_statuses ms ON ms.id = r.marital_status_id
+		LEFT JOIN education_levels el ON el.id = r.education_level_id
 		LEFT JOIN household_members hm ON hm.resident_id = r.id AND hm.is_active
 		LEFT JOIN households h ON h.id = hm.household_id AND h.organization_id = r.organization_id
 		LEFT JOIN house_units hu ON hu.id = h.house_unit_id AND hu.organization_id = r.organization_id
@@ -62,7 +65,12 @@ func (s *Service) Residents(ctx context.Context, principal *auth.Principal, filt
 		var item ResidentReportItem
 		var birthDate *time.Time
 		var createdAt time.Time
-		if err := rows.Scan(&item.ID, &item.FullName, &item.Gender, &birthDate, &item.ResidentStatus, &item.VerificationStatus, &item.HouseUnitCode, &item.HouseholdNumber, &item.Relationship, &createdAt); err != nil {
+		if err := rows.Scan(
+			&item.ID, &item.FullName, &item.Gender, &birthDate, &item.MaritalStatusName,
+			&item.EducationLevelName, &item.Occupation, &item.ResidentStatus,
+			&item.VerificationStatus, &item.HouseUnitCode, &item.HouseholdNumber,
+			&item.Relationship, &createdAt,
+		); err != nil {
 			return nil, fmt.Errorf("scan resident report: %w", err)
 		}
 		if birthDate != nil {
@@ -306,8 +314,13 @@ func (s *Service) Complaints(ctx context.Context, principal *auth.Principal, fil
 		conditions, args = append(conditions, fmt.Sprintf("c.created_at < ($%d::date + interval '1 day')", index)), append(args, filter.EndDate)
 	}
 	rows, err := s.db.Query(ctx, fmt.Sprintf(`
-		SELECT c.id, c.ticket_number, c.category, c.title, c.priority, c.status, COALESCE(ru.email, ru.phone, 'Warga'), NULLIF(COALESCE(au.email, au.phone, ''), ''), c.created_at, c.resolved_at
+		SELECT c.id, c.ticket_number, c.complaint_category_id, cc.name, c.title, c.priority, c.status,
+		       COALESCE(ru.email, ru.phone, 'Warga'),
+		       NULLIF(COALESCE(au.email, au.phone, ''), ''),
+		       c.created_at, c.resolved_at
 		FROM complaints c
+		JOIN complaint_categories cc ON cc.id = c.complaint_category_id
+		    AND cc.organization_id = c.organization_id
 		JOIN users ru ON ru.id = c.reporter_user_id AND ru.organization_id = c.organization_id
 		LEFT JOIN users au ON au.id = c.assigned_to AND au.organization_id = c.organization_id
 		WHERE %s ORDER BY c.created_at DESC`, strings.Join(conditions, " AND ")), args...)
@@ -320,7 +333,11 @@ func (s *Service) Complaints(ctx context.Context, principal *auth.Principal, fil
 		var item ComplaintReportItem
 		var createdAt time.Time
 		var resolvedAt *time.Time
-		if err := rows.Scan(&item.ID, &item.TicketNumber, &item.Category, &item.Title, &item.Priority, &item.Status, &item.ReporterName, &item.AssignedToName, &createdAt, &resolvedAt); err != nil {
+		if err := rows.Scan(
+			&item.ID, &item.TicketNumber, &item.ComplaintCategoryID, &item.CategoryName,
+			&item.Title, &item.Priority, &item.Status, &item.ReporterName,
+			&item.AssignedToName, &createdAt, &resolvedAt,
+		); err != nil {
 			return nil, fmt.Errorf("scan complaint report: %w", err)
 		}
 		item.CreatedAt = createdAt.UTC().Format(time.RFC3339)

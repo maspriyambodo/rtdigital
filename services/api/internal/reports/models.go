@@ -18,6 +18,9 @@ type ResidentReportItem struct {
 	FullName           string  `json:"full_name"`
 	Gender             *string `json:"gender"`
 	BirthDate          *string `json:"birth_date"`
+	MaritalStatusName  *string `json:"marital_status_name"`
+	EducationLevelName *string `json:"education_level_name"`
+	Occupation         *string `json:"occupation"`
 	ResidentStatus     string  `json:"resident_status"`
 	VerificationStatus string  `json:"verification_status"`
 	HouseUnitCode      *string `json:"house_unit_code"`
@@ -107,14 +110,15 @@ type LetterReportItem struct {
 }
 
 type ComplaintReportItem struct {
-	ID             string  `json:"id"`
-	TicketNumber   string  `json:"ticket_number"`
-	Category       string  `json:"category"`
-	Title          string  `json:"title"`
-	Priority       string  `json:"priority"`
-	Status         string  `json:"status"`
-	ReporterName   string  `json:"reporter_name"`
-	AssignedToName *string `json:"assigned_to_name,omitempty"`
-	CreatedAt      string  `json:"created_at"`
-	ResolvedAt     *string `json:"resolved_at,omitempty"`
+	ID                  string  `json:"id"`
+	TicketNumber        string  `json:"ticket_number"`
+	ComplaintCategoryID string  `json:"complaint_category_id"`
+	CategoryName        string  `json:"category_name"`
+	Title               string  `json:"title"`
+	Priority            string  `json:"priority"`
+	Status              string  `json:"status"`
+	ReporterName        string  `json:"reporter_name"`
+	AssignedToName      *string `json:"assigned_to_name,omitempty"`
+	CreatedAt           string  `json:"created_at"`
+	ResolvedAt          *string `json:"resolved_at,omitempty"`
 }

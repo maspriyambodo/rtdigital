@@ -16,6 +16,7 @@ const items = [
   { href: "/pengurus/kas", label: "Buku Kas" },
   { href: "/pengurus/surat", label: "Surat" },
   { href: "/pengurus/aduan", label: "Aduan" },
+  { href: "/pengurus/kategori-aduan", label: "Kategori Aduan" },
   { href: "/pengurus/pengaturan", label: "Pengaturan RT" },
   { href: "/pengurus/audit", label: "Audit Log" },
 ] as const;

@@ -14,9 +14,11 @@ import { useAuth } from "../../../../lib/auth-context";
 import {
   addComment,
   createComplaint,
+  listComplaintCategories,
   listComplaints,
   updateComplaint,
   updateStatus,
+  type ComplaintCategory,
   type ComplaintItem,
   type ComplaintPriority,
 } from "../../../../lib/complaints";
@@ -50,8 +52,9 @@ function statusVariant(status: ComplaintItem["status"]): StatusBadgeProps["varia
 export default function WargaAduanPage() {
   const { getAccessToken } = useAuth();
   const [items, setItems] = useState<ComplaintItem[]>([]);
+  const [categories, setCategories] = useState<ComplaintCategory[]>([]);
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
+  const [categoryID, setCategoryID] = useState("");
   const [description, setDescription] = useState("");
   const [locationDescription, setLocationDescription] = useState("");
   const [priority, setPriority] = useState<ComplaintPriority>("normal");
@@ -71,8 +74,12 @@ export default function WargaAduanPage() {
     try {
       const token = await getAccessToken();
       if (!token) return;
-      const complaints = await listComplaints(token);
+      const [complaints, categoryItems] = await Promise.all([
+        listComplaints(token),
+        listComplaintCategories(token),
+      ]);
       setItems(complaints);
+      setCategories(categoryItems);
       if (activeComplaint) setActiveComplaint(complaints.find((item) => item.id === activeComplaint.id));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Data aduan gagal dimuat.");
@@ -89,7 +96,7 @@ export default function WargaAduanPage() {
   const resetForm = () => {
     setEditing(undefined);
     setTitle("");
-    setCategory("");
+    setCategoryID("");
     setDescription("");
     setLocationDescription("");
     setPriority("normal");
@@ -99,7 +106,7 @@ export default function WargaAduanPage() {
   const startEdit = (item: ComplaintItem) => {
     setEditing(item);
     setTitle(item.title);
-    setCategory(item.category);
+    setCategoryID(item.complaint_category_id);
     setDescription(item.description);
     setLocationDescription(item.location_description ?? "");
     setPriority(item.priority);
@@ -109,7 +116,7 @@ export default function WargaAduanPage() {
 
   const submitComplaint = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!category.trim() || !title.trim() || !description.trim()) {
+    if (!categoryID || !title.trim() || !description.trim()) {
       setError("Isi kategori, judul, dan deskripsi aduan.");
       return;
     }
@@ -121,7 +128,7 @@ export default function WargaAduanPage() {
       const token = await getAccessToken();
       if (!token) return;
       const payload = {
-        category,
+        complaint_category_id: categoryID,
         title,
         description,
         location_description: locationDescription || undefined,
@@ -188,7 +195,7 @@ export default function WargaAduanPage() {
       {activeComplaint ? (
         <section style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)" }}>
           <div style={{ alignItems: "start", display: "flex", gap: "var(--space-2)", justifyContent: "space-between" }}>
-            <div><h2 style={{ fontSize: "1rem", margin: 0 }}>{activeComplaint.title}</h2><small>{activeComplaint.ticket_number} · {activeComplaint.category}</small></div>
+            <div><h2 style={{ fontSize: "1rem", margin: 0 }}>{activeComplaint.title}</h2><small>{activeComplaint.ticket_number} · {activeComplaint.category_name}</small></div>
             <StatusBadge variant={statusVariant(activeComplaint.status)}>{statusLabel[activeComplaint.status]}</StatusBadge>
           </div>
           <p>{activeComplaint.description}</p>
@@ -220,7 +227,7 @@ export default function WargaAduanPage() {
           <section style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", padding: "var(--space-4)" }}>
             <h2 style={{ fontSize: "1rem", marginTop: 0 }}>{editing ? `Ubah ${editing.ticket_number}` : "Buat aduan"}</h2>
             <form onSubmit={submitComplaint} style={{ display: "grid", gap: "var(--space-3)" }}>
-              <FormField label="Kategori" required>{(props) => <Select {...props} required value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Pilih kategori</option><option value="keamanan">Keamanan</option><option value="kebersihan">Kebersihan</option><option value="infrastruktur">Infrastruktur</option><option value="fasilitas_umum">Fasilitas umum</option><option value="lainnya">Lainnya</option></Select>}</FormField>
+              <FormField label="Kategori" required>{(props) => <Select {...props} required value={categoryID} onChange={(event) => setCategoryID(event.target.value)}><option value="">Pilih kategori</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>}</FormField>
               <FormField label="Judul" required>{(props) => <TextInput {...props} required value={title} onChange={(event) => setTitle(event.target.value)} />}</FormField>
               <FormField label="Deskripsi" required>{(props) => <TextArea {...props} required rows={4} value={description} onChange={(event) => setDescription(event.target.value)} style={{ minHeight: 96 }} />}</FormField>
               <FormField label="Lokasi umum">{(props) => <TextInput {...props} value={locationDescription} onChange={(event) => setLocationDescription(event.target.value)} />}</FormField>
@@ -232,7 +239,7 @@ export default function WargaAduanPage() {
 
           <section>
             <h2 style={{ fontSize: "1rem" }}>Aduan saya</h2>
-            {loading ? <p>Memuat…</p> : items.length === 0 ? <EmptyState title="Belum ada aduan" description="Aduan yang Anda buat muncul di sini." /> : <div style={{ display: "grid", gap: "var(--space-3)" }}>{items.map((item) => <article key={item.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", display: "grid", gap: "var(--space-2)", padding: "var(--space-3)" }}><div style={{ alignItems: "start", display: "flex", justifyContent: "space-between", gap: "var(--space-2)" }}><div><strong>{item.title}</strong><br /><small>{item.ticket_number} · {item.category}</small></div><StatusBadge variant={statusVariant(item.status)}>{statusLabel[item.status]}</StatusBadge></div><div style={{ display: "flex", gap: "var(--space-2)", justifyContent: "flex-end" }}>{item.status === "new" ? <Button type="button" variant="outline" onClick={() => startEdit(item)}>Ubah</Button> : null}<Button type="button" onClick={() => setActiveComplaint(item)}>Detail</Button></div></article>)}</div>}
+            {loading ? <p>Memuat…</p> : items.length === 0 ? <EmptyState title="Belum ada aduan" description="Aduan yang Anda buat muncul di sini." /> : <div style={{ display: "grid", gap: "var(--space-3)" }}>{items.map((item) => <article key={item.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", display: "grid", gap: "var(--space-2)", padding: "var(--space-3)" }}><div style={{ alignItems: "start", display: "flex", justifyContent: "space-between", gap: "var(--space-2)" }}><div><strong>{item.title}</strong><br /><small>{item.ticket_number} · {item.category_name}</small></div><StatusBadge variant={statusVariant(item.status)}>{statusLabel[item.status]}</StatusBadge></div><div style={{ display: "flex", gap: "var(--space-2)", justifyContent: "flex-end" }}>{item.status === "new" ? <Button type="button" variant="outline" onClick={() => startEdit(item)}>Ubah</Button> : null}<Button type="button" onClick={() => setActiveComplaint(item)}>Detail</Button></div></article>)}</div>}
           </section>
         </>
       )}

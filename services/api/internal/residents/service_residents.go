@@ -28,24 +28,29 @@ func (s *Service) CreateResident(ctx context.Context, principal *auth.Principal,
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	if err := validateResidentLookups(ctx, tx, req.EducationLevelID, req.MaritalStatusID); err != nil {
+		return Resident{}, err
+	}
+
 	var resident Resident
 	err = tx.QueryRow(ctx, `
 		INSERT INTO residents (
 			id, organization_id, national_id_encrypted, national_id_blind_index,
-			full_name, birth_place, birth_date, gender, marital_status, occupation,
-			education, phone, email, resident_status, verification_status
+			full_name, birth_place, birth_date, gender, marital_status_id, occupation,
+			education_level_id, phone, email, resident_status, verification_status
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7::date, $8, $9, $10, $11, $12, $13, $14, 'unverified'
 		)
-		RETURNING id, full_name, birth_place, birth_date::text, gender, marital_status,
-			occupation, education, phone, email, resident_status, verification_status, created_at, updated_at`,
+		RETURNING id, full_name, birth_place, birth_date::text, gender,
+			marital_status_id, occupation, education_level_id, phone, email,
+			resident_status, verification_status, created_at, updated_at`,
 		newUUID(), principal.OrganizationID, encryptedID, blindIndex, req.FullName,
 		nullableTrim(req.BirthPlace), nullableTrim(req.BirthDate), nullableTrim(req.Gender),
-		nullableTrim(req.MaritalStatus), nullableTrim(req.Occupation), nullableTrim(req.Education),
+		nullableTrim(req.MaritalStatusID), nullableTrim(req.Occupation), nullableTrim(req.EducationLevelID),
 		nullableTrim(req.Phone), nullableTrim(req.Email), req.ResidentStatus,
 	).Scan(
 		&resident.ID, &resident.FullName, &resident.BirthPlace, &resident.BirthDate,
-		&resident.Gender, &resident.MaritalStatus, &resident.Occupation, &resident.Education,
+		&resident.Gender, &resident.MaritalStatusID, &resident.Occupation, &resident.EducationLevelID,
 		&resident.Phone, &resident.Email, &resident.ResidentStatus, &resident.VerificationStatus,
 		&resident.CreatedAt, &resident.UpdatedAt,
 	)
@@ -68,13 +73,16 @@ func (s *Service) ListResidents(ctx context.Context, principal *auth.Principal, 
 	}
 
 	rows, err := s.db.Query(ctx, `
-		SELECT id, full_name, birth_place, birth_date::text, gender, marital_status,
-			occupation, education, phone, email, resident_status, verification_status, created_at, updated_at
-		FROM residents
-		WHERE organization_id = $1
-		  AND ($2 = '' OR resident_status = $2)
-		  AND ($3 = '' OR full_name ILIKE '%' || $3 || '%')
-		ORDER BY full_name, id`,
+		SELECT r.id, r.full_name, r.birth_place, r.birth_date::text, r.gender,
+			r.marital_status_id, ms.name, r.occupation, r.education_level_id, el.name,
+			r.phone, r.email, r.resident_status, r.verification_status, r.created_at, r.updated_at
+		FROM residents r
+		LEFT JOIN marital_statuses ms ON ms.id = r.marital_status_id
+		LEFT JOIN education_levels el ON el.id = r.education_level_id
+		WHERE r.organization_id = $1
+		  AND ($2 = '' OR r.resident_status = $2)
+		  AND ($3 = '' OR r.full_name ILIKE '%' || $3 || '%')
+		ORDER BY r.full_name, r.id`,
 		principal.OrganizationID, status, query,
 	)
 	if err != nil {
@@ -87,9 +95,9 @@ func (s *Service) ListResidents(ctx context.Context, principal *auth.Principal, 
 		var resident Resident
 		if err := rows.Scan(
 			&resident.ID, &resident.FullName, &resident.BirthPlace, &resident.BirthDate,
-			&resident.Gender, &resident.MaritalStatus, &resident.Occupation, &resident.Education,
-			&resident.Phone, &resident.Email, &resident.ResidentStatus, &resident.VerificationStatus,
-			&resident.CreatedAt, &resident.UpdatedAt,
+			&resident.Gender, &resident.MaritalStatusID, &resident.MaritalStatusName, &resident.Occupation,
+			&resident.EducationLevelID, &resident.EducationLevelName, &resident.Phone, &resident.Email,
+			&resident.ResidentStatus, &resident.VerificationStatus, &resident.CreatedAt, &resident.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan resident: %w", err)
 		}
@@ -102,16 +110,19 @@ func (s *Service) GetResident(ctx context.Context, principal *auth.Principal, id
 	var resident Resident
 	var encryptedID *string
 	err := s.db.QueryRow(ctx, `
-		SELECT id, national_id_encrypted, full_name, birth_place, birth_date::text, gender,
-			marital_status, occupation, education, phone, email, resident_status,
-			verification_status, created_at, updated_at
-		FROM residents WHERE id = $1 AND organization_id = $2`,
+		SELECT r.id, r.national_id_encrypted, r.full_name, r.birth_place, r.birth_date::text, r.gender,
+			r.marital_status_id, ms.name, r.occupation, r.education_level_id, el.name,
+			r.phone, r.email, r.resident_status, r.verification_status, r.created_at, r.updated_at
+		FROM residents r
+		LEFT JOIN marital_statuses ms ON ms.id = r.marital_status_id
+		LEFT JOIN education_levels el ON el.id = r.education_level_id
+		WHERE r.id = $1 AND r.organization_id = $2`,
 		id, principal.OrganizationID,
 	).Scan(
 		&resident.ID, &encryptedID, &resident.FullName, &resident.BirthPlace, &resident.BirthDate,
-		&resident.Gender, &resident.MaritalStatus, &resident.Occupation, &resident.Education,
-		&resident.Phone, &resident.Email, &resident.ResidentStatus, &resident.VerificationStatus,
-		&resident.CreatedAt, &resident.UpdatedAt,
+		&resident.Gender, &resident.MaritalStatusID, &resident.MaritalStatusName, &resident.Occupation,
+		&resident.EducationLevelID, &resident.EducationLevelName, &resident.Phone, &resident.Email,
+		&resident.ResidentStatus, &resident.VerificationStatus, &resident.CreatedAt, &resident.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Resident{}, ErrResidentNotFound
@@ -149,12 +160,13 @@ func (s *Service) VerifyResident(ctx context.Context, principal *auth.Principal,
 	err := s.db.QueryRow(ctx, `
 		UPDATE residents SET verification_status = 'verified'
 		WHERE id = $1 AND organization_id = $2
-		RETURNING id, full_name, birth_place, birth_date::text, gender, marital_status,
-			occupation, education, phone, email, resident_status, verification_status, created_at, updated_at`,
+		RETURNING id, full_name, birth_place, birth_date::text, gender,
+			marital_status_id, occupation, education_level_id, phone, email,
+			resident_status, verification_status, created_at, updated_at`,
 		id, principal.OrganizationID,
 	).Scan(
 		&resident.ID, &resident.FullName, &resident.BirthPlace, &resident.BirthDate,
-		&resident.Gender, &resident.MaritalStatus, &resident.Occupation, &resident.Education,
+		&resident.Gender, &resident.MaritalStatusID, &resident.Occupation, &resident.EducationLevelID,
 		&resident.Phone, &resident.Email, &resident.ResidentStatus, &resident.VerificationStatus,
 		&resident.CreatedAt, &resident.UpdatedAt,
 	)
@@ -172,6 +184,28 @@ func (s *Service) VerifyResident(ctx context.Context, principal *auth.Principal,
 		return Resident{}, fmt.Errorf("audit resident verification: %w", err)
 	}
 	return resident, nil
+}
+
+func validateResidentLookups(ctx context.Context, tx pgx.Tx, educationLevelID, maritalStatusID *string) error {
+	for _, lookup := range []struct {
+		table string
+		id    *string
+	}{
+		{"education_levels", nullableTrim(educationLevelID)},
+		{"marital_statuses", nullableTrim(maritalStatusID)},
+	} {
+		if lookup.id == nil {
+			continue
+		}
+		var exists bool
+		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM `+lookup.table+` WHERE id = $1)`, *lookup.id).Scan(&exists); err != nil {
+			return fmt.Errorf("validate resident lookup: %w", err)
+		}
+		if !exists {
+			return fmt.Errorf("%w: lookup", ErrValidation)
+		}
+	}
+	return nil
 }
 
 func (s *Service) encryptIndexedValue(value *string) (*string, *string, error) {

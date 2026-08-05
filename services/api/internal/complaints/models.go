@@ -12,7 +12,17 @@ var (
 	ErrInvalidState      = errors.New("invalid state")
 	ErrForbidden         = errors.New("forbidden")
 	ErrConflict          = errors.New("conflict")
+	ErrCategoryNotFound  = errors.New("complaint category not found")
 )
+
+type ComplaintCategory struct {
+	ID        string    `json:"id"`
+	Code      string    `json:"code"`
+	Name      string    `json:"name"`
+	Status    string    `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
 
 type AttachmentInfo struct {
 	AttachmentID string `json:"attachment_id"`
@@ -38,7 +48,8 @@ type ComplaintItem struct {
 	ReporterUserID      string           `json:"reporter_user_id"`
 	ReporterName        string           `json:"reporter_name"`
 	TicketNumber        string           `json:"ticket_number"`
-	Category            string           `json:"category"`
+	ComplaintCategoryID string           `json:"complaint_category_id"`
+	CategoryName        string           `json:"category_name"`
 	Title               string           `json:"title"`
 	Description         string           `json:"description"`
 	LocationDescription *string          `json:"location_description,omitempty"`
@@ -56,7 +67,7 @@ type ComplaintItem struct {
 }
 
 type CreateComplaintRequest struct {
-	Category            string   `json:"category"`
+	ComplaintCategoryID string   `json:"complaint_category_id"`
 	Title               string   `json:"title"`
 	Description         string   `json:"description"`
 	LocationDescription *string  `json:"location_description,omitempty"`
@@ -65,7 +76,7 @@ type CreateComplaintRequest struct {
 }
 
 func (r *CreateComplaintRequest) Validate() error {
-	r.Category = strings.TrimSpace(r.Category)
+	r.ComplaintCategoryID = strings.TrimSpace(r.ComplaintCategoryID)
 	r.Title = strings.TrimSpace(r.Title)
 	r.Description = strings.TrimSpace(r.Description)
 	r.Priority = strings.ToLower(strings.TrimSpace(r.Priority))
@@ -73,7 +84,7 @@ func (r *CreateComplaintRequest) Validate() error {
 		location := strings.TrimSpace(*r.LocationDescription)
 		r.LocationDescription = &location
 	}
-	if r.Category == "" || len(r.Category) > 50 || r.Title == "" || len(r.Title) > 255 || r.Description == "" {
+	if r.ComplaintCategoryID == "" || r.Title == "" || len(r.Title) > 255 || r.Description == "" {
 		return ErrValidation
 	}
 	if r.Priority == "" {
@@ -97,10 +108,38 @@ func (r *UpdateComplaintRequest) Validate() error {
 }
 
 type ComplaintFilter struct {
-	Status     string
-	Category   string
-	AssignedTo string
-	Search     string
+	Status              string
+	ComplaintCategoryID string
+	AssignedTo          string
+	Search              string
+}
+
+type CreateComplaintCategoryRequest struct {
+	Code string `json:"code"`
+	Name string `json:"name"`
+}
+
+func (r *CreateComplaintCategoryRequest) Validate() error {
+	r.Code = strings.ToLower(strings.TrimSpace(r.Code))
+	r.Name = strings.TrimSpace(r.Name)
+	if r.Code == "" || len(r.Code) > 50 || r.Name == "" || len(r.Name) > 100 {
+		return ErrValidation
+	}
+	return nil
+}
+
+type UpdateComplaintCategoryRequest struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+func (r *UpdateComplaintCategoryRequest) Validate() error {
+	r.Name = strings.TrimSpace(r.Name)
+	r.Status = strings.ToLower(strings.TrimSpace(r.Status))
+	if r.Name == "" || len(r.Name) > 100 || (r.Status != "" && r.Status != "active" && r.Status != "inactive") {
+		return ErrValidation
+	}
+	return nil
 }
 
 type AssignComplaintRequest struct {

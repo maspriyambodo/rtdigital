@@ -259,6 +259,72 @@ func TestResidentsIntegration(t *testing.T) {
 		}
 	})
 
+	t.Run("lookup master data and resident validation", func(t *testing.T) {
+		res := doRequest(http.MethodGet, "/api/v1/education-levels", adminToken, nil)
+		if res.Code != http.StatusOK {
+			t.Fatalf("list education levels = %d: %s", res.Code, res.Body.String())
+		}
+		var educationLevels struct {
+			Data []residents.EducationLevel `json:"data"`
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &educationLevels); err != nil {
+			t.Fatalf("parse education levels: %v", err)
+		}
+		if len(educationLevels.Data) == 0 {
+			t.Fatal("education levels empty")
+		}
+
+		res = doRequest(http.MethodGet, "/api/v1/marital-statuses", adminToken, nil)
+		if res.Code != http.StatusOK {
+			t.Fatalf("list marital statuses = %d: %s", res.Code, res.Body.String())
+		}
+		var maritalStatuses struct {
+			Data []residents.MaritalStatus `json:"data"`
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &maritalStatuses); err != nil {
+			t.Fatalf("parse marital statuses: %v", err)
+		}
+		if len(maritalStatuses.Data) == 0 {
+			t.Fatal("marital statuses empty")
+		}
+
+		body := []byte(fmt.Sprintf(
+			`{"full_name":"Warga Lookup","resident_status":"active","education_level_id":"%s","marital_status_id":"%s"}`,
+			educationLevels.Data[0].ID, maritalStatuses.Data[0].ID,
+		))
+		res = doRequest(http.MethodPost, "/api/v1/residents", adminToken, body)
+		if res.Code != http.StatusCreated {
+			t.Fatalf("create resident with lookup = %d: %s", res.Code, res.Body.String())
+		}
+		var resident struct {
+			Data residents.Resident `json:"data"`
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &resident); err != nil {
+			t.Fatalf("parse resident lookup: %v", err)
+		}
+		if resident.Data.EducationLevelID == nil || resident.Data.MaritalStatusID == nil {
+			t.Fatalf("lookup IDs absent: %+v", resident.Data)
+		}
+
+		res = doRequest(http.MethodGet, "/api/v1/residents/"+resident.Data.ID, adminToken, nil)
+		if res.Code != http.StatusOK {
+			t.Fatalf("get resident with lookup = %d: %s", res.Code, res.Body.String())
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &resident); err != nil {
+			t.Fatalf("parse resident lookup detail: %v", err)
+		}
+		if resident.Data.EducationLevelName == nil || resident.Data.MaritalStatusName == nil {
+			t.Fatalf("lookup names absent: %+v", resident.Data)
+		}
+
+		res = doRequest(http.MethodPost, "/api/v1/residents", adminToken, []byte(
+			`{"full_name":"Lookup Tidak Valid","resident_status":"active","education_level_id":"00000000-0000-0000-0000-000000000000"}`,
+		))
+		if res.Code != http.StatusBadRequest {
+			t.Fatalf("create resident invalid lookup = %d; expected 400: %s", res.Code, res.Body.String())
+		}
+	})
+
 	t.Run("csv dry run and import", func(t *testing.T) {
 		csvContent := "full_name,resident_status,national_id,phone\nWarga Impor Satu,active,9876543210987654,0811111111\nWarga Impor Dua,active,9876543210987655,0822222222\n"
 

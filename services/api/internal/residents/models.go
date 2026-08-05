@@ -2,6 +2,20 @@ package residents
 
 import "time"
 
+type EducationLevel struct {
+	ID        string    `json:"id"`
+	Code      string    `json:"code"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type MaritalStatus struct {
+	ID        string    `json:"id"`
+	Code      string    `json:"code"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 type HouseUnit struct {
 	ID              string    `json:"id"`
 	Code            string    `json:"code"`
@@ -19,9 +33,11 @@ type Resident struct {
 	BirthPlace         *string   `json:"birth_place"`
 	BirthDate          *string   `json:"birth_date"`
 	Gender             *string   `json:"gender"`
-	MaritalStatus      *string   `json:"marital_status"`
+	MaritalStatusID    *string   `json:"marital_status_id"`
+	MaritalStatusName  *string   `json:"marital_status_name"`
 	Occupation         *string   `json:"occupation"`
-	Education          *string   `json:"education"`
+	EducationLevelID   *string   `json:"education_level_id"`
+	EducationLevelName *string   `json:"education_level_name"`
 	Phone              *string   `json:"phone"`
 	Email              *string   `json:"email"`
 	ResidentStatus     string    `json:"resident_status"`
@@ -73,11 +89,11 @@ type CreateResidentRequest struct {
 	FullName       string  `json:"full_name"`
 	BirthPlace     *string `json:"birth_place"`
 	BirthDate      *string `json:"birth_date"`
-	Gender         *string `json:"gender"`
-	MaritalStatus  *string `json:"marital_status"`
-	Occupation     *string `json:"occupation"`
-	Education      *string `json:"education"`
-	Phone          *string `json:"phone"`
+	Gender           *string `json:"gender"`
+	MaritalStatusID  *string `json:"marital_status_id"`
+	Occupation       *string `json:"occupation"`
+	EducationLevelID *string `json:"education_level_id"`
+	Phone            *string `json:"phone"`
 	Email          *string `json:"email"`
 	ResidentStatus string  `json:"resident_status"`
 }
@@ -87,11 +103,11 @@ type UpdateResidentRequest struct {
 	FullName       *string `json:"full_name"`
 	BirthPlace     *string `json:"birth_place"`
 	BirthDate      *string `json:"birth_date"`
-	Gender         *string `json:"gender"`
-	MaritalStatus  *string `json:"marital_status"`
-	Occupation     *string `json:"occupation"`
-	Education      *string `json:"education"`
-	Phone          *string `json:"phone"`
+	Gender           *string `json:"gender"`
+	MaritalStatusID  *string `json:"marital_status_id"`
+	Occupation       *string `json:"occupation"`
+	EducationLevelID *string `json:"education_level_id"`
+	Phone            *string `json:"phone"`
 	Email          *string `json:"email"`
 	ResidentStatus *string `json:"resident_status"`
 }

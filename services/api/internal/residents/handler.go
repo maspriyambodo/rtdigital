@@ -38,6 +38,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /residents/{id}/corrections", h.require("resident.correction.submit", h.submitCorrection))
 	mux.Handle("GET /resident-corrections", h.require("resident.correction.review", h.listCorrections))
 	mux.Handle("POST /resident-corrections/{id}/{action}", h.require("resident.correction.review", h.reviewCorrection))
+
+	mux.Handle("GET /education-levels", h.require("resident.read", h.listEducationLevels))
+	mux.Handle("GET /marital-statuses", h.require("resident.read", h.listMaritalStatuses))
 }
 
 func (h *Handler) require(permission string, next http.HandlerFunc) http.Handler {
@@ -250,6 +253,24 @@ func (h *Handler) writeServiceError(w http.ResponseWriter, r *http.Request, err 
 	default:
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Terjadi kesalahan sistem.")
 	}
+}
+
+func (h *Handler) listEducationLevels(w http.ResponseWriter, r *http.Request) {
+	items, err := h.service.ListEducationLevels(r.Context())
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
+}
+
+func (h *Handler) listMaritalStatuses(w http.ResponseWriter, r *http.Request) {
+	items, err := h.service.ListMaritalStatuses(r.Context())
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {

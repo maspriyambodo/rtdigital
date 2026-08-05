@@ -224,16 +224,16 @@ Tujuan: menyelesaikan kesiapan operasional, keamanan, observabilitas, serta UAT 
 
 Tujuan: memformalkan data referensi yang saat ini berupa teks bebas agar input konsisten dan laporan akurat.
 
-- [ ] **Task 13.1:** Buat migration `complaint_categories` per organisasi: `id`, `organization_id`, `code`, `name`, `status`, timestamps; unique `(organization_id, code)`.
-- [ ] **Task 13.2:** Seed kategori aduan awal per organisasi dan migrasikan nilai `complaints.category` historis ke `complaint_categories`.
-- [ ] **Task 13.3:** Tambahkan `complaint_category_id` pada `complaints`, validasi tenant melalui FK komposit, ubah API/daftar/filter/laporan, lalu hapus kolom teks lama pada migration lanjutan.
-- [ ] **Task 13.4:** Implementasi API CRUD kategori aduan, RBAC pengurus, penonaktifan tanpa menghapus kategori yang telah dipakai, serta audit log.
-- [ ] **Task 13.5:** Perbarui UI pengurus pengelolaan kategori aduan dan form/filter aduan agar memakai data master.
-- [ ] **Task 13.6:** Buat lookup global read-only `education_levels` dan `marital_statuses`; seed nilai standar nasional; migrasikan nilai teks warga ke FK.
-- [ ] **Task 13.7:** Evaluasi normalisasi `occupations` dari data produksi. Buat master global hanya bila variasi penulisan mengganggu laporan; jangan blokir input pekerjaan bebas pada MVP.
-- [ ] **Task 13.8:** Perbarui API, UI, import CSV, serta laporan warga untuk memakai lookup pendidikan/status perkawinan; pekerjaan tetap teks sampai Task 13.7 disetujui.
-- [ ] **Task 13.9:** Tambahkan integration test FK, isolasi tenant, kategori nonaktif, migrasi data lama, RBAC, dan konsistensi filter/laporan.
-- [ ] **Task 13.10:** Evaluasi kebutuhan `announcement_categories`. Pertahankan `CHECK` global saat kategori seragam; buat master per organisasi hanya bila ada kebutuhan kategori kustom yang disetujui.
+- [x] **Task 13.1:** Buat migration `complaint_categories` per organisasi: `id`, `organization_id`, `code`, `name`, `status`, timestamps; unique `(organization_id, code)`.
+- [x] **Task 13.2:** Seed kategori aduan awal per organisasi dan migrasikan nilai `complaints.category` historis ke `complaint_categories`.
+- [x] **Task 13.3:** Tambahkan `complaint_category_id` pada `complaints`, validasi tenant melalui FK komposit, ubah API/daftar/filter/laporan, lalu hapus kolom teks lama pada migration lanjutan. *(FK, API, daftar, filter, dan laporan selesai; cleanup guarded tersedia pada `0017_epic13_cleanup.up.sql`.)*
+- [x] **Task 13.4:** Implementasi API CRUD kategori aduan, RBAC pengurus, penonaktifan tanpa menghapus kategori yang telah dipakai, serta audit log.
+- [x] **Task 13.5:** Perbarui UI pengurus pengelolaan kategori aduan dan form/filter aduan agar memakai data master.
+- [x] **Task 13.6:** Buat lookup global read-only `education_levels` dan `marital_statuses`; seed nilai standar nasional; migrasikan nilai teks warga ke FK.
+- [x] **Task 13.7:** Evaluasi normalisasi `occupations` dari data produksi. Buat master global hanya bila variasi penulisan mengganggu laporan; jangan blokir input pekerjaan bebas pada MVP. *(Pekerjaan tetap teks bebas pada MVP.)*
+- [x] **Task 13.8:** Perbarui API, UI, import CSV, serta laporan warga untuk memakai lookup pendidikan/status perkawinan; pekerjaan tetap teks sampai Task 13.7 disetujui. *(API lookup, UI detail warga, import CSV, dan laporan selesai.)*
+- [ ] **Task 13.9:** Tambahkan integration test FK, isolasi tenant, kategori nonaktif, migrasi data lama, RBAC, dan konsistensi filter/laporan. *(Test kategori aktif/nonaktif, ID tidak valid, RBAC, isolasi tenant, filter, scope warga, dan lookup warga tersedia; test migrasi legacy serta kontrak laporan/import lookup masih diperlukan.)*
+- [x] **Task 13.10:** Evaluasi kebutuhan `announcement_categories`. Pertahankan `CHECK` global saat kategori seragam; buat master per organisasi hanya bila ada kebutuhan kategori kustom yang disetujui. *(Tetap `CHECK` global pada MVP.)*
 
 ---
 

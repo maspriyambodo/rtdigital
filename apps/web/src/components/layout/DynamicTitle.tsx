@@ -20,6 +20,7 @@ const titles: Record<string, string> = {
   "/pengurus/kas": "Buku Kas",
   "/pengurus/surat": "Surat",
   "/pengurus/aduan": "Aduan",
+  "/pengurus/kategori-aduan": "Kategori Aduan",
   "/pengurus/pengaturan": "Pengaturan RT",
   "/pengurus/audit": "Audit Log",
   "/pengurus/laporan": "Laporan",

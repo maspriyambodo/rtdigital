@@ -121,8 +121,42 @@ func TestComplaintsWorkflowIntegration(t *testing.T) {
 	_, warga2Token := createUser("warga", orgID)
 	_, otherOrgToken := createUser("warga", otherOrgID)
 
+	categoryID := newID()
+	otherCategoryID := newID()
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO complaint_categories (id, organization_id, code, name, status)
+		VALUES ($1, $2, 'kebersihan', 'Kebersihan', 'active'),
+		       ($3, $4, 'lainnya', 'Lainnya', 'active')`,
+		categoryID, orgID, otherCategoryID, otherOrgID,
+	); err != nil {
+		t.Fatalf("seed complaint categories: %v", err)
+	}
+
+	wargaCannotManageCategory := doRequest(http.MethodPost, "/api/v1/complaint-categories", warga1Token, map[string]any{
+		"code": "warga", "name": "Kategori Warga",
+	})
+	if wargaCannotManageCategory.Code != http.StatusForbidden {
+		t.Fatalf("resident create category = %d; expected 403", wargaCannotManageCategory.Code)
+	}
+	createCategory := doRequest(http.MethodPost, "/api/v1/complaint-categories", sekretarisToken, map[string]any{
+		"code": "lingkungan", "name": "Lingkungan",
+	})
+	if createCategory.Code != http.StatusCreated {
+		t.Fatalf("manager create category = %d: %s", createCategory.Code, createCategory.Body.String())
+	}
+	var createdCategory struct {
+		Data complaints.ComplaintCategory `json:"data"`
+	}
+	if err := json.Unmarshal(createCategory.Body.Bytes(), &createdCategory); err != nil {
+		t.Fatalf("decode created category: %v", err)
+	}
+	otherTenantCategory := doRequest(http.MethodGet, "/api/v1/complaint-categories/"+otherCategoryID, sekretarisToken, nil)
+	if otherTenantCategory.Code != http.StatusNotFound {
+		t.Fatalf("cross-tenant category = %d; expected 404", otherTenantCategory.Code)
+	}
+
 	createResponse := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
-		"category":             "kebersihan",
+		"complaint_category_id": categoryID,
 		"title":                "Sampah menumpuk di blok A",
 		"description":          "Sampah belum diangkut 3 hari",
 		"location_description": "Depan pos kamling",
@@ -138,8 +172,60 @@ func TestComplaintsWorkflowIntegration(t *testing.T) {
 	if err := json.Unmarshal(createResponse.Body.Bytes(), &created); err != nil {
 		t.Fatalf("decode complaint: %v", err)
 	}
-	if created.Data.TicketNumber == "" || created.Data.Status != "new" {
+	if created.Data.TicketNumber == "" || created.Data.Status != "new" || created.Data.ComplaintCategoryID != categoryID || created.Data.CategoryName != "Kebersihan" {
 		t.Fatalf("unexpected complaint data: %+v", created.Data)
+	}
+
+	invalidCategory := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
+		"complaint_category_id": newID(),
+		"title":                "Kategori tidak valid",
+		"description":          "Harus ditolak.",
+		"priority":             "normal",
+		"attachment_file_ids":  []string{},
+	})
+	if invalidCategory.Code != http.StatusBadRequest {
+		t.Fatalf("create complaint with invalid category = %d; expected 400: %s", invalidCategory.Code, invalidCategory.Body.String())
+	}
+	crossTenantCategory := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
+		"complaint_category_id": otherCategoryID,
+		"title":                "Kategori lintas tenant",
+		"description":          "Harus ditolak.",
+		"priority":             "normal",
+		"attachment_file_ids":  []string{},
+	})
+	if crossTenantCategory.Code != http.StatusBadRequest {
+		t.Fatalf("create complaint with cross-tenant category = %d; expected 400: %s", crossTenantCategory.Code, crossTenantCategory.Body.String())
+	}
+
+	if _, err := pool.Exec(ctx, `UPDATE complaint_categories SET status = 'inactive' WHERE id = $1`, categoryID); err != nil {
+		t.Fatalf("deactivate complaint category: %v", err)
+	}
+	inactiveCategory := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
+		"complaint_category_id": categoryID,
+		"title":                "Kategori nonaktif",
+		"description":          "Harus ditolak.",
+		"priority":             "normal",
+		"attachment_file_ids":  []string{},
+	})
+	if inactiveCategory.Code != http.StatusBadRequest {
+		t.Fatalf("create complaint with inactive category = %d; expected 400: %s", inactiveCategory.Code, inactiveCategory.Body.String())
+	}
+	if _, err := pool.Exec(ctx, `UPDATE complaint_categories SET status = 'active' WHERE id = $1`, categoryID); err != nil {
+		t.Fatalf("reactivate complaint category: %v", err)
+	}
+
+	filtered := doRequest(http.MethodGet, "/api/v1/complaints?complaint_category_id="+categoryID, warga1Token, nil)
+	if filtered.Code != http.StatusOK {
+		t.Fatalf("filter complaint category = %d: %s", filtered.Code, filtered.Body.String())
+	}
+	var filteredItems struct {
+		Data []complaints.ComplaintItem `json:"data"`
+	}
+	if err := json.Unmarshal(filtered.Body.Bytes(), &filteredItems); err != nil {
+		t.Fatalf("decode filtered complaints: %v", err)
+	}
+	if len(filteredItems.Data) != 1 || filteredItems.Data[0].ID != created.Data.ID {
+		t.Fatalf("unexpected category filter result: %+v", filteredItems.Data)
 	}
 
 	warga2List := doRequest(http.MethodGet, "/api/v1/complaints", warga2Token, nil)

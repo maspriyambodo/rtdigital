@@ -52,12 +52,26 @@ func (s *Service) CreateComplaint(ctx context.Context, principal *auth.Principal
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	var categoryExists bool
+	if err := tx.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM complaint_categories
+			WHERE id = $1 AND organization_id = $2 AND status = 'active'
+		)`,
+		req.ComplaintCategoryID, principal.OrganizationID,
+	).Scan(&categoryExists); err != nil {
+		return ComplaintItem{}, fmt.Errorf("validate complaint category: %w", err)
+	}
+	if !categoryExists {
+		return ComplaintItem{}, ErrCategoryNotFound
+	}
+
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO complaints (
-			id, organization_id, reporter_user_id, ticket_number, category, title,
+			id, organization_id, reporter_user_id, ticket_number, complaint_category_id, title,
 			description, location_description, priority, status
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new')`,
-		id, principal.OrganizationID, principal.UserID, ticketNumber, req.Category,
+		id, principal.OrganizationID, principal.UserID, ticketNumber, req.ComplaintCategoryID,
 		req.Title, req.Description, req.LocationDescription, req.Priority,
 	); err != nil {
 		if isUniqueConstraintViolation(err) {
@@ -88,13 +102,13 @@ func (s *Service) ListComplaints(ctx context.Context, principal *auth.Principal,
 		WHERE organization_id = $1
 		  AND ($2 OR reporter_user_id = $3 OR assigned_to = $3)
 		  AND ($4 = '' OR status = $4)
-		  AND ($5 = '' OR category = $5)
+		  AND (NULLIF($5, '')::uuid IS NULL OR complaint_category_id = NULLIF($5, '')::uuid)
 		  AND (NULLIF($6, '')::uuid IS NULL OR assigned_to = NULLIF($6, '')::uuid)
 		  AND ($7 = '' OR ticket_number ILIKE '%' || $7 || '%' OR title ILIKE '%' || $7 || '%')
 		ORDER BY created_at DESC
 		LIMIT 100`,
 		principal.OrganizationID, manager, principal.UserID,
-		strings.TrimSpace(filter.Status), strings.TrimSpace(filter.Category),
+		strings.TrimSpace(filter.Status), strings.TrimSpace(filter.ComplaintCategoryID),
 		strings.TrimSpace(filter.AssignedTo), strings.TrimSpace(filter.Search),
 	)
 	if err != nil {
@@ -128,19 +142,22 @@ func (s *Service) GetComplaint(ctx context.Context, principal *auth.Principal, i
 	var item ComplaintItem
 	err := s.db.QueryRow(ctx, `
 		SELECT c.id, c.reporter_user_id, COALESCE(ru.email, ru.phone, 'Warga'),
-		       c.ticket_number, c.category, c.title, c.description, c.location_description,
-		       c.priority, c.status, c.assigned_to, NULLIF(COALESCE(au.email, au.phone, ''), ''),
-		       c.resolution_note, c.resolved_at, c.closed_at, c.created_at, c.updated_at
+		       c.ticket_number, c.complaint_category_id, cc.name, c.title, c.description,
+		       c.location_description, c.priority, c.status, c.assigned_to,
+		       NULLIF(COALESCE(au.email, au.phone, ''), ''), c.resolution_note, c.resolved_at,
+		       c.closed_at, c.created_at, c.updated_at
 		FROM complaints c
+		JOIN complaint_categories cc ON cc.organization_id = c.organization_id AND cc.id = c.complaint_category_id
 		JOIN users ru ON ru.organization_id = c.organization_id AND ru.id = c.reporter_user_id
 		LEFT JOIN users au ON au.organization_id = c.organization_id AND au.id = c.assigned_to
 		WHERE c.organization_id = $1 AND c.id = $2`,
 		principal.OrganizationID, id,
 	).Scan(
 		&item.ID, &item.ReporterUserID, &item.ReporterName, &item.TicketNumber,
-		&item.Category, &item.Title, &item.Description, &item.LocationDescription,
-		&item.Priority, &item.Status, &item.AssignedTo, &item.AssignedToName,
-		&item.ResolutionNote, &item.ResolvedAt, &item.ClosedAt, &item.CreatedAt, &item.UpdatedAt,
+		&item.ComplaintCategoryID, &item.CategoryName, &item.Title, &item.Description,
+		&item.LocationDescription, &item.Priority, &item.Status, &item.AssignedTo,
+		&item.AssignedToName, &item.ResolutionNote, &item.ResolvedAt, &item.ClosedAt,
+		&item.CreatedAt, &item.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ComplaintItem{}, ErrComplaintNotFound
@@ -199,11 +216,25 @@ func (s *Service) UpdateComplaint(ctx context.Context, principal *auth.Principal
 		return ComplaintItem{}, ErrInvalidState
 	}
 
+	var categoryExists bool
+	if err := tx.QueryRow(ctx, `
+		SELECT EXISTS(
+			SELECT 1 FROM complaint_categories
+			WHERE id = $1 AND organization_id = $2 AND status = 'active'
+		)`,
+		req.ComplaintCategoryID, principal.OrganizationID,
+	).Scan(&categoryExists); err != nil {
+		return ComplaintItem{}, fmt.Errorf("validate complaint category: %w", err)
+	}
+	if !categoryExists {
+		return ComplaintItem{}, ErrCategoryNotFound
+	}
+
 	if _, err := tx.Exec(ctx, `
 		UPDATE complaints
-		SET category = $1, title = $2, description = $3, location_description = $4, priority = $5
+		SET complaint_category_id = $1, title = $2, description = $3, location_description = $4, priority = $5
 		WHERE organization_id = $6 AND id = $7`,
-		req.Category, req.Title, req.Description, req.LocationDescription, req.Priority,
+		req.ComplaintCategoryID, req.Title, req.Description, req.LocationDescription, req.Priority,
 		principal.OrganizationID, id,
 	); err != nil {
 		return ComplaintItem{}, fmt.Errorf("update complaint: %w", err)
@@ -602,6 +633,121 @@ func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principa
 
 func (s *Service) isManager(principal *auth.Principal) bool {
 	return principal.HasPermission("complaint.assign") || principal.HasPermission("complaint.update_status")
+}
+
+func (s *Service) ListComplaintCategories(ctx context.Context, principal *auth.Principal, onlyActive bool) ([]ComplaintCategory, error) {
+	if principal == nil {
+		return nil, ErrForbidden
+	}
+	rows, err := s.db.Query(ctx, `
+		SELECT id, code, name, status, created_at, updated_at
+		FROM complaint_categories
+		WHERE organization_id = $1
+		  AND (NOT $2 OR status = 'active')
+		ORDER BY name`,
+		principal.OrganizationID, onlyActive,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list complaint categories: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]ComplaintCategory, 0)
+	for rows.Next() {
+		var item ComplaintCategory
+		if err := rows.Scan(&item.ID, &item.Code, &item.Name, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("scan complaint category: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
+func (s *Service) GetComplaintCategory(ctx context.Context, principal *auth.Principal, id string) (ComplaintCategory, error) {
+	if principal == nil || strings.TrimSpace(id) == "" {
+		return ComplaintCategory{}, ErrValidation
+	}
+	var item ComplaintCategory
+	err := s.db.QueryRow(ctx, `
+		SELECT id, code, name, status, created_at, updated_at
+		FROM complaint_categories
+		WHERE organization_id = $1 AND id = $2`,
+		principal.OrganizationID, id,
+	).Scan(&item.ID, &item.Code, &item.Name, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ComplaintCategory{}, ErrCategoryNotFound
+	}
+	if err != nil {
+		return ComplaintCategory{}, fmt.Errorf("get complaint category: %w", err)
+	}
+	return item, nil
+}
+
+func (s *Service) CreateComplaintCategory(ctx context.Context, principal *auth.Principal, req CreateComplaintCategoryRequest) (ComplaintCategory, error) {
+	if principal == nil {
+		return ComplaintCategory{}, ErrForbidden
+	}
+	if err := req.Validate(); err != nil {
+		return ComplaintCategory{}, err
+	}
+	id := newUUID()
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return ComplaintCategory{}, fmt.Errorf("begin create complaint category: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO complaint_categories (id, organization_id, code, name)
+		VALUES ($1, $2, $3, $4)`,
+		id, principal.OrganizationID, req.Code, req.Name,
+	); err != nil {
+		if isUniqueConstraintViolation(err) {
+			return ComplaintCategory{}, ErrConflict
+		}
+		return ComplaintCategory{}, fmt.Errorf("insert complaint category: %w", err)
+	}
+	if err := s.audit(ctx, tx, principal, "complaint_category.create", "complaint_category", id); err != nil {
+		return ComplaintCategory{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return ComplaintCategory{}, fmt.Errorf("commit create complaint category: %w", err)
+	}
+	return s.GetComplaintCategory(ctx, principal, id)
+}
+
+func (s *Service) UpdateComplaintCategory(ctx context.Context, principal *auth.Principal, id string, req UpdateComplaintCategoryRequest) (ComplaintCategory, error) {
+	if principal == nil {
+		return ComplaintCategory{}, ErrForbidden
+	}
+	if err := req.Validate(); err != nil {
+		return ComplaintCategory{}, err
+	}
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return ComplaintCategory{}, fmt.Errorf("begin update complaint category: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	tag, err := tx.Exec(ctx, `
+		UPDATE complaint_categories
+		SET name = $1, status = COALESCE(NULLIF($2, ''), status)
+		WHERE organization_id = $3 AND id = $4`,
+		req.Name, req.Status, principal.OrganizationID, id,
+	)
+	if err != nil {
+		return ComplaintCategory{}, fmt.Errorf("update complaint category: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ComplaintCategory{}, ErrCategoryNotFound
+	}
+	if err := s.audit(ctx, tx, principal, "complaint_category.update", "complaint_category", id); err != nil {
+		return ComplaintCategory{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return ComplaintCategory{}, fmt.Errorf("commit update complaint category: %w", err)
+	}
+	return s.GetComplaintCategory(ctx, principal, id)
 }
 
 func validTransition(from, to string) bool {

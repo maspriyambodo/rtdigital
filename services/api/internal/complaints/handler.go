@@ -26,6 +26,11 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /complaints/{id}/assign", h.require("complaint.assign", h.assignComplaint))
 	mux.Handle("POST /complaints/{id}/status", h.require("complaint.read", h.updateStatus))
 	mux.Handle("POST /complaints/{id}/comments", h.require("complaint.comment", h.addComment))
+
+	mux.Handle("GET /complaint-categories", h.require("complaint_category.read", h.listComplaintCategories))
+	mux.Handle("POST /complaint-categories", h.require("complaint_category.create", h.createComplaintCategory))
+	mux.Handle("GET /complaint-categories/{id}", h.require("complaint_category.read", h.getComplaintCategory))
+	mux.Handle("PATCH /complaint-categories/{id}", h.require("complaint_category.update", h.updateComplaintCategory))
 }
 
 func (h *Handler) require(permission string, next http.HandlerFunc) http.Handler {
@@ -35,10 +40,10 @@ func (h *Handler) require(permission string, next http.HandlerFunc) http.Handler
 func (h *Handler) listComplaints(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	items, err := h.service.ListComplaints(r.Context(), auth.PrincipalFromContext(r.Context()), ComplaintFilter{
-		Status:     query.Get("status"),
-		Category:   query.Get("category"),
-		AssignedTo: query.Get("assigned_to"),
-		Search:     query.Get("search"),
+		Status:              query.Get("status"),
+		ComplaintCategoryID: query.Get("complaint_category_id"),
+		AssignedTo:          query.Get("assigned_to"),
+		Search:              query.Get("search"),
 	})
 	if err != nil {
 		h.writeServiceError(w, err)
@@ -133,9 +138,56 @@ func (h *Handler) writeServiceError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusForbidden, "FORBIDDEN", "Akses tidak diizinkan.")
 	case errors.Is(err, ErrConflict):
 		writeError(w, http.StatusConflict, "CONFLICT", "Data sudah ada.")
+	case errors.Is(err, ErrCategoryNotFound):
+		writeError(w, http.StatusNotFound, "COMPLAINT_CATEGORY_NOT_FOUND", "Kategori aduan tidak ditemukan.")
 	default:
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "Terjadi kesalahan sistem.")
 	}
+}
+
+func (h *Handler) listComplaintCategories(w http.ResponseWriter, r *http.Request) {
+	onlyActive := r.URL.Query().Get("active") != "false"
+	items, err := h.service.ListComplaintCategories(r.Context(), auth.PrincipalFromContext(r.Context()), onlyActive)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
+}
+
+func (h *Handler) getComplaintCategory(w http.ResponseWriter, r *http.Request) {
+	item, err := h.service.GetComplaintCategory(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"))
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
+func (h *Handler) createComplaintCategory(w http.ResponseWriter, r *http.Request) {
+	var request CreateComplaintCategoryRequest
+	if !decodeJSON(w, r, &request) {
+		return
+	}
+	item, err := h.service.CreateComplaintCategory(r.Context(), auth.PrincipalFromContext(r.Context()), request)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"data": item})
+}
+
+func (h *Handler) updateComplaintCategory(w http.ResponseWriter, r *http.Request) {
+	var request UpdateComplaintCategoryRequest
+	if !decodeJSON(w, r, &request) {
+		return
+	}
+	item, err := h.service.UpdateComplaintCategory(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"), request)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
 }
 
 func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {

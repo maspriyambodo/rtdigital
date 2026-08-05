@@ -7,6 +7,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 )
 
@@ -34,7 +36,8 @@ func (s *Service) ImportCSV(ctx context.Context, principal *auth.Principal, sour
 	if len(records) < 2 {
 		return ImportResult{}, fmt.Errorf("%w: CSV must contain a header and at least one row", ErrValidation)
 	}
-	if !validImportHeader(records[0]) {
+	headers := importHeaderIndexes(records[0])
+	if headers["full_name"] < 0 || headers["resident_status"] < 0 {
 		return ImportResult{}, fmt.Errorf("%w: required headers are full_name,resident_status", ErrValidation)
 	}
 
@@ -44,20 +47,28 @@ func (s *Service) ImportCSV(ctx context.Context, principal *auth.Principal, sour
 
 	for index, record := range records[1:] {
 		line := index + 2
-		if len(record) < 2 {
-			result.InvalidRows++
-			result.Errors = append(result.Errors, fmt.Sprintf("Baris %d: kolom tidak lengkap.", line))
-			continue
+		value := func(name string) string {
+			position := headers[name]
+			if position < 0 || position >= len(record) {
+				return ""
+			}
+			return strings.TrimSpace(record[position])
 		}
 		req := CreateResidentRequest{
-			FullName:       strings.TrimSpace(record[0]),
-			ResidentStatus: strings.TrimSpace(record[1]),
+			FullName:       value("full_name"),
+			ResidentStatus: value("resident_status"),
 		}
-		if len(record) > 2 {
-			req.NationalID = nullableTrim(&record[2])
+		if nationalID := value("national_id"); nationalID != "" {
+			req.NationalID = &nationalID
 		}
-		if len(record) > 3 {
-			req.Phone = nullableTrim(&record[3])
+		if phone := value("phone"); phone != "" {
+			req.Phone = &phone
+		}
+		if educationCode := value("education_level_code"); educationCode != "" {
+			req.EducationLevelID = &educationCode
+		}
+		if maritalCode := value("marital_status_code"); maritalCode != "" {
+			req.MaritalStatusID = &maritalCode
 		}
 		if req.FullName == "" || !validResidentStatus(req.ResidentStatus) {
 			result.InvalidRows++
@@ -82,8 +93,32 @@ func (s *Service) ImportCSV(ctx context.Context, principal *auth.Principal, sour
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
+	educationIDs, maritalIDs, err := importLookupIDs(ctx, tx)
+	if err != nil {
+		return result, err
+	}
+	validRows := rows[:0]
 	for _, row := range rows {
+		if row.req.EducationLevelID != nil {
+			id, exists := educationIDs[strings.ToLower(*row.req.EducationLevelID)]
+			if !exists {
+				result.InvalidRows++
+				result.Errors = append(result.Errors, fmt.Sprintf("Baris %d: kode pendidikan tidak valid.", row.line))
+				continue
+			}
+			row.req.EducationLevelID = &id
+		}
+		if row.req.MaritalStatusID != nil {
+			id, exists := maritalIDs[strings.ToLower(*row.req.MaritalStatusID)]
+			if !exists {
+				result.InvalidRows++
+				result.Errors = append(result.Errors, fmt.Sprintf("Baris %d: kode status perkawinan tidak valid.", row.line))
+				continue
+			}
+			row.req.MaritalStatusID = &id
+		}
 		if row.req.NationalID == nil {
+			validRows = append(validRows, row)
 			continue
 		}
 		blindIndex := auth.GenerateBlindIndex(*row.req.NationalID, s.blindKey)
@@ -98,15 +133,17 @@ func (s *Service) ImportCSV(ctx context.Context, principal *auth.Principal, sour
 		if exists {
 			result.DuplicateRows++
 			result.Errors = append(result.Errors, fmt.Sprintf("Baris %d: NIK sudah terdaftar.", row.line))
+			continue
 		}
+		validRows = append(validRows, row)
 	}
 
-	result.ValidRows = result.TotalRows - result.InvalidRows - result.DuplicateRows
+	result.ValidRows = len(validRows)
 	if dryRun || result.InvalidRows > 0 || result.DuplicateRows > 0 {
 		return result, nil
 	}
 
-	for _, row := range rows {
+	for _, row := range validRows {
 		encryptedID, blindIndex, err := s.encryptIndexedValue(row.req.NationalID)
 		if err != nil {
 			return result, err
@@ -114,10 +151,12 @@ func (s *Service) ImportCSV(ctx context.Context, principal *auth.Principal, sour
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO residents (
 				id, organization_id, national_id_encrypted, national_id_blind_index,
-				full_name, phone, resident_status, verification_status
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, 'verified')`,
+				full_name, phone, education_level_id, marital_status_id,
+				resident_status, verification_status
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'verified')`,
 			newUUID(), principal.OrganizationID, encryptedID, blindIndex,
-			row.req.FullName, row.req.Phone, row.req.ResidentStatus,
+			row.req.FullName, row.req.Phone, row.req.EducationLevelID,
+			row.req.MaritalStatusID, row.req.ResidentStatus,
 		); err != nil {
 			return result, mapDatabaseError(err, "import resident")
 		}
@@ -132,8 +171,43 @@ func (s *Service) ImportCSV(ctx context.Context, principal *auth.Principal, sour
 	return result, nil
 }
 
-func validImportHeader(header []string) bool {
-	return len(header) >= 2 &&
-		strings.EqualFold(strings.TrimSpace(header[0]), "full_name") &&
-		strings.EqualFold(strings.TrimSpace(header[1]), "resident_status")
+func importHeaderIndexes(header []string) map[string]int {
+	indexes := map[string]int{
+		"full_name": -1, "resident_status": -1, "national_id": -1, "phone": -1,
+		"education_level_code": -1, "marital_status_code": -1,
+	}
+	for index, value := range header {
+		if _, supported := indexes[strings.ToLower(strings.TrimSpace(value))]; supported {
+			indexes[strings.ToLower(strings.TrimSpace(value))] = index
+		}
+	}
+	return indexes
+}
+
+func importLookupIDs(ctx context.Context, tx pgx.Tx) (map[string]string, map[string]string, error) {
+	load := func(table string) (map[string]string, error) {
+		rows, err := tx.Query(ctx, `SELECT id, code FROM `+table)
+		if err != nil {
+			return nil, fmt.Errorf("load import lookup: %w", err)
+		}
+		defer rows.Close()
+		items := map[string]string{}
+		for rows.Next() {
+			var id, code string
+			if err := rows.Scan(&id, &code); err != nil {
+				return nil, fmt.Errorf("scan import lookup: %w", err)
+			}
+			items[strings.ToLower(code)] = id
+		}
+		return items, rows.Err()
+	}
+	education, err := load("education_levels")
+	if err != nil {
+		return nil, nil, err
+	}
+	marital, err := load("marital_statuses")
+	if err != nil {
+		return nil, nil, err
+	}
+	return education, marital, nil
 }

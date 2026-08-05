@@ -13,8 +13,10 @@ import { useAuth } from "../../../../lib/auth-context";
 import {
   addComment,
   assignComplaint,
+  listComplaintCategories,
   listComplaints,
   updateStatus,
+  type ComplaintCategory,
   type ComplaintItem,
   type ComplaintStatus,
 } from "../../../../lib/complaints";
@@ -54,8 +56,9 @@ export default function PengurusAduanPage() {
   const { getAccessToken } = useAuth();
   const [items, setItems] = useState<ComplaintItem[]>([]);
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [categories, setCategories] = useState<ComplaintCategory[]>([]);
   const [status, setStatus] = useState<ComplaintStatus | "">("");
-  const [category, setCategory] = useState("");
+  const [categoryID, setCategoryID] = useState("");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ComplaintItem>();
   const [assigneeID, setAssigneeID] = useState("");
@@ -73,19 +76,21 @@ export default function PengurusAduanPage() {
     try {
       const token = await getAccessToken();
       if (!token) return;
-      const [complaints, activeUsers] = await Promise.all([
-        listComplaints(token, { status: status || undefined, category: category || undefined, search: search || undefined }),
+      const [complaints, activeUsers, categoryItems] = await Promise.all([
+        listComplaints(token, { status: status || undefined, complaint_category_id: categoryID || undefined, search: search || undefined }),
         apiFetch<UserItem[]>("users", { headers: { Authorization: `Bearer ${token}` } }),
+        listComplaintCategories(token, false),
       ]);
       setItems(complaints);
       setUsers(activeUsers.filter((user) => user.status === "active"));
+      setCategories(categoryItems);
       if (selected) setSelected(complaints.find((item) => item.id === selected.id));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Data aduan gagal dimuat.");
     } finally {
       setLoading(false);
     }
-  }, [category, getAccessToken, search, selected, status]);
+  }, [categoryID, getAccessToken, search, selected, status]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -149,7 +154,7 @@ export default function PengurusAduanPage() {
       {selected ? (
         <section style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", display: "grid", gap: "var(--space-3)", padding: "var(--space-4)" }}>
           <div style={{ alignItems: "start", display: "flex", gap: "var(--space-2)", justifyContent: "space-between" }}>
-            <div><h2 style={{ fontSize: "1rem", margin: 0 }}>{selected.title}</h2><small>{selected.ticket_number} · Pelapor: {selected.reporter_name}</small></div>
+            <div><h2 style={{ fontSize: "1rem", margin: 0 }}>{selected.title}</h2><small>{selected.ticket_number} · Kategori: {selected.category_name} · Pelapor: {selected.reporter_name}</small></div>
             <StatusBadge variant={statusVariant(selected.status)}>{statusLabel[selected.status]}</StatusBadge>
           </div>
           <p style={{ margin: 0 }}>{selected.description}</p>
@@ -182,12 +187,12 @@ export default function PengurusAduanPage() {
         <>
           <section style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", display: "grid", gap: "var(--space-2)", padding: "var(--space-4)" }}>
             <Select aria-label="Filter status" value={status} onChange={(event) => setStatus(event.target.value as ComplaintStatus)}><option value="">Semua status</option>{Object.entries(statusLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
-            <TextInput aria-label="Filter kategori" placeholder="Kategori" value={category} onChange={(event) => setCategory(event.target.value)} />
+            <Select aria-label="Filter kategori" value={categoryID} onChange={(event) => setCategoryID(event.target.value)}><option value="">Semua kategori</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</Select>
             <TextInput aria-label="Cari aduan" placeholder="Cari tiket atau judul" value={search} onChange={(event) => setSearch(event.target.value)} />
           </section>
           <section>
             <h2 style={{ fontSize: "1rem" }}>Daftar aduan</h2>
-            {loading ? <p>Memuat…</p> : items.length === 0 ? <EmptyState title="Tidak ada aduan" description="Aduan sesuai filter akan muncul di sini." /> : <div style={{ display: "grid", gap: "var(--space-3)" }}>{items.map((item) => <article key={item.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", display: "grid", gap: "var(--space-2)", padding: "var(--space-3)" }}><div style={{ alignItems: "start", display: "flex", justifyContent: "space-between", gap: "var(--space-2)" }}><div><strong>{item.title}</strong><br /><small>{item.ticket_number} · {item.category} · {item.reporter_name}</small></div><StatusBadge variant={statusVariant(item.status)}>{statusLabel[item.status]}</StatusBadge></div><div><Button type="button" onClick={() => setSelected(item)}>Detail</Button></div></article>)}</div>}
+            {loading ? <p>Memuat…</p> : items.length === 0 ? <EmptyState title="Tidak ada aduan" description="Aduan sesuai filter akan muncul di sini." /> : <div style={{ display: "grid", gap: "var(--space-3)" }}>{items.map((item) => <article key={item.id} style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-md)", display: "grid", gap: "var(--space-2)", padding: "var(--space-3)" }}><div style={{ alignItems: "start", display: "flex", justifyContent: "space-between", gap: "var(--space-2)" }}><div><strong>{item.title}</strong><br /><small>{item.ticket_number} · {item.category_name} · {item.reporter_name}</small></div><StatusBadge variant={statusVariant(item.status)}>{statusLabel[item.status]}</StatusBadge></div><div><Button type="button" onClick={() => setSelected(item)}>Detail</Button></div></article>)}</div>}
           </section>
         </>
       )}

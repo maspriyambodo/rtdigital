@@ -10,6 +10,15 @@ export type ComplaintStatus =
   | "rejected"
   | "closed";
 
+export interface ComplaintCategory {
+  id: string;
+  code: string;
+  name: string;
+  status: "active" | "inactive";
+  created_at: string;
+  updated_at: string;
+}
+
 export interface AttachmentInfo {
   attachment_id: string;
   file_id: string;
@@ -34,7 +43,8 @@ export interface ComplaintItem {
   reporter_user_id: string;
   reporter_name: string;
   ticket_number: string;
-  category: string;
+  complaint_category_id: string;
+  category_name: string;
   title: string;
   description: string;
   location_description?: string;
@@ -52,7 +62,7 @@ export interface ComplaintItem {
 }
 
 export interface CreateComplaintRequest {
-  category: string;
+  complaint_category_id: string;
   title: string;
   description: string;
   location_description?: string;
@@ -64,9 +74,19 @@ export type UpdateComplaintRequest = CreateComplaintRequest;
 
 export interface ComplaintFilter {
   status?: ComplaintStatus;
-  category?: string;
+  complaint_category_id?: string;
   assigned_to?: string;
   search?: string;
+}
+
+export interface CreateComplaintCategoryRequest {
+  code: string;
+  name: string;
+}
+
+export interface UpdateComplaintCategoryRequest {
+  name: string;
+  status?: "active" | "inactive";
 }
 
 export interface AssignComplaintRequest {
@@ -98,6 +118,18 @@ const queryPath = <T extends object>(path: string, values: T) => {
 
 export const listComplaints = (token: string, filter: ComplaintFilter = {}) =>
   apiFetch<ComplaintItem[]>(queryPath("complaints", filter), options(token));
+
+export const listComplaintCategories = (token: string, activeOnly = true) =>
+  apiFetch<ComplaintCategory[]>(`complaint-categories?active=${activeOnly}`, options(token));
+
+export const getComplaintCategory = (token: string, id: string) =>
+  apiFetch<ComplaintCategory>(`complaint-categories/${id}`, options(token));
+
+export const createComplaintCategory = (token: string, data: CreateComplaintCategoryRequest) =>
+  apiFetch<ComplaintCategory>("complaint-categories", options(token, { method: "POST", body: JSON.stringify(data) }));
+
+export const updateComplaintCategory = (token: string, id: string, data: UpdateComplaintCategoryRequest) =>
+  apiFetch<ComplaintCategory>(`complaint-categories/${id}`, options(token, { method: "PATCH", body: JSON.stringify(data) }));
 
 export const getComplaint = (token: string, id: string) =>
   apiFetch<ComplaintItem>(`complaints/${id}`, options(token));

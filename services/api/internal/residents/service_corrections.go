@@ -15,16 +15,16 @@ import (
 var ErrCorrectionNotFound = errors.New("resident correction not found")
 
 var correctionFields = map[string]struct{}{
-	"full_name":       {},
-	"birth_place":     {},
-	"birth_date":      {},
-	"gender":          {},
-	"marital_status":  {},
-	"occupation":      {},
-	"education":       {},
-	"phone":           {},
-	"email":           {},
-	"resident_status": {},
+	"full_name":          {},
+	"birth_place":        {},
+	"birth_date":         {},
+	"gender":             {},
+	"marital_status_id":  {},
+	"occupation":         {},
+	"education_level_id": {},
+	"phone":              {},
+	"email":              {},
+	"resident_status":    {},
 }
 
 func (s *Service) SubmitCorrection(ctx context.Context, principal *auth.Principal, residentID string, req CreateResidentCorrectionRequest) (ResidentCorrection, error) {
@@ -179,9 +179,9 @@ func (s *Service) ReviewCorrection(ctx context.Context, principal *auth.Principa
 			    birth_place = COALESCE($2::jsonb->>'birth_place', birth_place),
 			    birth_date = COALESCE(($2::jsonb->>'birth_date')::date, birth_date),
 			    gender = COALESCE($2::jsonb->>'gender', gender),
-			    marital_status = COALESCE($2::jsonb->>'marital_status', marital_status),
+			    marital_status_id = COALESCE(($2::jsonb->>'marital_status_id')::uuid, marital_status_id),
 			    occupation = COALESCE($2::jsonb->>'occupation', occupation),
-			    education = COALESCE($2::jsonb->>'education', education),
+			    education_level_id = COALESCE(($2::jsonb->>'education_level_id')::uuid, education_level_id),
 			    phone = COALESCE($2::jsonb->>'phone', phone),
 			    email = COALESCE($2::jsonb->>'email', email),
 			    resident_status = COALESCE($2::jsonb->>'resident_status', resident_status)

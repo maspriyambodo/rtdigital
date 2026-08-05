@@ -16,9 +16,9 @@ interface Resident {
   birth_place: string | null;
   birth_date: string | null;
   gender: "male" | "female" | null;
-  marital_status: string | null;
+  marital_status_name: string | null;
   occupation: string | null;
-  education: string | null;
+  education_level_name: string | null;
   resident_status: "active" | "moved_out" | "deceased";
   verification_status: "unverified" | "verified";
 }
@@ -107,9 +107,9 @@ export default function WargaDetailPage({ params }: { params: Promise<{ id: stri
         <p><strong>Email:</strong> {resident.email ?? "Belum diisi"}</p>
         <p><strong>Tempat/tanggal lahir:</strong> {resident.birth_place ?? "Belum diisi"}, {resident.birth_date ?? "Belum diisi"}</p>
         <p><strong>Jenis kelamin:</strong> {resident.gender === "male" ? "Laki-laki" : resident.gender === "female" ? "Perempuan" : "Belum diisi"}</p>
-        <p><strong>Status perkawinan:</strong> {resident.marital_status ?? "Belum diisi"}</p>
+        <p><strong>Status perkawinan:</strong> {resident.marital_status_name ?? "Belum diisi"}</p>
         <p><strong>Pekerjaan:</strong> {resident.occupation ?? "Belum diisi"}</p>
-        <p><strong>Pendidikan:</strong> {resident.education ?? "Belum diisi"}</p>
+        <p><strong>Pendidikan:</strong> {resident.education_level_name ?? "Belum diisi"}</p>
       </section>
     </div>
   );

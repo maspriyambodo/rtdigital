@@ -49,10 +49,21 @@ func (h *Handler) residents(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"data": items})
 		return
 	}
-	headers := []string{"ID", "Nama Lengkap", "Jenis Kelamin", "Tanggal Lahir", "Status Warga", "Status Verifikasi", "Unit Rumah", "Nomor Keluarga", "Hubungan", "Dibuat"}
+	headers := []string{
+		"ID", "Nama Lengkap", "Jenis Kelamin", "Tanggal Lahir",
+		"Status Perkawinan", "Pendidikan", "Pekerjaan",
+		"Status Warga", "Status Verifikasi",
+		"Unit Rumah", "Nomor Keluarga", "Hubungan", "Dibuat",
+	}
 	rows := make([][]string, 0, len(items))
 	for _, item := range items {
-		rows = append(rows, []string{item.ID, item.FullName, value(item.Gender), value(item.BirthDate), item.ResidentStatus, item.VerificationStatus, value(item.HouseUnitCode), value(item.HouseholdNumber), value(item.Relationship), item.CreatedAt})
+		rows = append(rows, []string{
+			item.ID, item.FullName, value(item.Gender), value(item.BirthDate),
+			value(item.MaritalStatusName), value(item.EducationLevelName), value(item.Occupation),
+			item.ResidentStatus, item.VerificationStatus,
+			value(item.HouseUnitCode), value(item.HouseholdNumber), value(item.Relationship),
+			item.CreatedAt,
+		})
 	}
 	h.writeExport(w, r, principal, "residents", "Laporan Data Warga", "laporan_warga", headers, rows)
 }
@@ -201,10 +212,14 @@ func (h *Handler) complaints(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"data": items})
 		return
 	}
-	headers := []string{"ID", "Nomor Tiket", "Kategori", "Judul", "Prioritas", "Status", "Pelapor", "Petugas", "Dibuat", "Diselesaikan"}
+	headers := []string{"ID", "Nomor Tiket", "Kategori ID", "Kategori", "Judul", "Prioritas", "Status", "Pelapor", "Petugas", "Dibuat", "Diselesaikan"}
 	rows := make([][]string, 0, len(items))
 	for _, item := range items {
-		rows = append(rows, []string{item.ID, item.TicketNumber, item.Category, item.Title, item.Priority, item.Status, item.ReporterName, value(item.AssignedToName), item.CreatedAt, value(item.ResolvedAt)})
+		rows = append(rows, []string{
+			item.ID, item.TicketNumber, item.ComplaintCategoryID, item.CategoryName,
+			item.Title, item.Priority, item.Status, item.ReporterName,
+			value(item.AssignedToName), item.CreatedAt, value(item.ResolvedAt),
+		})
 	}
 	h.writeExport(w, r, principal, "complaints", "Laporan Aduan Warga", "laporan_aduan", headers, rows)
 }
