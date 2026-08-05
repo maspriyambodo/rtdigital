@@ -15,6 +15,7 @@ Backlog ini memecah MVP menjadi epic dan task yang dapat dikerjakan bertahap. Se
 5. Epic 13: master data.
 6. Epic 14: otomatisasi dan layanan operasional proaktif.
 7. Epic 15: tabungan warga (dana titipan non-kas).
+8. Epic 16: manajemen pengelolaan aset.
 
 ---
 
@@ -273,6 +274,24 @@ Tujuan: memfasilitasi tabungan terarah warga, misalnya Qurban/Idul Adha, tanpa m
 - [ ] **Task 15.9:** Buat UI bendahara untuk master produk, akun, antrean verifikasi, persetujuan mutasi debit, dan rekonsiliasi rekening penampungan.
 - [ ] **Task 15.10:** Tambahkan laporan dana titipan per produk/per keluarga dan rekonsiliasi saldo sistem dengan kas fisik atau rekening penampungan khusus; pisahkan dari laporan kas operasional.
 - [ ] **Task 15.11:** Tambahkan integration test perhitungan saldo dari mutasi, idempotensi setoran, pencegahan saldo negatif, otorisasi debit, append-only, rekonsiliasi, dan isolasi tenant.
+
+---
+
+## Epic 16: Manajemen Pengelolaan Aset
+
+Tujuan: menginventarisasi aset fisik RT, melacak lokasi, kondisi, peminjaman, pemeliharaan, dan penghapusan aset secara terkontrol.
+
+- [ ] **Task 16.1:** Buat migration `asset_categories`, `asset_locations`, `assets`, `asset_loans`, dan `asset_maintenance_logs` dengan index tenant, FK komposit, constraint status, serta riwayat append-only untuk mutasi penting.
+- [ ] **Task 16.2:** Implementasi API CRUD `asset_categories` dan `asset_locations` per organisasi: kode unik, nama, status; penonaktifan tanpa menghapus data yang telah dipakai.
+- [ ] **Task 16.3:** Implementasi API CRUD `assets`: kode/label unik, nama, deskripsi, kategori, lokasi, kondisi, status, tanggal/nilai perolehan, penanggung jawab, serta lampiran foto atau dokumen melalui `file_objects`.
+- [ ] **Task 16.4:** Implementasi perubahan lokasi, kondisi, dan status aset dengan alasan wajib, audit log, serta larangan penghapusan aset aktif; gunakan status nonaktif/dihapus untuk disposal.
+- [ ] **Task 16.5:** Implementasi peminjaman aset: pengajuan warga/pengurus, persetujuan pengurus, tanggal pinjam/jatuh tempo/pengembalian, kondisi saat serah-terima, penolakan, dan riwayat peminjam.
+- [ ] **Task 16.6:** Implementasi pencatatan pemeliharaan/perbaikan: jadwal, jenis, biaya, petugas, catatan, bukti, hasil, dan pembaruan kondisi/status aset.
+- [ ] **Task 16.7:** Implementasi daftar/detail aset, pencarian, filter kategori/lokasi/kondisi/status, daftar aset terlambat dikembalikan, serta audit akses dan perubahan penting.
+- [ ] **Task 16.8:** Buat UI pengurus untuk kategori, lokasi, inventaris, detail aset, peminjaman, serah-terima, pemeliharaan, dan disposal.
+- [ ] **Task 16.9:** Buat UI warga untuk melihat aset yang dapat dipinjam, mengajukan peminjaman, melihat status pengajuan, dan riwayat peminjaman sendiri.
+- [ ] **Task 16.10:** Tambahkan laporan inventaris, kondisi, nilai perolehan, peminjaman, pemeliharaan, dan aset terlambat; ekspor sesuai permission dan audit.
+- [ ] **Task 16.11:** Tambahkan integration test kode aset unik, siklus status, peminjaman/pengembalian, pemeliharaan, RBAC, ownership warga, audit log, dan isolasi tenant.
 
 ---
 
