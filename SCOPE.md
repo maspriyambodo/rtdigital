@@ -127,12 +127,16 @@ Fitur berikut bernilai, tetapi tidak dibangun sebelum MVP rilis dan tervalidasi:
 
 ### 3.3 Fitur Operasional Tambahan
 
-- Buku tamu.
-- Jadwal ronda dan absensi petugas.
-- Inventaris aset.
+Pengembangan pasca-MVP berikut dirinci pada Epic 16–19 di `DEVELOPMENT_BACKLOG.md`.
+
+- Manajemen pengelolaan aset RT.
+- Operasional keamanan: Siskamling, jadwal/tukar ronda, absensi petugas, laporan kejadian, Buku Tamu Digital, dan Panic Button.
+- Kegiatan warga: kerja bakti, absensi per KK, serta denda ketidakhadiran opsional.
+- Layanan sampah: jadwal pengangkutan dan retribusi terpisah.
+- Direktori UMKM warga.
+- Administrasi Posyandu non-medis untuk lansia dan balita.
+- E-voting pemilihan pengurus RT.
 - Pemesanan fasilitas bersama.
-- Voting atau musyawarah digital.
-- Marketplace atau direktori usaha warga.
 - Statistik dashboard lanjutan.
 - SLA aduan otomatis.
 - Konfirmasi kehadiran kegiatan lanjutan.

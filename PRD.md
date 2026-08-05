@@ -6,7 +6,7 @@
 |---|---|
 | Nama sementara | RT Digital |
 | Dokumen | Product Requirements Document |
-| Versi | 1.3 |
+| Versi | 1.4 |
 | Status | Draft untuk validasi |
 | Tanggal | 8 Agustus 2026 |
 | Pemilik produk | Pengurus RT |
@@ -155,15 +155,19 @@ Prioritas ini mengubah modul yang telah ada dari CRUD reaktif menjadi bantuan op
 
 ### 5.3 Fitur Lain Setelah MVP
 
+Pengembangan pasca-MVP berikut dirinci pada Epic 16–19 di `DEVELOPMENT_BACKLOG.md`.
+
+- Manajemen pengelolaan aset RT.
+- Operasional keamanan: Siskamling, jadwal/tukar ronda, absensi petugas, laporan kejadian, Buku Tamu Digital, dan Panic Button.
+- Kegiatan warga: kerja bakti, absensi per KK, serta denda ketidakhadiran opsional.
+- Layanan sampah: jadwal pengangkutan dan retribusi terpisah.
+- Direktori UMKM warga.
+- Administrasi Posyandu non-medis untuk lansia dan balita.
+- E-voting pemilihan pengurus RT.
 - Integrasi payment gateway dan virtual account.
 - Tanda tangan elektronik tersertifikasi.
 - Portal publik RT.
-- Buku tamu dan pencatatan keamanan.
-- Jadwal ronda dan absensi petugas.
-- Inventaris aset RT.
 - Pemesanan fasilitas bersama.
-- Voting atau musyawarah digital.
-- Marketplace atau direktori usaha warga.
 - Integrasi data dengan RW atau kelurahan apabila tersedia dan diizinkan.
 - Aplikasi mobile native.
 - Dukungan banyak RT dalam satu platform.
@@ -1803,6 +1807,7 @@ Sebuah fitur dianggap selesai apabila:
 
 | Versi | Tanggal | Perubahan |
 |---|---|---|
+| 1.4 | 8 Agustus 2026 | Menambahkan Epic 16–19: aset, keamanan/kegiatan warga, sampah/UMKM/Posyandu, serta e-voting pengurus sebagai fitur pasca-MVP |
 | 1.3 | 8 Agustus 2026 | Menambahkan tabungan warga sebagai dana titipan non-kas dan master data jenis tabungan |
 | 1.2 | 8 Agustus 2026 | Menambahkan prioritas otomatisasi dan layanan operasional proaktif pasca-MVP |
 | 1.1 | 1 Agustus 2026 | Memperkuat kebutuhan mobile-first, PWA dasar, UX seluler, ketahanan koneksi, dan pengujian perangkat seluler |

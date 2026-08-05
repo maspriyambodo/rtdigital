@@ -565,6 +565,17 @@ Nilai standar: `single`, `married`, `divorced`, `widowed`.
 
 **Aturan:** tabel append-only. Saldo dihitung dari mutasi `verified`: `deposit` dan `reversal` kredit/debit sesuai mutasi asal; `withdrawal`, `refund`, dan `allocation` mengurangi saldo. Service mengunci akun saat memverifikasi mutasi debit agar saldo tidak negatif. Koreksi hanya memakai `reversal`, bukan `UPDATE` nominal atau penghapusan.
 
+### 8.4 Entitas Rencana Epic 16–19
+
+*(Pasca-MVP. Detail kolom, constraint, FK komposit, retensi, dan indeks ditetapkan bersama acceptance criteria sebelum migration dibuat.)*
+
+| Epic | Entitas rencana | Batasan desain wajib |
+|---|---|---|
+| 16 — Aset | `asset_categories`, `asset_locations`, `assets`, `asset_loans`, `asset_maintenance_logs` | Tenant-scoped; kode aset unik per organisasi; riwayat peminjaman/pemeliharaan append-only; disposal memakai status, bukan penghapusan. |
+| 17 — Keamanan dan kegiatan | `patrol_posts`, `patrol_schedules`, `patrol_assignments`, `patrol_attendances`, `patrol_incidents`, `community_activities`, `activity_attendances`, `visitor_invites`, `visitor_logs`, `emergency_alerts` | QR ronda dan undangan tamu wajib kedaluwarsa; absensi memakai waktu server; lokasi darurat hanya dengan persetujuan, akses dibatasi, dan retensi ditetapkan sebelum rilis. |
+| 18 — Sampah, UMKM, Posyandu | Konfigurasi layanan sampah berbasis `due_types`/`invoices`; `resident_businesses`; entitas sasaran, jadwal, dan kehadiran Posyandu non-medis. | Jangan membuat ledger pembayaran sampah baru; kontak UMKM memerlukan persetujuan pemilik; Posyandu tidak menyimpan diagnosis, hasil pemeriksaan, atau rekam medis. |
+| 19 — E-voting | `elections`, `election_candidates`, `election_voter_rolls`, `election_ballots` | Snapshot pemilih per KK; satu hak suara sah per KK; identitas/credential pemilih dipisahkan dari ballot agar pilihan tidak dapat ditautkan ke pemilih; hasil hanya agregat. |
+
 ---
 
 ## 9. Tabel File dan Audit

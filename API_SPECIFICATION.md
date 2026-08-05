@@ -281,6 +281,30 @@ Status HTTP minimum:
 | `GET` | `/audit-logs` | Daftar audit log operasional | `audit.read` |
 | `GET` | `/audit-logs/{id}` | Detail audit log | `audit.read` |
 
+## 2.10 Endpoint Rencana Pasca-MVP Epic 16–19
+
+*Kontrak berikut bersifat rencana. Permission, payload, state transition, retensi, idempotensi, dan OpenAPI final ditetapkan bersama acceptance criteria sebelum implementasi.*
+
+| Epic | Method | Endpoint | Keterangan | Otorisasi rencana |
+|---|---|---|---|---|
+| 16 | `GET` | `/asset-categories`, `/asset-locations`, `/assets` | Master dan daftar aset | `asset.read` |
+| 16 | `POST` | `/asset-categories`, `/asset-locations`, `/assets` | Kelola master dan inventaris aset | `asset.manage` |
+| 16 | `GET` | `/assets/{id}` | Detail aset, peminjaman, pemeliharaan | `asset.read` |
+| 16 | `PATCH` | `/assets/{id}` | Ubah aset, lokasi, kondisi, atau status | `asset.manage` |
+| 16 | `POST` | `/assets/{id}/loans`, `/assets/{id}/maintenance` | Ajukan pinjam dan catat pemeliharaan | `asset.loan` / `asset.maintain` |
+| 17 | `GET` | `/patrol-schedules`, `/patrol-assignments` | Jadwal dan penugasan ronda | `patrol.read` |
+| 17 | `POST` | `/patrol-schedules`, `/patrol-assignments`, `/patrol-assignments/{id}/swap-requests` | Kelola jadwal, penugasan, dan tukar jadwal | `patrol.manage` / scope warga |
+| 17 | `POST` | `/patrol-attendances`, `/patrol-incidents` | Check-in QR/kode dan laporan kejadian ronda | `patrol.checkin` / `patrol.incident` |
+| 17 | `GET` / `POST` | `/community-activities`, `/community-activities/{id}/attendances` | Kerja bakti dan absensi per KK | `activity.read` / `activity.manage` / scope |
+| 17 | `POST` | `/emergency-alerts` | Panic Button; lokasi hanya bila disetujui pengguna | Auth + `emergency.alert` |
+| 17 | `POST` | `/visitor-invites`, `/visitor-logs/check-in`, `/visitor-logs/{id}/check-out` | Undangan QR serta check-in/out tamu, kurir, kendaraan | `visitor.invite` / `visitor.manage` |
+| 18 | `GET` / `POST` | `/waste-services`, `/waste-services/{id}/schedules` | Konfigurasi dan kalender pengangkutan sampah | `waste.read` / `waste.manage` |
+| 18 | `GET` / `POST` | `/resident-businesses` | Direktori dan pengajuan UMKM warga | `business.read` / `business.submit` |
+| 18 | `GET` / `POST` | `/posyandu-schedules`, `/posyandu-attendances` | Jadwal dan kehadiran Posyandu non-medis | `posyandu.read` / `posyandu.manage` |
+| 19 | `GET` / `POST` | `/elections`, `/elections/{id}/candidates` | Kelola pemilihan dan kandidat | `election.read` / `election.manage` |
+| 19 | `POST` | `/elections/{id}/ballots` | Kirim ballot rahasia satu suara per KK | `election.vote` |
+| 19 | `GET` | `/elections/{id}/results` | Hasil dan turnout agregat tanpa pilihan individual | `election.read` |
+
 ---
 
 ## 3. Contoh Payload Inti

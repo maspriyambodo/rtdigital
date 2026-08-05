@@ -82,7 +82,11 @@ services/api/
 │   │   ├── letter/                  # Jenis surat dan pengajuan
 │   │   ├── complaint/               # Aduan, komentar, kategori aduan
 │   │   ├── file/                    # Metadata file dan signed URL
-│   │   └── audit/                   # Audit log
+│   │   ├── audit/                   # Audit log
+│   │   ├── asset/                   # (Pasca-MVP) Aset, peminjaman, pemeliharaan
+│   │   ├── security_ops/            # (Pasca-MVP) Ronda, kerja bakti, panic button, buku tamu
+│   │   ├── local_services/          # (Pasca-MVP) Sampah, UMKM, Posyandu non-medis
+│   │   └── governance/              # (Pasca-MVP) E-voting pengurus
 │   └── infrastructure/
 │       ├── s3/                      # Cloudflare R2 via AWS SDK S3-compatible
 │       ├── email/                   # Resend client
@@ -148,7 +152,11 @@ apps/web/
 │   │   ├── resident/
 │   │   ├── letter/
 │   │   ├── complaint/
-│   │   └── communication/
+│   │   ├── communication/
+│   │   ├── asset/                   # Dibuat saat Epic 16 dimulai
+│   │   ├── security-ops/            # Dibuat saat Epic 17 dimulai
+│   │   ├── local-services/          # Dibuat saat Epic 18 dimulai
+│   │   └── governance/              # Dibuat saat Epic 19 dimulai
 │   ├── lib/
 │   │   ├── api.ts                   # Wrapper fetch tipis
 │   │   ├── auth.ts                  # Token memory dan refresh satu kali
@@ -530,5 +538,6 @@ Pengiriman email melalui Resend dan notifikasi WhatsApp melalui SaungWA terjadi 
 - [ ] Endpoint daftar memakai cursor/keyset pagination.
 - [ ] Upload/download memakai Cloudflare R2 signed URL S3-compatible dan pemeriksaan permission.
 - [ ] Payment, kas, dan pembuatan massal dilindungi idempotency.
+- [ ] Modul Epic 16–19 menerapkan idempotency pada mutasi yang dapat diproses ulang, isolasi tenant, kontrol akses, audit, dan pengujian privasi sesuai backlog.
 - [ ] Migration dijalankan terpisah, teruji di staging, dan kompatibel lintas rilis.
 - [ ] Unit, integration, authorization, serta E2E test meliputi alur utama.

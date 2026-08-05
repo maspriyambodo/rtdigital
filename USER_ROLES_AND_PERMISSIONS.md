@@ -224,6 +224,44 @@ complaint_category.create
 complaint_category.update
 ```
 
+### 4.6 Rencana Izin Pasca-MVP (Epic 16–19)
+
+```text
+asset.read
+asset.manage
+asset.loan
+asset.maintain
+patrol.read
+patrol.manage
+patrol.checkin
+patrol.incident
+activity.read
+activity.manage
+emergency.alert
+visitor.invite
+visitor.manage
+waste.read
+waste.manage
+business.read
+business.submit
+posyandu.read
+posyandu.manage
+election.read
+election.manage
+election.vote
+```
+
+### 4.7 Rencana Akses Pasca-MVP (Epic 16–19)
+
+*Hak akses berikut bukan bagian MVP. Finalisasi peran, pemisahan tugas, scope, retensi, dan audit dilakukan bersama acceptance criteria tiap epic.*
+
+| Modul | Peran utama | Batas akses |
+|---|---|---|
+| Aset | Pengurus, Warga | Warga hanya melihat aset yang dapat dipinjam serta pengajuan/riwayat sendiri; pengurus terotorisasi mengelola inventaris, peminjaman, dan pemeliharaan. |
+| Siskamling, kerja bakti, panic button, buku tamu | Warga, Petugas keamanan, Pengurus | Warga hanya mengakses jadwal, absensi, laporan, alert, atau undangan miliknya; lokasi darurat dan log tamu dibatasi petugas/pengurus berwenang. |
+| Sampah, UMKM, Posyandu | Warga, Bendahara, Pengurus | Retribusi sampah mengikuti otorisasi `due_types`/`invoices`; kontak UMKM hanya yang disetujui pemilik; data Posyandu non-medis dibatasi petugas berwenang. |
+| E-voting | Warga, Pengurus pemilihan | Pemilih hanya dapat menggunakan satu hak suara per KK; admin pemilihan tidak dapat melihat pilihan individual; hasil yang dipublikasikan hanya agregat. |
+
 ---
 
 ## 5. Aturan Implementasi Wajib
@@ -238,3 +276,5 @@ complaint_category.update
 8. Lookup pendidikan dan status perkawinan memakai `resident.read`; keduanya global serta read-only, tanpa permission CRUD terpisah.
 9. Kategori aduan tidak dihapus; `complaint_category.update` dapat mengubah status menjadi `inactive`.
 10. Izin frontend harus mengikuti izin backend, tetapi backend tetap menjadi sumber keputusan akhir.
+11. Epic 16–19 memakai izin rencana pada §4.6 hanya setelah permission di-seed, matriks peran disetujui, serta authorization test tersedia.
+12. Alert darurat, lokasi pengguna, log tamu, data Posyandu, dan ballot tidak boleh diekspor atau diakses lintas scope tanpa dasar operasional, permission khusus, dan audit.
