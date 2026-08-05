@@ -290,7 +290,7 @@ func (s *Service) ListLetterRequests(ctx context.Context, principal *auth.Princi
 			WHERE mine.is_active AND u.id = $3 AND target.resident_id = letter_requests.resident_id
 		  ))
 		  AND ($4 = '' OR status = $4)
-		  AND ($5 = '' OR letter_type_id = $5)
+		  AND ($5 = '' OR letter_type_id::text = $5)
 		  AND ($6 = '' OR request_number ILIKE '%' || $6 || '%')
 		ORDER BY created_at DESC LIMIT 100`,
 		principal.OrganizationID, manager, principal.UserID, strings.TrimSpace(filter.Status), strings.TrimSpace(filter.LetterTypeID), strings.TrimSpace(filter.Search),
@@ -298,20 +298,30 @@ func (s *Service) ListLetterRequests(ctx context.Context, principal *auth.Princi
 	if err != nil {
 		return nil, fmt.Errorf("list letter requests: %w", err)
 	}
-	defer rows.Close()
-	items := make([]LetterRequestItem, 0)
+	ids := make([]string, 0)
 	for rows.Next() {
 		var id string
 		if err := rows.Scan(&id); err != nil {
+			rows.Close()
 			return nil, fmt.Errorf("scan letter request id: %w", err)
 		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return nil, err
+	}
+	rows.Close()
+
+	items := make([]LetterRequestItem, 0, len(ids))
+	for _, id := range ids {
 		item, err := s.GetLetterRequest(ctx, principal, id)
 		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
 	}
-	return items, rows.Err()
+	return items, nil
 }
 
 func (s *Service) GetLetterRequest(ctx context.Context, principal *auth.Principal, id string) (LetterRequestItem, error) {
@@ -326,7 +336,7 @@ func (s *Service) GetLetterRequest(ctx context.Context, principal *auth.Principa
 		       lr.approved_at, lr.issued_file_id, lr.issued_at, lt.sla_hours, lr.sla_due_at, lr.sla_escalated_at,
 		       lr.created_at, lr.updated_at
 		FROM letter_requests lr
-		JOIN users ru ON ru.organization_id = lr.organization_id AND ru.id = lr.requester_user_id
+		LEFT JOIN users ru ON ru.organization_id = lr.organization_id AND ru.id = lr.requester_user_id
 		JOIN residents r ON r.organization_id = lr.organization_id AND r.id = lr.resident_id
 		JOIN letter_types lt ON lt.organization_id = lr.organization_id AND lt.id = lr.letter_type_id
 		WHERE lr.organization_id = $1 AND lr.id = $2`,
