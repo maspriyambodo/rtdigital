@@ -457,7 +457,14 @@ func (s *Service) getTargetHouseholds(ctx context.Context, tx pgx.Tx, organizati
 		SELECT h.id, h.internal_number, hu.code
 		FROM households h
 		JOIN house_units hu ON hu.id = h.house_unit_id AND hu.organization_id = h.organization_id
-		WHERE h.organization_id = $1`
+		WHERE h.organization_id = $1
+		  AND EXISTS (
+			SELECT 1
+			FROM household_members hm
+			WHERE hm.organization_id = h.organization_id
+			  AND hm.household_id = h.id
+			  AND hm.is_active
+		  )`
 	args := []any{organizationID}
 	if len(selectedIDs) > 0 {
 		if len(cleaned) == 0 {

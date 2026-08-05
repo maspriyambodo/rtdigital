@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/notifications"
 )
 
 var (
@@ -21,17 +22,29 @@ var (
 	ErrHouseholdNotFound = errors.New("household not found")
 	ErrDuplicateData     = errors.New("duplicate data")
 	ErrConstraint        = errors.New("business constraint violated")
+	ErrForbidden         = errors.New("forbidden")
 )
 
 type Service struct {
-	db       *pgxpool.Pool
-	crypter  auth.Crypter
-	blindKey string
-	now      func() time.Time
+	db         *pgxpool.Pool
+	crypter    auth.Crypter
+	blindKey   string
+	dispatcher *notifications.Dispatcher
+	now        func() time.Time
 }
 
 func NewService(db *pgxpool.Pool, crypter auth.Crypter, blindKey string) *Service {
 	return &Service{db: db, crypter: crypter, blindKey: blindKey, now: func() time.Time { return time.Now().UTC() }}
+}
+
+func (s *Service) SetNotificationDispatcher(dispatcher *notifications.Dispatcher) {
+	s.dispatcher = dispatcher
+}
+
+func (s *Service) dispatchNotification(job notifications.DispatchJob) {
+	if s.dispatcher != nil {
+		s.dispatcher.Dispatch(job)
+	}
 }
 
 func (s *Service) ListEducationLevels(ctx context.Context) ([]EducationLevel, error) {

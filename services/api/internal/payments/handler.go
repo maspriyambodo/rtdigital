@@ -22,6 +22,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /payments", h.require("payment.read", h.list))
 	mux.Handle("POST /payments", h.require("payment.submit", h.submit))
 	mux.Handle("GET /payments/{id}", h.require("payment.read", h.get))
+	mux.Handle("GET /payments/queue", h.require("payment.verify", h.queue))
 	mux.Handle("POST /payments/{id}/verify", h.require("payment.verify", h.verify))
 	mux.Handle("POST /payments/{id}/reject", h.require("payment.reject", h.reject))
 	mux.Handle("POST /payments/{id}/cancel", h.require("payment.cancel", h.cancel))
@@ -51,6 +52,15 @@ func (h *Handler) get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
+func (h *Handler) queue(w http.ResponseWriter, r *http.Request) {
+	items, err := h.service.Queue(r.Context(), auth.PrincipalFromContext(r.Context()))
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
 func (h *Handler) submit(w http.ResponseWriter, r *http.Request) {

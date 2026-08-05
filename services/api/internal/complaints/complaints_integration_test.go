@@ -157,11 +157,11 @@ func TestComplaintsWorkflowIntegration(t *testing.T) {
 
 	createResponse := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
 		"complaint_category_id": categoryID,
-		"title":                "Sampah menumpuk di blok A",
-		"description":          "Sampah belum diangkut 3 hari",
-		"location_description": "Depan pos kamling",
-		"priority":             "high",
-		"attachment_file_ids":  []string{},
+		"title":                 "Sampah menumpuk di blok A",
+		"description":           "Sampah belum diangkut 3 hari",
+		"location_description":  "Depan pos kamling",
+		"priority":              "high",
+		"attachment_file_ids":   []string{},
 	})
 	if createResponse.Code != http.StatusCreated {
 		t.Fatalf("create complaint = %d: %s", createResponse.Code, createResponse.Body.String())
@@ -178,20 +178,20 @@ func TestComplaintsWorkflowIntegration(t *testing.T) {
 
 	invalidCategory := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
 		"complaint_category_id": newID(),
-		"title":                "Kategori tidak valid",
-		"description":          "Harus ditolak.",
-		"priority":             "normal",
-		"attachment_file_ids":  []string{},
+		"title":                 "Kategori tidak valid",
+		"description":           "Harus ditolak.",
+		"priority":              "normal",
+		"attachment_file_ids":   []string{},
 	})
 	if invalidCategory.Code != http.StatusBadRequest {
 		t.Fatalf("create complaint with invalid category = %d; expected 400: %s", invalidCategory.Code, invalidCategory.Body.String())
 	}
 	crossTenantCategory := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
 		"complaint_category_id": otherCategoryID,
-		"title":                "Kategori lintas tenant",
-		"description":          "Harus ditolak.",
-		"priority":             "normal",
-		"attachment_file_ids":  []string{},
+		"title":                 "Kategori lintas tenant",
+		"description":           "Harus ditolak.",
+		"priority":              "normal",
+		"attachment_file_ids":   []string{},
 	})
 	if crossTenantCategory.Code != http.StatusBadRequest {
 		t.Fatalf("create complaint with cross-tenant category = %d; expected 400: %s", crossTenantCategory.Code, crossTenantCategory.Body.String())
@@ -202,10 +202,10 @@ func TestComplaintsWorkflowIntegration(t *testing.T) {
 	}
 	inactiveCategory := doRequest(http.MethodPost, "/api/v1/complaints", warga1Token, map[string]any{
 		"complaint_category_id": categoryID,
-		"title":                "Kategori nonaktif",
-		"description":          "Harus ditolak.",
-		"priority":             "normal",
-		"attachment_file_ids":  []string{},
+		"title":                 "Kategori nonaktif",
+		"description":           "Harus ditolak.",
+		"priority":              "normal",
+		"attachment_file_ids":   []string{},
 	})
 	if inactiveCategory.Code != http.StatusBadRequest {
 		t.Fatalf("create complaint with inactive category = %d; expected 400: %s", inactiveCategory.Code, inactiveCategory.Body.String())

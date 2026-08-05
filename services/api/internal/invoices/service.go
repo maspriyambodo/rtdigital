@@ -73,10 +73,14 @@ func (s *Service) notifyHousehold(ctx context.Context, organizationID, household
 }
 
 func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principal, action, entityType, entityID string) error {
+	var actorID *string
+	if principal.UserID != "" {
+		actorID = &principal.UserID
+	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
 		VALUES ($1, $2, $3, $4, $5)`,
-		principal.OrganizationID, principal.UserID, action, entityType, entityID,
+		principal.OrganizationID, actorID, action, entityType, entityID,
 	); err != nil {
 		return fmt.Errorf("audit %s: %w", action, err)
 	}

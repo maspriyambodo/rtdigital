@@ -1,26 +1,27 @@
 package dashboard
 
 type ResidentDashboard struct {
-	ActiveInvoices      []InvoiceSummary      `json:"active_invoices"`
-	RecentPayments      []PaymentSummary      `json:"recent_payments"`
-	RecentLetters       []LetterSummary       `json:"recent_letters"`
-	RecentComplaints    []ComplaintSummary    `json:"recent_complaints"`
-	Announcements       []AnnouncementSummary `json:"announcements"`
-	UpcomingEvents      []EventSummary        `json:"upcoming_events"`
+	ActiveInvoices    []InvoiceSummary      `json:"active_invoices"`
+	RecentPayments    []PaymentSummary      `json:"recent_payments"`
+	RecentLetters     []LetterSummary       `json:"recent_letters"`
+	RecentComplaints  []ComplaintSummary    `json:"recent_complaints"`
+	Announcements     []AnnouncementSummary `json:"announcements"`
+	UpcomingEvents    []EventSummary        `json:"upcoming_events"`
+	PublicCashSummary *PublicCashSummary    `json:"public_cash_summary,omitempty"`
 }
 
 type AdminDashboard struct {
-	ActiveHouseholds      int                `json:"active_households"`
-	ActiveResidents       int                `json:"active_residents"`
-	ActiveInvoices        int                `json:"active_invoices"`
-	OutstandingAmount     float64            `json:"outstanding_amount"`
-	PendingPayments       int                `json:"pending_payments"`
-	CashBalance           float64            `json:"cash_balance"`
-	PendingLetters        int                `json:"pending_letters"`
-	OpenComplaints        int                `json:"open_complaints"`
-	RecentPayments        []PaymentSummary   `json:"recent_payments"`
-	RecentLetters         []LetterSummary    `json:"recent_letters"`
-	RecentComplaints      []ComplaintSummary `json:"recent_complaints"`
+	ActiveHouseholds  int                `json:"active_households"`
+	ActiveResidents   int                `json:"active_residents"`
+	ActiveInvoices    int                `json:"active_invoices"`
+	OutstandingAmount float64            `json:"outstanding_amount"`
+	PendingPayments   int                `json:"pending_payments"`
+	CashBalance       float64            `json:"cash_balance"`
+	PendingLetters    int                `json:"pending_letters"`
+	OpenComplaints    int                `json:"open_complaints"`
+	RecentPayments    []PaymentSummary   `json:"recent_payments"`
+	RecentLetters     []LetterSummary    `json:"recent_letters"`
+	RecentComplaints  []ComplaintSummary `json:"recent_complaints"`
 }
 
 type InvoiceSummary struct {
@@ -72,4 +73,21 @@ type EventSummary struct {
 	Title    string `json:"title"`
 	StartsAt string `json:"starts_at"`
 	Location string `json:"location"`
+}
+
+// PublicCashSummary contains only administrator-published aggregate values.
+// It intentionally excludes transaction, payer, and proof-document data.
+type PublicCashSummary struct {
+	PeriodStart   string                      `json:"period_start"`
+	PeriodEnd     string                      `json:"period_end"`
+	TotalIncome   float64                     `json:"total_income"`
+	TotalExpense  float64                     `json:"total_expense"`
+	EndingBalance float64                     `json:"ending_balance"`
+	Categories    []PublicCashCategorySummary `json:"categories"`
+}
+
+type PublicCashCategorySummary struct {
+	CategoryName    string  `json:"category_name"`
+	TransactionType string  `json:"transaction_type"`
+	TotalAmount     float64 `json:"total_amount"`
 }

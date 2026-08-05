@@ -86,11 +86,12 @@ func (s *Service) IssueLetter(ctx context.Context, principal *auth.Principal, id
 	); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("insert issued letter file: %w", err)
 	}
+	publicCode := newUUID()
 	if _, err := tx.Exec(ctx, `
 		UPDATE letter_requests
-		SET letter_number = $1, status = 'issued', issued_file_id = $2, issued_at = $3
-		WHERE organization_id = $4 AND id = $5`,
-		letterNumber, fileID, now, principal.OrganizationID, id,
+		SET letter_number = $1, status = 'issued', issued_file_id = $2, issued_at = $3, public_verification_code = $4
+		WHERE organization_id = $5 AND id = $6`,
+		letterNumber, fileID, now, publicCode, principal.OrganizationID, id,
 	); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("mark letter issued: %w", err)
 	}

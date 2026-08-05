@@ -22,6 +22,7 @@ var (
 	ErrCannotEscalate        = errors.New("cannot escalate privileges")
 	ErrCannotModifySelf      = errors.New("cannot modify own roles")
 	ErrMFAEnrollmentRequired = errors.New("MFA enrollment required")
+	ErrForbidden             = errors.New("forbidden")
 )
 
 type NotificationDispatcher interface {
@@ -420,6 +421,18 @@ func validateRoleCodes(ctx context.Context, tx pgx.Tx, principal *auth.Principal
 		roleIDs = append(roleIDs, roleID)
 	}
 	return roleIDs, nil
+}
+
+func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principal, action, entityType, entityID string) error {
+	_, err := tx.Exec(ctx, `
+		INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+		VALUES ($1, $2, $3, $4, $5)`,
+		principal.OrganizationID, principal.UserID, action, entityType, entityID,
+	)
+	if err != nil {
+		return fmt.Errorf("audit %s: %w", action, err)
+	}
+	return nil
 }
 
 func hasRole(principal *auth.Principal, roleCode string) bool {

@@ -241,20 +241,20 @@ Tujuan: memformalkan data referensi yang saat ini berupa teks bebas agar input k
 
 Tujuan: mengubah data dan transaksi menjadi pengingat, antrean kerja, kepastian status warga, serta transparansi yang aman.
 
-- [ ] **Task 14.1:** Implementasi penerbitan tagihan rutin terjadwal untuk `due_types` aktif, target keluarga yang sah, idempotensi periode, ringkasan hasil, dan audit.
-- [ ] **Task 14.2:** Implementasi pengingat iuran melalui dispatcher sesuai preferensi kanal, jadwal yang dapat dikonfigurasi, pembatasan frekuensi, dan pencatatan kegagalan tanpa menggagalkan transaksi utama.
-- [ ] **Task 14.3:** Implementasi pembayaran rapel: satu pelaporan pembayaran dialokasikan atomik ke beberapa invoice menurut aturan alokasi yang eksplisit, dengan perlindungan overpayment dan audit.
-- [ ] **Task 14.4:** Buat antrean verifikasi bendahara satu layar: bukti, nominal, invoice, sisa tagihan, riwayat relevan, alasan penolakan standar, dan separation of duties.
-- [ ] **Task 14.5:** Implementasi validasi pra-pengajuan surat untuk data formulir, persyaratan lampiran, dan status data yang diwajibkan oleh jenis surat; tampilkan kekurangan sebelum pengajuan.
-- [ ] **Task 14.6:** Tambahkan SLA antrean surat per jenis surat, indikator jatuh tempo/terlambat bagi pengurus, estimasi status bagi warga, dan notifikasi eskalasi yang tidak berlebihan.
-- [ ] **Task 14.7:** Perluas `complaint_categories` dengan target respons dan penyelesaian; buat timeline aduan, indikator SLA, serta pengelompokan/dukungan aduan serupa bila kebutuhan volume terbukti.
-- [ ] **Task 14.8:** Implementasi konfirmasi penyelesaian aduan oleh pelapor, tenggat penutupan otomatis yang dapat dikonfigurasi, alasan penutupan, dan jejak audit.
-- [ ] **Task 14.9:** Implementasi health score keluarga berbasis kelengkapan, verifikasi, usia pembaruan, dan kontak; tampilkan daftar kerja sekretaris tanpa menghukum warga.
-- [ ] **Task 14.10:** Tambahkan tanggal evaluasi domisili sementara/kontrak dan pengingat konfirmasi tinggal/pindah bagi warga serta sekretaris.
-- [ ] **Task 14.11:** Buat transparansi kas agregat untuk warga: saldo, pemasukan/pengeluaran per kategori dan periode, bukti yang diizinkan, tanpa nama penunggak atau detail transaksi pribadi.
-- [ ] **Task 14.12:** Tambahkan QR dan halaman verifikasi publik surat yang hanya menampilkan nomor, jenis, tanggal terbit, dan status valid/dibatalkan; tanpa data pribadi atau URL dokumen privat.
-- [ ] **Task 14.13:** Implementasi serah-terima jabatan: checklist role, akses, rekening, tagihan terbuka, kas, surat, aduan, dokumen; penurunan akses pengurus lama; audit historis tetap utuh.
-- [ ] **Task 14.14:** Tambahkan integration test scheduler/idempotensi, alokasi rapel, SLA, isolasi tenant, otorisasi, privasi kas/QR, dan serah-terima akses.
+- [x] **Task 14.1:** Implementasi penerbitan tagihan rutin terjadwal untuk `due_types` aktif, target keluarga yang sah, idempotensi periode, ringkasan hasil, dan audit.
+- [x] **Task 14.2:** Implementasi pengingat iuran melalui dispatcher sesuai preferensi kanal, jadwal yang dapat dikonfigurasi, pembatasan frekuensi, dan pencatatan kegagalan tanpa menggagalkan transaksi utama.
+- [x] **Task 14.3:** Implementasi pembayaran rapel: satu pelaporan pembayaran dialokasikan atomik ke beberapa invoice menurut aturan alokasi yang eksplisit, dengan perlindungan overpayment dan audit.
+- [x] **Task 14.4:** Buat antrean verifikasi bendahara satu layar: bukti, nominal, invoice, sisa tagihan, riwayat relevan, alasan penolakan standar, dan separation of duties.
+- [x] **Task 14.5:** Implementasi validasi pra-pengajuan surat untuk data formulir, persyaratan lampiran, dan status data yang diwajibkan oleh jenis surat; tampilkan kekurangan sebelum pengajuan.
+- [x] **Task 14.6:** Tambahkan SLA antrean surat per jenis surat, indikator jatuh tempo/terlambat bagi pengurus, estimasi status bagi warga, dan notifikasi eskalasi yang tidak berlebihan.
+- [x] **Task 14.7:** Perluas `complaint_categories` dengan target respons dan penyelesaian; buat timeline aduan, indikator SLA, serta pengelompokan/dukungan aduan serupa bila kebutuhan volume terbukti.
+- [x] **Task 14.8:** Implementasi konfirmasi penyelesaian aduan oleh pelapor, tenggat penutupan otomatis yang dapat dikonfigurasi, alasan penutupan, dan jejak audit.
+- [x] **Task 14.9:** Implementasi health score keluarga berbasis kelengkapan, verifikasi, usia pembaruan, dan kontak; tampilkan daftar kerja sekretaris tanpa menghukum warga.
+- [x] **Task 14.10:** Tambahkan tanggal evaluasi domisili sementara/kontrak dan pengingat konfirmasi tinggal/pindah bagi warga serta sekretaris.
+- [x] **Task 14.11:** Buat transparansi kas agregat untuk warga: saldo, pemasukan/pengeluaran per kategori dan periode, bukti yang diizinkan, tanpa nama penunggak atau detail transaksi pribadi.
+- [x] **Task 14.12:** Tambahkan QR dan halaman verifikasi publik surat yang hanya menampilkan nomor, jenis, tanggal terbit, dan status valid/dibatalkan; tanpa data pribadi atau URL dokumen privat.
+- [x] **Task 14.13:** Implementasi serah-terima jabatan: checklist role, akses, rekening, tagihan terbuka, kas, surat, aduan, dokumen; penurunan akses pengurus lama; audit historis tetap utuh.
+- [ ] **Task 14.14:** Tambahkan integration test scheduler/idempotensi, alokasi rapel, SLA, isolasi tenant, otorisasi, privasi kas/QR, dan serah-terima akses. *(Cakupan serah-terima tersedia; scheduler/idempotensi, rapel, SLA, isolasi tenant, otorisasi, serta privasi kas/QR masih harus diuji eksplisit.)*
 
 ---
 

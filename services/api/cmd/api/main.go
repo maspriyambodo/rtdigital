@@ -115,6 +115,7 @@ func main() {
 	usersService.SetNotificationDispatcher(dispatcher)
 	paymentsService.SetNotificationDispatcher(dispatcher)
 	invoicesService.SetNotificationDispatcher(dispatcher)
+	residentsService.SetNotificationDispatcher(dispatcher)
 	lettersService.SetNotificationDispatcher(dispatcher)
 	complaintsService.SetNotificationDispatcher(dispatcher)
 	communicationService.SetNotificationDispatcher(dispatcher)
@@ -124,6 +125,10 @@ func main() {
 		Addr:    cfg.Address(),
 		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, dashboardService, reportsService, settingsService, auditService, storage),
 	}
+
+	schedulerCtx, cancelScheduler := context.WithCancel(context.Background())
+	defer cancelScheduler()
+	go runEpic14Scheduler(schedulerCtx, logger, invoicesService, lettersService, complaintsService, residentsService)
 
 	serverErr := make(chan error, 1)
 	go func() {
@@ -151,6 +156,72 @@ func main() {
 	}
 
 	logger.Info("server exited cleanly")
+}
+
+func runEpic14Scheduler(
+	ctx context.Context,
+	logger *slog.Logger,
+	invoiceService *invoices.Service,
+	letterService *letters.Service,
+	complaintService *complaints.Service,
+	residentService *residents.Service,
+) {
+	run := func() {
+		runCtx, cancel := context.WithTimeout(ctx, 10*time.Minute)
+		defer cancel()
+
+		if result, err := invoiceService.RunScheduledGeneration(runCtx); err != nil {
+			logger.Error("scheduled invoice generation failed", "error", err)
+		} else {
+			logger.Info("scheduled invoice generation completed",
+				"attempted", result.Attempted,
+				"created", result.Created,
+				"skipped", result.Skipped,
+				"failed", result.Failed,
+			)
+		}
+
+		if reminders, err := invoiceService.RunDueReminders(runCtx); err != nil {
+			logger.Error("scheduled due reminders failed", "error", err)
+		} else {
+			logger.Info("scheduled due reminders completed",
+				"eligible", reminders.Eligible,
+				"queued", reminders.Queued,
+				"skipped", reminders.Skipped,
+				"failures", reminders.Failures,
+			)
+		}
+
+		if count, err := letterService.EscalateLetters(runCtx); err != nil {
+			logger.Error("scheduled letter escalation failed", "error", err)
+		} else if count > 0 {
+			logger.Info("scheduled letter escalation completed", "escalated", count)
+		}
+
+		if count, err := complaintService.AutoCloseComplaints(runCtx); err != nil {
+			logger.Error("scheduled complaint auto-close failed", "error", err)
+		} else if count > 0 {
+			logger.Info("scheduled complaint auto-close completed", "closed", count)
+		}
+
+		if count, err := residentService.RunDomicileReminders(runCtx); err != nil {
+			logger.Error("scheduled domicile reminders failed", "error", err)
+		} else if count > 0 {
+			logger.Info("scheduled domicile reminders completed", "queued", count)
+		}
+	}
+
+	run()
+	ticker := time.NewTicker(time.Hour)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			run()
+		}
+	}
 }
 
 func signalContext() <-chan os.Signal {

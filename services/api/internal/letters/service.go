@@ -80,9 +80,9 @@ func (s *Service) CreateLetterType(ctx context.Context, principal *auth.Principa
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO letter_types (id, organization_id, name, requirements, form_schema, template, number_pattern, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		id, principal.OrganizationID, req.Name, req.Requirements, req.FormSchema, req.Template, req.NumberPattern, req.Status,
+		INSERT INTO letter_types (id, organization_id, name, requirements, form_schema, template, number_pattern, status, sla_hours)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+		id, principal.OrganizationID, req.Name, req.Requirements, req.FormSchema, req.Template, req.NumberPattern, req.Status, req.SLAHours,
 	); err != nil {
 		if isUniqueConstraintViolation(err) {
 			return LetterTypeItem{}, ErrConflict
@@ -103,7 +103,7 @@ func (s *Service) ListLetterTypes(ctx context.Context, principal *auth.Principal
 		return nil, ErrForbidden
 	}
 	rows, err := s.db.Query(ctx, `
-		SELECT id, name, requirements, form_schema, template, number_pattern, status, created_at, updated_at
+		SELECT id, name, requirements, form_schema, template, number_pattern, status, sla_hours, created_at, updated_at
 		FROM letter_types
 		WHERE organization_id = $1 AND ($2 OR status = 'active')
 		ORDER BY name`,
@@ -116,7 +116,7 @@ func (s *Service) ListLetterTypes(ctx context.Context, principal *auth.Principal
 	items := make([]LetterTypeItem, 0)
 	for rows.Next() {
 		var item LetterTypeItem
-		if err := rows.Scan(&item.ID, &item.Name, &item.Requirements, &item.FormSchema, &item.Template, &item.NumberPattern, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(&item.ID, &item.Name, &item.Requirements, &item.FormSchema, &item.Template, &item.NumberPattern, &item.Status, &item.SLAHours, &item.CreatedAt, &item.UpdatedAt); err != nil {
 			return nil, fmt.Errorf("scan letter type: %w", err)
 		}
 		items = append(items, item)
@@ -130,10 +130,10 @@ func (s *Service) GetLetterType(ctx context.Context, principal *auth.Principal, 
 	}
 	var item LetterTypeItem
 	err := s.db.QueryRow(ctx, `
-		SELECT id, name, requirements, form_schema, template, number_pattern, status, created_at, updated_at
+		SELECT id, name, requirements, form_schema, template, number_pattern, status, sla_hours, created_at, updated_at
 		FROM letter_types WHERE organization_id = $1 AND id = $2`,
 		principal.OrganizationID, id,
-	).Scan(&item.ID, &item.Name, &item.Requirements, &item.FormSchema, &item.Template, &item.NumberPattern, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	).Scan(&item.ID, &item.Name, &item.Requirements, &item.FormSchema, &item.Template, &item.NumberPattern, &item.Status, &item.SLAHours, &item.CreatedAt, &item.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return LetterTypeItem{}, ErrLetterTypeNotFound
 	}
@@ -156,9 +156,10 @@ func (s *Service) UpdateLetterType(ctx context.Context, principal *auth.Principa
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 	result, err := tx.Exec(ctx, `
-		UPDATE letter_types SET name = $1, requirements = $2, form_schema = $3, template = $4, number_pattern = $5, status = $6
-		WHERE organization_id = $7 AND id = $8`,
-		req.Name, req.Requirements, req.FormSchema, req.Template, req.NumberPattern, req.Status, principal.OrganizationID, id,
+		UPDATE letter_types
+		SET name = $1, requirements = $2, form_schema = $3, template = $4, number_pattern = $5, status = $6, sla_hours = $7
+		WHERE organization_id = $8 AND id = $9`,
+		req.Name, req.Requirements, req.FormSchema, req.Template, req.NumberPattern, req.Status, req.SLAHours, principal.OrganizationID, id,
 	)
 	if err != nil {
 		if isUniqueConstraintViolation(err) {
@@ -224,21 +225,35 @@ func (s *Service) SubmitLetterRequest(ctx context.Context, principal *auth.Princ
 		return LetterRequestItem{}, fmt.Errorf("begin submit letter: %w", err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
-	var requirements json.RawMessage
-	if err := tx.QueryRow(ctx, `SELECT requirements FROM letter_types WHERE organization_id = $1 AND id = $2 AND status = 'active'`, principal.OrganizationID, req.LetterTypeID).Scan(&requirements); errors.Is(err, pgx.ErrNoRows) {
+	var requirements, formSchema json.RawMessage
+	var slaHours *int
+	if err := tx.QueryRow(ctx, `
+		SELECT requirements, form_schema, sla_hours
+		FROM letter_types
+		WHERE organization_id = $1 AND id = $2 AND status = 'active'`,
+		principal.OrganizationID, req.LetterTypeID,
+	).Scan(&requirements, &formSchema, &slaHours); errors.Is(err, pgx.ErrNoRows) {
 		return LetterRequestItem{}, ErrLetterTypeNotFound
 	} else if err != nil {
 		return LetterRequestItem{}, fmt.Errorf("get letter type: %w", err)
 	}
-	if err := validateForm(req.FormData, requirements, len(req.AttachmentFileIDs)); err != nil {
+	if err := s.validateLetterSubmission(ctx, tx, principal.OrganizationID, req.ResidentID, req.FormData, formSchema, requirements, len(req.AttachmentFileIDs)); err != nil {
 		return LetterRequestItem{}, err
 	}
 	id, now := newUUID(), s.now()
 	requestNumber := fmt.Sprintf("SR-%s-%s", now.Format("060102"), strings.ToUpper(id[:6]))
+	var slaDueAt *time.Time
+	if slaHours != nil {
+		due := now.Add(time.Duration(*slaHours) * time.Hour)
+		slaDueAt = &due
+	}
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO letter_requests (id, organization_id, requester_user_id, resident_id, letter_type_id, request_number, form_data, status, resident_note, submitted_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'submitted', $8, $9)`,
-		id, principal.OrganizationID, principal.UserID, req.ResidentID, req.LetterTypeID, requestNumber, req.FormData, req.ResidentNote, now,
+		INSERT INTO letter_requests (
+			id, organization_id, requester_user_id, resident_id, letter_type_id, request_number,
+			form_data, status, resident_note, submitted_at, sla_due_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'submitted', $8, $9, $10)`,
+		id, principal.OrganizationID, principal.UserID, req.ResidentID, req.LetterTypeID, requestNumber,
+		req.FormData, req.ResidentNote, now, slaDueAt,
 	); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("insert letter request: %w", err)
 	}
@@ -308,7 +323,8 @@ func (s *Service) GetLetterRequest(ctx context.Context, principal *auth.Principa
 		SELECT lr.id, lr.requester_user_id, COALESCE(ru.email, ru.phone, 'Warga'), lr.resident_id, r.full_name,
 		       lr.letter_type_id, lt.name, lr.request_number, lr.letter_number, lr.form_data, lr.status,
 		       lr.resident_note, lr.internal_note, lr.submitted_at, lr.processed_by, lr.approved_by,
-		       lr.approved_at, lr.issued_file_id, lr.issued_at, lr.created_at, lr.updated_at
+		       lr.approved_at, lr.issued_file_id, lr.issued_at, lt.sla_hours, lr.sla_due_at, lr.sla_escalated_at,
+		       lr.created_at, lr.updated_at
 		FROM letter_requests lr
 		JOIN users ru ON ru.organization_id = lr.organization_id AND ru.id = lr.requester_user_id
 		JOIN residents r ON r.organization_id = lr.organization_id AND r.id = lr.resident_id
@@ -318,7 +334,8 @@ func (s *Service) GetLetterRequest(ctx context.Context, principal *auth.Principa
 	).Scan(&item.ID, &item.RequesterUserID, &item.RequesterName, &item.ResidentID, &item.ResidentName,
 		&item.LetterTypeID, &item.LetterTypeName, &item.RequestNumber, &item.LetterNumber, &item.FormData,
 		&item.Status, &item.ResidentNote, &item.InternalNote, &item.SubmittedAt, &item.ProcessedBy,
-		&item.ApprovedBy, &item.ApprovedAt, &item.IssuedFileID, &item.IssuedAt, &item.CreatedAt, &item.UpdatedAt)
+		&item.ApprovedBy, &item.ApprovedAt, &item.IssuedFileID, &item.IssuedAt, &item.SLAHours, &item.SLADueAt,
+		&item.SLAEscalatedAt, &item.CreatedAt, &item.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return LetterRequestItem{}, ErrLetterRequestNotFound
 	}
@@ -375,25 +392,33 @@ func (s *Service) UpdateLetterRequest(ctx context.Context, principal *auth.Princ
 		return LetterRequestItem{}, ErrForbidden
 	}
 
-	var requirements json.RawMessage
+	var requirements, formSchema json.RawMessage
+	var slaHours *int
 	if err := tx.QueryRow(ctx, `
-		SELECT requirements FROM letter_types
+		SELECT requirements, form_schema, sla_hours
+		FROM letter_types
 		WHERE organization_id = $1 AND id = $2 AND status = 'active'`,
 		principal.OrganizationID, req.LetterTypeID,
-	).Scan(&requirements); errors.Is(err, pgx.ErrNoRows) {
+	).Scan(&requirements, &formSchema, &slaHours); errors.Is(err, pgx.ErrNoRows) {
 		return LetterRequestItem{}, ErrLetterTypeNotFound
 	} else if err != nil {
 		return LetterRequestItem{}, fmt.Errorf("get letter type: %w", err)
 	}
-	if err := validateForm(req.FormData, requirements, len(req.AttachmentFileIDs)); err != nil {
+	if err := s.validateLetterSubmission(ctx, tx, principal.OrganizationID, req.ResidentID, req.FormData, formSchema, requirements, len(req.AttachmentFileIDs)); err != nil {
 		return LetterRequestItem{}, err
+	}
+	now := s.now()
+	var slaDueAt *time.Time
+	if slaHours != nil {
+		due := now.Add(time.Duration(*slaHours) * time.Hour)
+		slaDueAt = &due
 	}
 	if _, err := tx.Exec(ctx, `
 		UPDATE letter_requests
 		SET resident_id = $1, letter_type_id = $2, form_data = $3, resident_note = $4,
-		    status = 'submitted', submitted_at = $5
-		WHERE organization_id = $6 AND id = $7`,
-		req.ResidentID, req.LetterTypeID, req.FormData, req.ResidentNote, s.now(),
+		    status = 'submitted', submitted_at = $5, sla_due_at = $6, sla_escalated_at = NULL
+		WHERE organization_id = $7 AND id = $8`,
+		req.ResidentID, req.LetterTypeID, req.FormData, req.ResidentNote, now, slaDueAt,
 		principal.OrganizationID, id,
 	); err != nil {
 		return LetterRequestItem{}, fmt.Errorf("update letter request: %w", err)
@@ -517,6 +542,60 @@ func (s *Service) RejectLetterRequest(ctx context.Context, principal *auth.Princ
 	return s.transitionLetterRequest(ctx, principal, id, "submitted,under_review,awaiting_approval", "rejected", "reject", req, true, true)
 }
 
+func (s *Service) CancelLetterRequest(ctx context.Context, principal *auth.Principal, id string, req CancelLetterRequest) (LetterRequestItem, error) {
+	if principal == nil {
+		return LetterRequestItem{}, ErrForbidden
+	}
+	if err := req.Validate(); err != nil {
+		return LetterRequestItem{}, err
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return LetterRequestItem{}, fmt.Errorf("begin cancel letter request: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var status string
+	if err := tx.QueryRow(ctx, `
+		SELECT status
+		FROM letter_requests
+		WHERE organization_id = $1 AND id = $2
+		FOR UPDATE`,
+		principal.OrganizationID, id,
+	).Scan(&status); errors.Is(err, pgx.ErrNoRows) {
+		return LetterRequestItem{}, ErrLetterRequestNotFound
+	} else if err != nil {
+		return LetterRequestItem{}, fmt.Errorf("lock letter request cancellation: %w", err)
+	}
+
+	switch status {
+	case "submitted", "under_review", "needs_revision", "awaiting_approval", "approved", "issued":
+	default:
+		return LetterRequestItem{}, ErrInvalidState
+	}
+
+	now := s.now()
+	if _, err := tx.Exec(ctx, `
+		UPDATE letter_requests
+		SET status = 'cancelled',
+		    cancelled_by = $1,
+		    cancelled_at = $2,
+		    cancellation_reason = $3
+		WHERE organization_id = $4 AND id = $5`,
+		principal.UserID, now, req.Reason, principal.OrganizationID, id,
+	); err != nil {
+		return LetterRequestItem{}, fmt.Errorf("cancel letter request: %w", err)
+	}
+	if err := s.audit(ctx, tx, principal, "letter_request.cancel", "letter_request", id); err != nil {
+		return LetterRequestItem{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return LetterRequestItem{}, fmt.Errorf("commit letter request cancellation: %w", err)
+	}
+	return s.GetLetterRequest(ctx, principal, id)
+}
+
 func (s *Service) syncAttachments(ctx context.Context, tx pgx.Tx, principal *auth.Principal, requestID string, fileIDs []string) error {
 	if _, err := tx.Exec(ctx, `DELETE FROM file_attachments WHERE organization_id = $1 AND entity_type = 'letter_request' AND entity_id = $2`, principal.OrganizationID, requestID); err != nil {
 		return fmt.Errorf("clear letter attachments: %w", err)
@@ -587,10 +666,54 @@ func (s *Service) ownsResident(ctx context.Context, principal *auth.Principal, r
 	return allowed, nil
 }
 
+func (s *Service) validateLetterSubmission(
+	ctx context.Context,
+	tx pgx.Tx,
+	organizationID, residentID string,
+	formData, formSchema, requirements json.RawMessage,
+	attachmentCount int,
+) error {
+	var residentStatus string
+	if err := tx.QueryRow(ctx, `
+		SELECT status
+		FROM residents
+		WHERE organization_id = $1 AND id = $2`,
+		organizationID, residentID,
+	).Scan(&residentStatus); errors.Is(err, pgx.ErrNoRows) {
+		return ErrValidation
+	} else if err != nil {
+		return fmt.Errorf("check letter resident: %w", err)
+	}
+	if residentStatus != "active" {
+		return ErrConstraint
+	}
+	return validateFormSchema(formData, formSchema, requirements, attachmentCount)
+}
+
 func validateForm(formData, requirements json.RawMessage, attachmentCount int) error {
+	// Compatibility wrapper for existing callers/tests without form schema.
+	return validateFormSchema(formData, json.RawMessage("{}"), requirements, attachmentCount)
+}
+
+func validateFormSchema(formData, formSchema, requirements json.RawMessage, attachmentCount int) error {
 	var data map[string]any
 	if err := json.Unmarshal(formData, &data); err != nil {
 		return ErrValidation
+	}
+	var schema map[string]struct {
+		Required bool `json:"required"`
+	}
+	if err := json.Unmarshal(formSchema, &schema); err != nil {
+		return ErrValidation
+	}
+	for field, config := range schema {
+		if !config.Required {
+			continue
+		}
+		value, exists := data[field]
+		if !exists || value == nil || strings.TrimSpace(fmt.Sprint(value)) == "" {
+			return ErrValidation
+		}
 	}
 	var requirementsList []struct {
 		Required bool `json:"required"`

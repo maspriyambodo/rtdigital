@@ -14,6 +14,7 @@ var (
 	ErrInvalidState          = errors.New("invalid state")
 	ErrForbidden             = errors.New("forbidden")
 	ErrConflict              = errors.New("conflict")
+	ErrConstraint            = errors.New("business constraint violated")
 	ErrStorage               = errors.New("storage error")
 )
 
@@ -25,6 +26,7 @@ type LetterTypeItem struct {
 	Template      string          `json:"template"`
 	NumberPattern string          `json:"number_pattern"`
 	Status        string          `json:"status"`
+	SLAHours      *int            `json:"sla_hours,omitempty"`
 	CreatedAt     time.Time       `json:"created_at"`
 	UpdatedAt     time.Time       `json:"updated_at"`
 }
@@ -36,6 +38,7 @@ type CreateLetterTypeRequest struct {
 	Template      string          `json:"template"`
 	NumberPattern string          `json:"number_pattern"`
 	Status        string          `json:"status"`
+	SLAHours      *int            `json:"sla_hours"`
 }
 
 func (r *CreateLetterTypeRequest) Validate() error {
@@ -61,6 +64,9 @@ func (r *CreateLetterTypeRequest) Validate() error {
 	if r.Status != "active" && r.Status != "inactive" {
 		return ErrValidation
 	}
+	if r.SLAHours != nil && (*r.SLAHours < 1 || *r.SLAHours > 8_760) {
+		return ErrValidation
+	}
 	return nil
 }
 
@@ -84,6 +90,13 @@ type AttachmentInfo struct {
 	Purpose      string `json:"purpose"`
 }
 
+type PublicLetterVerification struct {
+	LetterNumber string     `json:"letter_number,omitempty"`
+	LetterType   string     `json:"letter_type"`
+	IssuedAt     *time.Time `json:"issued_at,omitempty"`
+	Status       string     `json:"status"`
+}
+
 type LetterRequestItem struct {
 	ID              string           `json:"id"`
 	RequesterUserID string           `json:"requester_user_id"`
@@ -104,6 +117,9 @@ type LetterRequestItem struct {
 	ApprovedAt      *time.Time       `json:"approved_at,omitempty"`
 	IssuedFileID    *string          `json:"issued_file_id,omitempty"`
 	IssuedAt        *time.Time       `json:"issued_at,omitempty"`
+	SLAHours        *int             `json:"sla_hours,omitempty"`
+	SLADueAt        *time.Time       `json:"sla_due_at,omitempty"`
+	SLAEscalatedAt  *time.Time       `json:"sla_escalated_at,omitempty"`
 	CreatedAt       time.Time        `json:"created_at"`
 	UpdatedAt       time.Time        `json:"updated_at"`
 	Attachments     []AttachmentInfo `json:"attachments"`
@@ -156,6 +172,18 @@ type LetterRequestFilter struct {
 type ReviewLetterRequest struct {
 	ResidentNote *string `json:"resident_note,omitempty"`
 	InternalNote *string `json:"internal_note,omitempty"`
+}
+
+type CancelLetterRequest struct {
+	Reason string `json:"reason"`
+}
+
+func (r *CancelLetterRequest) Validate() error {
+	r.Reason = strings.TrimSpace(r.Reason)
+	if r.Reason == "" {
+		return ErrValidation
+	}
+	return nil
 }
 
 func (r *ReviewLetterRequest) Validate(requireResidentNote bool) error {

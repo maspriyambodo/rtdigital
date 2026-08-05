@@ -27,6 +27,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /users/{id}/deactivate", auth.RequireAuthenticatedPermission(h.tokens, h.authz, "user.deactivate", true, http.HandlerFunc(h.deactivateUser)))
 	mux.Handle("POST /users/{id}/roles", auth.RequireAuthenticatedPermission(h.tokens, h.authz, "role.assign", true, http.HandlerFunc(h.assignRole)))
 	mux.Handle("DELETE /users/{id}/roles/{role_id}", auth.RequireAuthenticatedPermission(h.tokens, h.authz, "role.revoke", true, http.HandlerFunc(h.revokeRole)))
+	mux.Handle("POST /office-handovers", auth.RequireAuthenticatedPermission(h.tokens, h.authz, "role.assign", true, http.HandlerFunc(h.createOfficeHandover)))
+	mux.Handle("GET /office-handovers/{id}", auth.RequireAuthenticatedPermission(h.tokens, h.authz, "role.assign", true, http.HandlerFunc(h.getOfficeHandover)))
+	mux.Handle("POST /office-handovers/{id}/complete", auth.RequireAuthenticatedPermission(h.tokens, h.authz, "role.assign", true, http.HandlerFunc(h.completeOfficeHandover)))
 }
 
 func (h *Handler) listRoles(w http.ResponseWriter, r *http.Request) {
@@ -119,6 +122,43 @@ func (h *Handler) revokeRole(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+func (h *Handler) createOfficeHandover(w http.ResponseWriter, r *http.Request) {
+	var request CreateOfficeHandoverRequest
+	if !decodeJSON(w, r, &request) {
+		return
+	}
+	item, err := h.service.CreateOfficeHandover(r.Context(), auth.PrincipalFromContext(r.Context()), request)
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"data": item})
+}
+
+func (h *Handler) getOfficeHandover(w http.ResponseWriter, r *http.Request) {
+	item, err := h.service.GetOfficeHandover(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"))
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
+func (h *Handler) completeOfficeHandover(w http.ResponseWriter, r *http.Request) {
+	var request CompleteOfficeHandoverRequest
+	if !decodeJSON(w, r, &request) {
+		return
+	}
+	item, err := h.service.CompleteOfficeHandover(
+		r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"), request,
+	)
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
 func (h *Handler) writeServiceError(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, ErrValidation):
@@ -135,6 +175,8 @@ func (h *Handler) writeServiceError(w http.ResponseWriter, r *http.Request, err 
 		writeError(w, r, http.StatusForbidden, "MFA_ENROLLMENT_REQUIRED", "Akun target harus mengaktifkan MFA untuk peran ini.")
 	case errors.Is(err, ErrCannotModifySelf):
 		writeError(w, r, http.StatusForbidden, "SELF_MODIFICATION_DENIED", "Tidak dapat mengubah peran sendiri.")
+	case errors.Is(err, ErrForbidden):
+		writeError(w, r, http.StatusForbidden, "FORBIDDEN", "Anda tidak memiliki izin untuk tindakan ini.")
 	default:
 		writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "Terjadi kesalahan internal.")
 	}

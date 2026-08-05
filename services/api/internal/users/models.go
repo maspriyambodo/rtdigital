@@ -1,6 +1,9 @@
 package users
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type UserListItem struct {
 	ID          string     `json:"id"`
@@ -42,4 +45,29 @@ type InviteUserResponse struct {
 	InviteToken   string    `json:"invite_token,omitempty"`
 	ActivationURL string    `json:"activation_url"`
 	ExpiresAt     time.Time `json:"expires_at"`
+}
+
+type OfficeHandover struct {
+	ID             string          `json:"id"`
+	OutgoingUserID string          `json:"outgoing_user_id"`
+	IncomingUserID *string         `json:"incoming_user_id,omitempty"`
+	Status         string          `json:"status"`
+	Checklist      json.RawMessage `json:"checklist"`
+	Notes          *string         `json:"notes,omitempty"`
+	CompletedBy    *string         `json:"completed_by,omitempty"`
+	CompletedAt    *time.Time      `json:"completed_at,omitempty"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+}
+
+type CreateOfficeHandoverRequest struct {
+	OutgoingUserID string          `json:"outgoing_user_id"`
+	Checklist      json.RawMessage `json:"checklist"`
+	Notes          *string         `json:"notes,omitempty"`
+}
+
+type CompleteOfficeHandoverRequest struct {
+	IncomingUserID string          `json:"incoming_user_id"`
+	Checklist      json.RawMessage `json:"checklist"`
+	Notes          *string         `json:"notes,omitempty"`
 }

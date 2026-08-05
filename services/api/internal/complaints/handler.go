@@ -25,6 +25,7 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("PATCH /complaints/{id}", h.require("complaint.submit", h.updateComplaint))
 	mux.Handle("POST /complaints/{id}/assign", h.require("complaint.assign", h.assignComplaint))
 	mux.Handle("POST /complaints/{id}/status", h.require("complaint.read", h.updateStatus))
+	mux.Handle("POST /complaints/{id}/confirm", h.require("complaint.submit", h.confirmResolution))
 	mux.Handle("POST /complaints/{id}/comments", h.require("complaint.comment", h.addComment))
 
 	mux.Handle("GET /complaint-categories", h.require("complaint_category.read", h.listComplaintCategories))
@@ -106,6 +107,15 @@ func (h *Handler) updateStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	item, err := h.service.UpdateStatus(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"), request)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
+func (h *Handler) confirmResolution(w http.ResponseWriter, r *http.Request) {
+	item, err := h.service.ConfirmResolution(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"))
 	if err != nil {
 		h.writeServiceError(w, err)
 		return

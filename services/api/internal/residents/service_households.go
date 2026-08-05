@@ -36,12 +36,14 @@ func (s *Service) CreateHousehold(ctx context.Context, principal *auth.Principal
 			domicile_status, move_in_date, verification_status
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::date, 'unverified')
 		RETURNING id, house_unit_id, internal_number, domicile_status,
-			move_in_date::text, move_out_date::text, verification_status, created_at, updated_at`,
+			move_in_date::text, move_out_date::text, domicile_review_due_at::text,
+			domicile_last_confirmed_at, verification_status, created_at, updated_at`,
 		newUUID(), principal.OrganizationID, req.HouseUnitID, req.InternalNumber,
 		encryptedKK, blindIndex, req.DomicileStatus, nullableTrim(req.MoveInDate),
 	).Scan(
 		&household.ID, &household.HouseUnitID, &household.InternalNumber, &household.DomicileStatus,
-		&household.MoveInDate, &household.MoveOutDate, &household.VerificationStatus,
+		&household.MoveInDate, &household.MoveOutDate, &household.DomicileReviewDueAt,
+		&household.DomicileLastConfirmedAt, &household.VerificationStatus,
 		&household.CreatedAt, &household.UpdatedAt,
 	)
 	if err != nil {
@@ -60,6 +62,7 @@ func (s *Service) ListHouseholds(ctx context.Context, principal *auth.Principal)
 	rows, err := s.db.Query(ctx, `
 		SELECT h.id, h.house_unit_id, h.internal_number, h.head_resident_id, r.full_name,
 			h.domicile_status, h.move_in_date::text, h.move_out_date::text,
+			h.domicile_review_due_at::text, h.domicile_last_confirmed_at,
 			h.verification_status, h.created_at, h.updated_at
 		FROM households h
 		LEFT JOIN residents r ON r.id = h.head_resident_id AND r.organization_id = h.organization_id
@@ -76,7 +79,8 @@ func (s *Service) ListHouseholds(ctx context.Context, principal *auth.Principal)
 		if err := rows.Scan(
 			&household.ID, &household.HouseUnitID, &household.InternalNumber,
 			&household.HeadResidentID, &household.HeadResidentName, &household.DomicileStatus,
-			&household.MoveInDate, &household.MoveOutDate, &household.VerificationStatus,
+			&household.MoveInDate, &household.MoveOutDate, &household.DomicileReviewDueAt,
+			&household.DomicileLastConfirmedAt, &household.VerificationStatus,
 			&household.CreatedAt, &household.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan household: %w", err)
@@ -92,14 +96,16 @@ func (s *Service) GetHousehold(ctx context.Context, principal *auth.Principal, i
 	err := s.db.QueryRow(ctx, `
 		SELECT h.id, h.house_unit_id, h.internal_number, h.family_card_number_encrypted,
 			h.head_resident_id, r.full_name, h.domicile_status, h.move_in_date::text,
-			h.move_out_date::text, h.verification_status, h.created_at, h.updated_at
+			h.move_out_date::text, h.domicile_review_due_at::text, h.domicile_last_confirmed_at,
+			h.verification_status, h.created_at, h.updated_at
 		FROM households h
 		LEFT JOIN residents r ON r.id = h.head_resident_id AND r.organization_id = h.organization_id
 		WHERE h.id = $1 AND h.organization_id = $2`, id, principal.OrganizationID,
 	).Scan(
 		&household.ID, &household.HouseUnitID, &household.InternalNumber, &encryptedKK,
 		&household.HeadResidentID, &household.HeadResidentName, &household.DomicileStatus,
-		&household.MoveInDate, &household.MoveOutDate, &household.VerificationStatus,
+		&household.MoveInDate, &household.MoveOutDate, &household.DomicileReviewDueAt,
+		&household.DomicileLastConfirmedAt, &household.VerificationStatus,
 		&household.CreatedAt, &household.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -174,6 +180,41 @@ func (s *Service) AddHouseholdMember(ctx context.Context, principal *auth.Princi
 		return err
 	}
 	return tx.Commit(ctx)
+}
+
+func (s *Service) ConfirmDomicile(ctx context.Context, principal *auth.Principal, householdID string) (Household, error) {
+	if principal == nil || strings.TrimSpace(householdID) == "" {
+		return Household{}, ErrValidation
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return Household{}, fmt.Errorf("begin confirm domicile: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	now := s.now()
+	// ponytail: yearly review until per-organization cadence is required.
+	tag, err := tx.Exec(ctx, `
+		UPDATE households
+		SET domicile_last_confirmed_at = $1,
+		    domicile_review_due_at = ($1 + interval '1 year')::date
+		WHERE organization_id = $2 AND id = $3`,
+		now, principal.OrganizationID, householdID,
+	)
+	if err != nil {
+		return Household{}, fmt.Errorf("confirm domicile: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return Household{}, ErrHouseholdNotFound
+	}
+	if err := s.audit(ctx, tx, principal, "household.domicile.confirm", "households", householdID); err != nil {
+		return Household{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return Household{}, fmt.Errorf("commit domicile confirmation: %w", err)
+	}
+	return s.GetHousehold(ctx, principal, householdID)
 }
 
 func (s *Service) listHouseholdMembers(ctx context.Context, organizationID, householdID string) ([]HouseholdMember, error) {

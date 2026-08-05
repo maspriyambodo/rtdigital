@@ -2,9 +2,11 @@ package dashboard
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
@@ -240,7 +242,71 @@ func (s *Service) GetResidentDashboard(ctx context.Context, principal *auth.Prin
 	}
 	rows.Close()
 
+	publicCashSummary, err := s.getPublicCashSummary(ctx, principal.OrganizationID)
+	if err != nil {
+		return ResidentDashboard{}, err
+	}
+	dashboard.PublicCashSummary = publicCashSummary
+
 	return dashboard, nil
+}
+
+func (s *Service) getPublicCashSummary(ctx context.Context, organizationID string) (*PublicCashSummary, error) {
+	var (
+		summary                PublicCashSummary
+		summaryID              string
+		periodStart, periodEnd time.Time
+	)
+
+	err := s.db.QueryRow(ctx, `
+		SELECT s.id, s.period_start, s.period_end, s.total_income, s.total_expense, s.ending_balance
+		FROM public_cash_summaries s
+		JOIN cash_publication_policies p
+		  ON p.organization_id = s.organization_id
+		WHERE s.organization_id = $1
+		  AND p.is_public
+		  AND (p.public_until IS NULL OR p.public_until >= CURRENT_DATE)
+		ORDER BY s.period_end DESC, s.published_at DESC
+		LIMIT 1`,
+		organizationID,
+	).Scan(
+		&summaryID, &periodStart, &periodEnd, &summary.TotalIncome,
+		&summary.TotalExpense, &summary.EndingBalance,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get public cash summary: %w", err)
+	}
+
+	summary.PeriodStart = periodStart.Format(time.DateOnly)
+	summary.PeriodEnd = periodEnd.Format(time.DateOnly)
+	summary.Categories = []PublicCashCategorySummary{}
+
+	rows, err := s.db.Query(ctx, `
+		SELECT category_name, transaction_type, total_amount
+		FROM public_cash_summary_categories
+		WHERE public_cash_summary_id = $1
+		ORDER BY transaction_type, category_name`,
+		summaryID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list public cash categories: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var category PublicCashCategorySummary
+		if err := rows.Scan(&category.CategoryName, &category.TransactionType, &category.TotalAmount); err != nil {
+			return nil, fmt.Errorf("scan public cash category: %w", err)
+		}
+		summary.Categories = append(summary.Categories, category)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate public cash categories: %w", err)
+	}
+	return &summary, nil
 }
 
 func (s *Service) GetAdminDashboard(ctx context.Context, principal *auth.Principal) (AdminDashboard, error) {

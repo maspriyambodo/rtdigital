@@ -16,12 +16,15 @@ var (
 )
 
 type ComplaintCategory struct {
-	ID        string    `json:"id"`
-	Code      string    `json:"code"`
-	Name      string    `json:"name"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID                              string    `json:"id"`
+	Code                            string    `json:"code"`
+	Name                            string    `json:"name"`
+	Status                          string    `json:"status"`
+	TargetResponseHours             *int      `json:"target_response_hours,omitempty"`
+	TargetResolutionHours           *int      `json:"target_resolution_hours,omitempty"`
+	TargetReporterConfirmationHours *int      `json:"target_reporter_confirmation_hours,omitempty"`
+	CreatedAt                       time.Time `json:"created_at"`
+	UpdatedAt                       time.Time `json:"updated_at"`
 }
 
 type AttachmentInfo struct {
@@ -44,26 +47,40 @@ type CommentItem struct {
 }
 
 type ComplaintItem struct {
-	ID                  string           `json:"id"`
-	ReporterUserID      string           `json:"reporter_user_id"`
-	ReporterName        string           `json:"reporter_name"`
-	TicketNumber        string           `json:"ticket_number"`
-	ComplaintCategoryID string           `json:"complaint_category_id"`
-	CategoryName        string           `json:"category_name"`
-	Title               string           `json:"title"`
-	Description         string           `json:"description"`
-	LocationDescription *string          `json:"location_description,omitempty"`
-	Priority            string           `json:"priority"`
-	Status              string           `json:"status"`
-	AssignedTo          *string          `json:"assigned_to,omitempty"`
-	AssignedToName      *string          `json:"assigned_to_name,omitempty"`
-	ResolutionNote      *string          `json:"resolution_note,omitempty"`
-	ResolvedAt          *time.Time       `json:"resolved_at,omitempty"`
-	ClosedAt            *time.Time       `json:"closed_at,omitempty"`
-	CreatedAt           time.Time        `json:"created_at"`
-	UpdatedAt           time.Time        `json:"updated_at"`
-	Attachments         []AttachmentInfo `json:"attachments"`
-	Comments            []CommentItem    `json:"comments"`
+	ID                        string           `json:"id"`
+	ReporterUserID            string           `json:"reporter_user_id"`
+	ReporterName              string           `json:"reporter_name"`
+	TicketNumber              string           `json:"ticket_number"`
+	ComplaintCategoryID       string           `json:"complaint_category_id"`
+	CategoryName              string           `json:"category_name"`
+	Title                     string           `json:"title"`
+	Description               string           `json:"description"`
+	LocationDescription       *string          `json:"location_description,omitempty"`
+	Priority                  string           `json:"priority"`
+	Status                    string           `json:"status"`
+	AssignedTo                *string          `json:"assigned_to,omitempty"`
+	AssignedToName            *string          `json:"assigned_to_name,omitempty"`
+	ResolutionNote            *string          `json:"resolution_note,omitempty"`
+	ResolvedAt                *time.Time       `json:"resolved_at,omitempty"`
+	ClosedAt                  *time.Time       `json:"closed_at,omitempty"`
+	ResponseDueAt             *time.Time       `json:"response_due_at,omitempty"`
+	RespondedAt               *time.Time       `json:"responded_at,omitempty"`
+	ResolutionDueAt           *time.Time       `json:"resolution_due_at,omitempty"`
+	ReporterConfirmationDueAt *time.Time       `json:"reporter_confirmation_due_at,omitempty"`
+	ReporterConfirmedAt       *time.Time       `json:"reporter_confirmed_at,omitempty"`
+	ClosureReason             *string          `json:"closure_reason,omitempty"`
+	CreatedAt                 time.Time        `json:"created_at"`
+	UpdatedAt                 time.Time        `json:"updated_at"`
+	Attachments               []AttachmentInfo `json:"attachments"`
+	Comments                  []CommentItem    `json:"comments"`
+	Events                    []ComplaintEvent `json:"events"`
+}
+
+type ComplaintEvent struct {
+	ID        string    `json:"id"`
+	EventType string    `json:"event_type"`
+	Data      any       `json:"data"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type CreateComplaintRequest struct {
@@ -115,8 +132,11 @@ type ComplaintFilter struct {
 }
 
 type CreateComplaintCategoryRequest struct {
-	Code string `json:"code"`
-	Name string `json:"name"`
+	Code                            string `json:"code"`
+	Name                            string `json:"name"`
+	TargetResponseHours             *int   `json:"target_response_hours"`
+	TargetResolutionHours           *int   `json:"target_resolution_hours"`
+	TargetReporterConfirmationHours *int   `json:"target_reporter_confirmation_hours"`
 }
 
 func (r *CreateComplaintCategoryRequest) Validate() error {
@@ -125,18 +145,38 @@ func (r *CreateComplaintCategoryRequest) Validate() error {
 	if r.Code == "" || len(r.Code) > 50 || r.Name == "" || len(r.Name) > 100 {
 		return ErrValidation
 	}
-	return nil
+	return validateSLAHours(
+		r.TargetResponseHours,
+		r.TargetResolutionHours,
+		r.TargetReporterConfirmationHours,
+	)
 }
 
 type UpdateComplaintCategoryRequest struct {
-	Name   string `json:"name"`
-	Status string `json:"status"`
+	Name                            string `json:"name"`
+	Status                          string `json:"status"`
+	TargetResponseHours             *int   `json:"target_response_hours"`
+	TargetResolutionHours           *int   `json:"target_resolution_hours"`
+	TargetReporterConfirmationHours *int   `json:"target_reporter_confirmation_hours"`
 }
 
 func (r *UpdateComplaintCategoryRequest) Validate() error {
 	r.Name = strings.TrimSpace(r.Name)
 	r.Status = strings.ToLower(strings.TrimSpace(r.Status))
 	if r.Name == "" || len(r.Name) > 100 || (r.Status != "" && r.Status != "active" && r.Status != "inactive") {
+		return ErrValidation
+	}
+	return validateSLAHours(
+		r.TargetResponseHours,
+		r.TargetResolutionHours,
+		r.TargetReporterConfirmationHours,
+	)
+}
+
+func validateSLAHours(response, resolution, reporterConfirmation *int) error {
+	if (response != nil && (*response < 1 || *response > 8_760)) ||
+		(resolution != nil && (*resolution < 1 || *resolution > 8_760)) ||
+		(reporterConfirmation != nil && (*reporterConfirmation < 1 || *reporterConfirmation > 8_760)) {
 		return ErrValidation
 	}
 	return nil

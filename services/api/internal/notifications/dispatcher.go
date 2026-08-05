@@ -30,13 +30,15 @@ type Dispatcher struct {
 }
 
 type DispatchJob struct {
-	OrganizationID string
+	OrganizationID  string
 	RecipientUserID string
 	Type            string
 	Title           string
 	Body            string
 	ReferenceType   string
 	ReferenceID     string
+	IsDueReminder   bool
+	Channels        map[string]bool
 }
 
 func NewDispatcher(
@@ -93,33 +95,52 @@ func (d *Dispatcher) Dispatch(job DispatchJob) {
 		defer cancel()
 
 		var email, phone *string
+		var inAppEnabled, emailEnabled, whatsappEnabled, dueReminderEnabled bool
 		if err := d.db.QueryRow(ctx, `
-			SELECT NULLIF(email, ''), NULLIF(phone, '')
-			FROM users
-			WHERE organization_id = $1
-			  AND id = $2
-			  AND status IN ('active', 'invited')`,
+			SELECT
+				NULLIF(u.email, ''),
+				NULLIF(u.phone, ''),
+				COALESCE(np.in_app_enabled, true),
+				COALESCE(np.email_enabled, true),
+				COALESCE(np.whatsapp_enabled, false),
+				COALESCE(np.due_reminder_enabled, true)
+			FROM users u
+			LEFT JOIN notification_preferences np
+			  ON np.organization_id = u.organization_id
+			 AND np.user_id = u.id
+			WHERE u.organization_id = $1
+			  AND u.id = $2
+			  AND u.status IN ('active', 'invited')`,
 			job.OrganizationID,
 			job.RecipientUserID,
-		).Scan(&email, &phone); err != nil {
+		).Scan(&email, &phone, &inAppEnabled, &emailEnabled, &whatsappEnabled, &dueReminderEnabled); err != nil {
 			d.logFailure(ctx, "load_recipient", job, err)
 			return
 		}
 
-		if err := d.createInApp(ctx, job); err != nil {
-			d.logFailure(ctx, "create_in_app", job, err)
+		if job.IsDueReminder && !dueReminderEnabled {
+			return
 		}
-		if email != nil {
+		if inAppEnabled && d.allowsChannel(job, "in_app") {
+			if err := d.createInApp(ctx, job); err != nil {
+				d.logFailure(ctx, "create_in_app", job, err)
+			}
+		}
+		if email != nil && emailEnabled && d.allowsChannel(job, "email") {
 			if err := d.mailer.SendEmail(ctx, *email, job.Title, emailHTML(job.Title, job.Body)); err != nil {
 				d.logFailure(ctx, "send_email", job, err)
 			}
 		}
-		if phone != nil {
+		if phone != nil && whatsappEnabled && d.allowsChannel(job, "whatsapp") {
 			if err := d.whatsapp.SendMessage(ctx, *phone, whatsappText(job.Title, job.Body)); err != nil {
 				d.logFailure(ctx, "send_whatsapp", job, err)
 			}
 		}
 	}()
+}
+
+func (d *Dispatcher) allowsChannel(job DispatchJob, channel string) bool {
+	return len(job.Channels) == 0 || job.Channels[channel]
 }
 
 func (d *Dispatcher) createInApp(ctx context.Context, job DispatchJob) error {

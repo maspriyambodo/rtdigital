@@ -192,4 +192,96 @@ func TestAuthorizationAndRBAC(t *testing.T) {
 			t.Fatalf("status = %d, want %d: %s", response.Code, http.StatusForbidden, response.Body.String())
 		}
 	})
+
+	t.Run("office handover enforces MFA and revokes outgoing access", func(t *testing.T) {
+		outgoingUserID, _ := createTestUser("bendahara", orgID)
+		incomingUserID, _ := createTestUser("warga", orgID)
+		createBody, err := json.Marshal(map[string]any{
+			"outgoing_user_id": outgoingUserID,
+			"checklist": map[string]bool{
+				"akses": true,
+				"rekening": true,
+				"kas": true,
+			},
+		})
+		if err != nil {
+			t.Fatalf("marshal create handover: %v", err)
+		}
+		res := doRequest(http.MethodPost, "/api/v1/office-handovers", ketuaToken, createBody)
+		if res.Code != http.StatusCreated {
+			t.Fatalf("create handover = %d, want 201: %s", res.Code, res.Body.String())
+		}
+		var created struct {
+			Data users.OfficeHandover `json:"data"`
+		}
+		if err := json.Unmarshal(res.Body.Bytes(), &created); err != nil {
+			t.Fatalf("decode created handover: %v", err)
+		}
+
+		completeBody, err := json.Marshal(map[string]any{
+			"incoming_user_id": incomingUserID,
+			"checklist": map[string]bool{
+				"akses": true,
+				"rekening": true,
+				"kas": true,
+			},
+		})
+		if err != nil {
+			t.Fatalf("marshal complete handover: %v", err)
+		}
+		res = doRequest(http.MethodPost, "/api/v1/office-handovers/"+created.Data.ID+"/complete", ketuaToken, completeBody)
+		if res.Code != http.StatusForbidden {
+			t.Fatalf("complete without incoming MFA = %d, want 403: %s", res.Code, res.Body.String())
+		}
+		if !bytes.Contains(res.Body.Bytes(), []byte("MFA_ENROLLMENT_REQUIRED")) {
+			t.Fatalf("missing MFA guard response: %s", res.Body.String())
+		}
+
+		if _, err := pool.Exec(ctx, `UPDATE users SET mfa_enabled_at = now() WHERE id = $1`, incomingUserID); err != nil {
+			t.Fatalf("enable incoming MFA: %v", err)
+		}
+		res = doRequest(http.MethodPost, "/api/v1/office-handovers/"+created.Data.ID+"/complete", ketuaToken, completeBody)
+		if res.Code != http.StatusOK {
+			t.Fatalf("complete handover = %d, want 200: %s", res.Code, res.Body.String())
+		}
+
+		var incomingHasRole, outgoingHasRole, outgoingSessionsRevoked, auditExists bool
+		if err := pool.QueryRow(ctx, `
+			SELECT EXISTS (
+				SELECT 1 FROM user_roles ur
+				JOIN roles r ON r.id = ur.role_id
+				WHERE ur.user_id = $1 AND r.code = 'bendahara'
+			)`, incomingUserID).Scan(&incomingHasRole); err != nil {
+			t.Fatalf("check incoming role: %v", err)
+		}
+		if err := pool.QueryRow(ctx, `
+			SELECT EXISTS (
+				SELECT 1 FROM user_roles ur
+				JOIN roles r ON r.id = ur.role_id
+				WHERE ur.user_id = $1 AND r.code = 'bendahara'
+			)`, outgoingUserID).Scan(&outgoingHasRole); err != nil {
+			t.Fatalf("check outgoing role: %v", err)
+		}
+		if err := pool.QueryRow(ctx, `
+			SELECT NOT EXISTS (
+				SELECT 1 FROM sessions WHERE user_id = $1 AND revoked_at IS NULL
+			)`, outgoingUserID).Scan(&outgoingSessionsRevoked); err != nil {
+			t.Fatalf("check outgoing sessions: %v", err)
+		}
+		if err := pool.QueryRow(ctx, `
+			SELECT EXISTS (
+				SELECT 1 FROM audit_logs
+				WHERE organization_id = $1
+				  AND entity_id = $2
+				  AND action = 'office_handover.complete'
+			)`, orgID, created.Data.ID).Scan(&auditExists); err != nil {
+			t.Fatalf("check handover audit: %v", err)
+		}
+		if !incomingHasRole || outgoingHasRole || !outgoingSessionsRevoked || !auditExists {
+			t.Fatalf(
+				"handover invariant failed: incoming_role=%t outgoing_role=%t sessions_revoked=%t audit=%t",
+				incomingHasRole, outgoingHasRole, outgoingSessionsRevoked, auditExists,
+			)
+		}
+	})
 }

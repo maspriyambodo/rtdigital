@@ -18,7 +18,9 @@ func (s *Service) ListDueTypes(ctx context.Context, principal *auth.Principal, s
 	}
 
 	rows, err := s.db.Query(ctx, `
-		SELECT id, name, description, amount, frequency, due_day, status, created_at, updated_at
+		SELECT id, name, description, amount, frequency, due_day, status,
+		       automatic_generation_enabled, generation_lead_days, reminder_lead_days,
+		       created_at, updated_at
 		FROM due_types
 		WHERE organization_id = $1 AND ($2 = '' OR status = $2)
 		ORDER BY name, id`,
@@ -34,7 +36,8 @@ func (s *Service) ListDueTypes(ctx context.Context, principal *auth.Principal, s
 		var item DueType
 		if err := rows.Scan(
 			&item.ID, &item.Name, &item.Description, &item.Amount, &item.Frequency,
-			&item.DueDay, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+			&item.DueDay, &item.Status, &item.AutomaticGenerationEnabled,
+			&item.GenerationLeadDays, &item.ReminderLeadDays, &item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan due type: %w", err)
 		}
@@ -46,13 +49,16 @@ func (s *Service) ListDueTypes(ctx context.Context, principal *auth.Principal, s
 func (s *Service) GetDueType(ctx context.Context, principal *auth.Principal, id string) (DueType, error) {
 	var item DueType
 	err := s.db.QueryRow(ctx, `
-		SELECT id, name, description, amount, frequency, due_day, status, created_at, updated_at
+		SELECT id, name, description, amount, frequency, due_day, status,
+		       automatic_generation_enabled, generation_lead_days, reminder_lead_days,
+		       created_at, updated_at
 		FROM due_types
 		WHERE id = $1 AND organization_id = $2`,
 		id, principal.OrganizationID,
 	).Scan(
 		&item.ID, &item.Name, &item.Description, &item.Amount, &item.Frequency,
-		&item.DueDay, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+		&item.DueDay, &item.Status, &item.AutomaticGenerationEnabled,
+		&item.GenerationLeadDays, &item.ReminderLeadDays, &item.CreatedAt, &item.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return DueType{}, ErrDueTypeNotFound
@@ -74,6 +80,12 @@ func (s *Service) CreateDueType(ctx context.Context, principal *auth.Principal, 
 	if req.DueDay != nil && (*req.DueDay < 1 || *req.DueDay > 31) {
 		return DueType{}, fmt.Errorf("%w: due_day", ErrValidation)
 	}
+	if req.GenerationLeadDays != nil && (*req.GenerationLeadDays < 0 || *req.GenerationLeadDays > 366) {
+		return DueType{}, fmt.Errorf("%w: generation_lead_days", ErrValidation)
+	}
+	if req.ReminderLeadDays != nil && (*req.ReminderLeadDays < 0 || *req.ReminderLeadDays > 30) {
+		return DueType{}, fmt.Errorf("%w: reminder_lead_days", ErrValidation)
+	}
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -83,14 +95,20 @@ func (s *Service) CreateDueType(ctx context.Context, principal *auth.Principal, 
 
 	var item DueType
 	err = tx.QueryRow(ctx, `
-		INSERT INTO due_types (id, organization_id, name, description, amount, frequency, due_day, status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, 'active')
-		RETURNING id, name, description, amount, frequency, due_day, status, created_at, updated_at`,
+		INSERT INTO due_types (
+			id, organization_id, name, description, amount, frequency, due_day, status,
+			automatic_generation_enabled, generation_lead_days, reminder_lead_days
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', COALESCE($8, false), COALESCE($9, 0), COALESCE($10, 3))
+		RETURNING id, name, description, amount, frequency, due_day, status,
+		          automatic_generation_enabled, generation_lead_days, reminder_lead_days,
+		          created_at, updated_at`,
 		newUUID(), principal.OrganizationID, req.Name, nullableTrim(req.Description),
-		req.Amount, req.Frequency, req.DueDay,
+		req.Amount, req.Frequency, req.DueDay, req.AutomaticGenerationEnabled,
+		req.GenerationLeadDays, req.ReminderLeadDays,
 	).Scan(
 		&item.ID, &item.Name, &item.Description, &item.Amount, &item.Frequency,
-		&item.DueDay, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+		&item.DueDay, &item.Status, &item.AutomaticGenerationEnabled,
+		&item.GenerationLeadDays, &item.ReminderLeadDays, &item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {
 		return DueType{}, mapDatabaseError(err, "create due type")
@@ -105,7 +123,9 @@ func (s *Service) CreateDueType(ctx context.Context, principal *auth.Principal, 
 }
 
 func (s *Service) UpdateDueType(ctx context.Context, principal *auth.Principal, id string, req UpdateDueTypeRequest) (DueType, error) {
-	if req.Name == nil && req.Description == nil && req.Amount == nil && req.Frequency == nil && req.DueDay == nil {
+	if req.Name == nil && req.Description == nil && req.Amount == nil && req.Frequency == nil &&
+		req.DueDay == nil && req.AutomaticGenerationEnabled == nil && req.GenerationLeadDays == nil &&
+		req.ReminderLeadDays == nil {
 		return DueType{}, fmt.Errorf("%w: no changes", ErrValidation)
 	}
 	if req.Name != nil && strings.TrimSpace(*req.Name) == "" {
@@ -119,6 +139,12 @@ func (s *Service) UpdateDueType(ctx context.Context, principal *auth.Principal, 
 	}
 	if req.DueDay != nil && (*req.DueDay < 1 || *req.DueDay > 31) {
 		return DueType{}, fmt.Errorf("%w: due_day", ErrValidation)
+	}
+	if req.GenerationLeadDays != nil && (*req.GenerationLeadDays < 0 || *req.GenerationLeadDays > 366) {
+		return DueType{}, fmt.Errorf("%w: generation_lead_days", ErrValidation)
+	}
+	if req.ReminderLeadDays != nil && (*req.ReminderLeadDays < 0 || *req.ReminderLeadDays > 30) {
+		return DueType{}, fmt.Errorf("%w: reminder_lead_days", ErrValidation)
 	}
 
 	tx, err := s.db.Begin(ctx)
@@ -134,14 +160,21 @@ func (s *Service) UpdateDueType(ctx context.Context, principal *auth.Principal, 
 		    description = COALESCE($2, description),
 		    amount = COALESCE($3, amount),
 		    frequency = COALESCE($4, frequency),
-		    due_day = COALESCE($5, due_day)
-		WHERE id = $6 AND organization_id = $7
-		RETURNING id, name, description, amount, frequency, due_day, status, created_at, updated_at`,
+		    due_day = COALESCE($5, due_day),
+		    automatic_generation_enabled = COALESCE($6, automatic_generation_enabled),
+		    generation_lead_days = COALESCE($7, generation_lead_days),
+		    reminder_lead_days = COALESCE($8, reminder_lead_days)
+		WHERE id = $9 AND organization_id = $10
+		RETURNING id, name, description, amount, frequency, due_day, status,
+		          automatic_generation_enabled, generation_lead_days, reminder_lead_days,
+		          created_at, updated_at`,
 		nullableTrim(req.Name), nullableTrim(req.Description), req.Amount, req.Frequency,
-		req.DueDay, id, principal.OrganizationID,
+		req.DueDay, req.AutomaticGenerationEnabled, req.GenerationLeadDays,
+		req.ReminderLeadDays, id, principal.OrganizationID,
 	).Scan(
 		&item.ID, &item.Name, &item.Description, &item.Amount, &item.Frequency,
-		&item.DueDay, &item.Status, &item.CreatedAt, &item.UpdatedAt,
+		&item.DueDay, &item.Status, &item.AutomaticGenerationEnabled,
+		&item.GenerationLeadDays, &item.ReminderLeadDays, &item.CreatedAt, &item.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return DueType{}, ErrDueTypeNotFound

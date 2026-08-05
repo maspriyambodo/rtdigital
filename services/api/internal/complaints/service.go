@@ -3,6 +3,7 @@ package complaints
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -66,13 +67,33 @@ func (s *Service) CreateComplaint(ctx context.Context, principal *auth.Principal
 		return ComplaintItem{}, ErrCategoryNotFound
 	}
 
+	var responseHours, resolutionHours *int
+	if err := tx.QueryRow(ctx, `
+		SELECT target_response_hours, target_resolution_hours
+		FROM complaint_categories
+		WHERE id = $1 AND organization_id = $2`,
+		req.ComplaintCategoryID, principal.OrganizationID,
+	).Scan(&responseHours, &resolutionHours); err != nil {
+		return ComplaintItem{}, fmt.Errorf("get complaint category SLA: %w", err)
+	}
+
+	var responseDueAt, resolutionDueAt *time.Time
+	if responseHours != nil {
+		due := now.Add(time.Duration(*responseHours) * time.Hour)
+		responseDueAt = &due
+	}
+	if resolutionHours != nil {
+		due := now.Add(time.Duration(*resolutionHours) * time.Hour)
+		resolutionDueAt = &due
+	}
+
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO complaints (
 			id, organization_id, reporter_user_id, ticket_number, complaint_category_id, title,
-			description, location_description, priority, status
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new')`,
+			description, location_description, priority, status, response_due_at, resolution_due_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'new', $10, $11)`,
 		id, principal.OrganizationID, principal.UserID, ticketNumber, req.ComplaintCategoryID,
-		req.Title, req.Description, req.LocationDescription, req.Priority,
+		req.Title, req.Description, req.LocationDescription, req.Priority, responseDueAt, resolutionDueAt,
 	); err != nil {
 		if isUniqueConstraintViolation(err) {
 			return ComplaintItem{}, ErrConflict
@@ -80,6 +101,11 @@ func (s *Service) CreateComplaint(ctx context.Context, principal *auth.Principal
 		return ComplaintItem{}, fmt.Errorf("insert complaint: %w", err)
 	}
 	if err := s.syncAttachments(ctx, tx, principal, id, req.AttachmentFileIDs); err != nil {
+		return ComplaintItem{}, err
+	}
+	if err := s.addEvent(ctx, tx, principal.OrganizationID, id, &principal.UserID, "submitted", map[string]string{
+		"status": "new",
+	}); err != nil {
 		return ComplaintItem{}, err
 	}
 	if err := s.audit(ctx, tx, principal, "complaint.submit", "complaint", id); err != nil {
@@ -145,7 +171,9 @@ func (s *Service) GetComplaint(ctx context.Context, principal *auth.Principal, i
 		       c.ticket_number, c.complaint_category_id, cc.name, c.title, c.description,
 		       c.location_description, c.priority, c.status, c.assigned_to,
 		       NULLIF(COALESCE(au.email, au.phone, ''), ''), c.resolution_note, c.resolved_at,
-		       c.closed_at, c.created_at, c.updated_at
+		       c.closed_at, c.response_due_at, c.responded_at, c.resolution_due_at,
+		       c.reporter_confirmation_due_at, c.reporter_confirmed_at, c.closure_reason,
+		       c.created_at, c.updated_at
 		FROM complaints c
 		JOIN complaint_categories cc ON cc.organization_id = c.organization_id AND cc.id = c.complaint_category_id
 		JOIN users ru ON ru.organization_id = c.organization_id AND ru.id = c.reporter_user_id
@@ -157,6 +185,8 @@ func (s *Service) GetComplaint(ctx context.Context, principal *auth.Principal, i
 		&item.ComplaintCategoryID, &item.CategoryName, &item.Title, &item.Description,
 		&item.LocationDescription, &item.Priority, &item.Status, &item.AssignedTo,
 		&item.AssignedToName, &item.ResolutionNote, &item.ResolvedAt, &item.ClosedAt,
+		&item.ResponseDueAt, &item.RespondedAt, &item.ResolutionDueAt,
+		&item.ReporterConfirmationDueAt, &item.ReporterConfirmedAt, &item.ClosureReason,
 		&item.CreatedAt, &item.UpdatedAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -177,6 +207,10 @@ func (s *Service) GetComplaint(ctx context.Context, principal *auth.Principal, i
 		return ComplaintItem{}, err
 	}
 	item.Comments, err = s.comments(ctx, principal, id, manager || assigned)
+	if err != nil {
+		return ComplaintItem{}, err
+	}
+	item.Events, err = s.events(ctx, principal.OrganizationID, id)
 	if err != nil {
 		return ComplaintItem{}, err
 	}
@@ -299,11 +333,23 @@ func (s *Service) AssignComplaint(ctx context.Context, principal *auth.Principal
 		nextStatus = "reviewed"
 	}
 	if _, err := tx.Exec(ctx, `
-		UPDATE complaints SET assigned_to = $1, status = $2
-		WHERE organization_id = $3 AND id = $4`,
-		req.AssignedTo, nextStatus, principal.OrganizationID, id,
+		UPDATE complaints
+		SET assigned_to = $1,
+		    status = $2,
+		    responded_at = CASE
+		        WHEN responded_at IS NULL AND $2 <> 'new' THEN $3
+		        ELSE responded_at
+		    END
+		WHERE organization_id = $4 AND id = $5`,
+		req.AssignedTo, nextStatus, s.now(), principal.OrganizationID, id,
 	); err != nil {
 		return ComplaintItem{}, fmt.Errorf("assign complaint: %w", err)
+	}
+	if err := s.addEvent(ctx, tx, principal.OrganizationID, id, &principal.UserID, "assigned", map[string]string{
+		"assigned_to": req.AssignedTo,
+		"status":      nextStatus,
+	}); err != nil {
+		return ComplaintItem{}, err
 	}
 	if err := s.audit(ctx, tx, principal, "complaint.assign", "complaint", id); err != nil {
 		return ComplaintItem{}, err
@@ -320,6 +366,65 @@ func (s *Service) AssignComplaint(ctx context.Context, principal *auth.Principal
 		ReferenceType:   "complaint",
 		ReferenceID:     id,
 	})
+	return s.GetComplaint(ctx, principal, id)
+}
+
+func (s *Service) ConfirmResolution(ctx context.Context, principal *auth.Principal, id string) (ComplaintItem, error) {
+	if principal == nil {
+		return ComplaintItem{}, ErrForbidden
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return ComplaintItem{}, fmt.Errorf("begin confirm complaint resolution: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	var reporterID, status string
+	err = tx.QueryRow(ctx, `
+		SELECT reporter_user_id, status
+		FROM complaints
+		WHERE organization_id = $1 AND id = $2
+		FOR UPDATE`,
+		principal.OrganizationID, id,
+	).Scan(&reporterID, &status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return ComplaintItem{}, ErrComplaintNotFound
+	}
+	if err != nil {
+		return ComplaintItem{}, fmt.Errorf("lock complaint confirmation: %w", err)
+	}
+	if reporterID != principal.UserID {
+		return ComplaintItem{}, ErrForbidden
+	}
+	if status != "resolved" {
+		return ComplaintItem{}, ErrInvalidState
+	}
+
+	now := s.now()
+	if _, err := tx.Exec(ctx, `
+		UPDATE complaints
+		SET status = 'closed',
+		    closed_at = $1,
+		    closed_by = $2,
+		    closure_reason = 'confirmed_by_reporter',
+		    reporter_confirmed_at = $1
+		WHERE organization_id = $3 AND id = $4`,
+		now, principal.UserID, principal.OrganizationID, id,
+	); err != nil {
+		return ComplaintItem{}, fmt.Errorf("confirm complaint resolution: %w", err)
+	}
+	if err := s.addEvent(ctx, tx, principal.OrganizationID, id, &principal.UserID, "reporter_confirmed", map[string]string{
+		"status": "closed",
+	}); err != nil {
+		return ComplaintItem{}, err
+	}
+	if err := s.audit(ctx, tx, principal, "complaint.confirm_resolution", "complaint", id); err != nil {
+		return ComplaintItem{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return ComplaintItem{}, fmt.Errorf("commit complaint confirmation: %w", err)
+	}
 	return s.GetComplaint(ctx, principal, id)
 }
 
@@ -365,20 +470,73 @@ func (s *Service) UpdateStatus(ctx context.Context, principal *auth.Principal, i
 	}
 
 	now := s.now()
-	query := `UPDATE complaints SET status = $1`
-	args := []any{req.Status}
-	if req.Status == "resolved" || req.Status == "rejected" {
-		query += `, resolution_note = $2, resolved_at = $3`
-		args = append(args, req.ResolutionNote, now)
-	} else if req.Status == "closed" {
-		query += `, closed_at = $2`
-		args = append(args, now)
+	var query string
+	var args []any
+	switch req.Status {
+	case "resolved":
+		var confirmationHours *int
+		if err := tx.QueryRow(ctx, `
+			SELECT cc.target_reporter_confirmation_hours
+			FROM complaints c
+			JOIN complaint_categories cc
+			  ON cc.organization_id = c.organization_id
+			 AND cc.id = c.complaint_category_id
+			WHERE c.organization_id = $1 AND c.id = $2`,
+			principal.OrganizationID, id,
+		).Scan(&confirmationHours); err != nil {
+			return ComplaintItem{}, fmt.Errorf("get complaint confirmation SLA: %w", err)
+		}
+
+		var confirmationDueAt *time.Time
+		if confirmationHours != nil {
+			due := now.Add(time.Duration(*confirmationHours) * time.Hour)
+			confirmationDueAt = &due
+		}
+		query = `
+			UPDATE complaints
+			SET status = $1,
+			    responded_at = COALESCE(responded_at, $2),
+			    resolution_note = $3,
+			    resolved_at = $2,
+			    reporter_confirmation_due_at = $4
+			WHERE organization_id = $5 AND id = $6`
+		args = []any{req.Status, now, req.ResolutionNote, confirmationDueAt, principal.OrganizationID, id}
+	case "rejected":
+		query = `
+			UPDATE complaints
+			SET status = $1,
+			    responded_at = COALESCE(responded_at, $2),
+			    resolution_note = $3,
+			    resolved_at = $2
+			WHERE organization_id = $4 AND id = $5`
+		args = []any{req.Status, now, req.ResolutionNote, principal.OrganizationID, id}
+	case "closed":
+		query = `
+			UPDATE complaints
+			SET status = $1,
+			    responded_at = COALESCE(responded_at, $2),
+			    closed_at = $2,
+			    closed_by = $3,
+			    closure_reason = 'closed_by_reporter'
+			WHERE organization_id = $4 AND id = $5`
+		args = []any{req.Status, now, principal.UserID, principal.OrganizationID, id}
+	default:
+		query = `
+			UPDATE complaints
+			SET status = $1,
+			    responded_at = COALESCE(responded_at, $2)
+			WHERE organization_id = $3 AND id = $4`
+		args = []any{req.Status, now, principal.OrganizationID, id}
 	}
-	query += ` WHERE organization_id = $` + fmt.Sprint(len(args)+1) + ` AND id = $` + fmt.Sprint(len(args)+2)
-	args = append(args, principal.OrganizationID, id)
 
 	if _, err := tx.Exec(ctx, query, args...); err != nil {
 		return ComplaintItem{}, fmt.Errorf("update complaint status: %w", err)
+	}
+	if err := s.addEvent(ctx, tx, principal.OrganizationID, id, &principal.UserID, "status_changed", map[string]string{
+		"from": current,
+		"to":   req.Status,
+	}); err != nil {
+		return ComplaintItem{}, err
 	}
 	if err := s.audit(ctx, tx, principal, "complaint.update_status", "complaint", id); err != nil {
 		return ComplaintItem{}, err
@@ -548,6 +706,49 @@ func (s *Service) comments(ctx context.Context, principal *auth.Principal, compl
 	return items, rows.Err()
 }
 
+func (s *Service) addEvent(ctx context.Context, tx pgx.Tx, organizationID, complaintID string, actorUserID *string, eventType string, data any) error {
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("encode complaint event: %w", err)
+	}
+	if _, err := tx.Exec(ctx, `
+		INSERT INTO complaint_events (id, organization_id, complaint_id, actor_user_id, event_type, data)
+		VALUES ($1, $2, $3, $4, $5, $6)`,
+		newUUID(), organizationID, complaintID, actorUserID, eventType, payload,
+	); err != nil {
+		return fmt.Errorf("insert complaint event: %w", err)
+	}
+	return nil
+}
+
+func (s *Service) events(ctx context.Context, organizationID, complaintID string) ([]ComplaintEvent, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT id, event_type, data, created_at
+		FROM complaint_events
+		WHERE organization_id = $1 AND complaint_id = $2
+		ORDER BY created_at ASC, id ASC`,
+		organizationID, complaintID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list complaint events: %w", err)
+	}
+	defer rows.Close()
+
+	items := make([]ComplaintEvent, 0)
+	for rows.Next() {
+		var item ComplaintEvent
+		var data json.RawMessage
+		if err := rows.Scan(&item.ID, &item.EventType, &data, &item.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan complaint event: %w", err)
+		}
+		if err := json.Unmarshal(data, &item.Data); err != nil {
+			return nil, fmt.Errorf("decode complaint event: %w", err)
+		}
+		items = append(items, item)
+	}
+	return items, rows.Err()
+}
+
 func (s *Service) syncAttachments(ctx context.Context, tx pgx.Tx, principal *auth.Principal, complaintID string, fileIDs []string) error {
 	if _, err := tx.Exec(ctx, `
 		DELETE FROM file_attachments
@@ -631,6 +832,66 @@ func (s *Service) audit(ctx context.Context, tx pgx.Tx, principal *auth.Principa
 	return nil
 }
 
+// AutoCloseComplaints closes resolved complaints whose reporter-confirmation
+// deadline has elapsed. It is safe to invoke repeatedly from a scheduler.
+func (s *Service) AutoCloseComplaints(ctx context.Context) (int, error) {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("begin complaint auto-close: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	rows, err := tx.Query(ctx, `
+		UPDATE complaints
+		SET status = 'closed',
+		    closed_at = now(),
+		    closed_by = NULL,
+		    closure_reason = 'auto_closed_confirmation_timeout'
+		WHERE status = 'resolved'
+		  AND reporter_confirmation_due_at IS NOT NULL
+		  AND reporter_confirmation_due_at <= now()
+		RETURNING organization_id, id`,
+	)
+	if err != nil {
+		return 0, fmt.Errorf("auto-close expired complaints: %w", err)
+	}
+
+	count := 0
+	for rows.Next() {
+		var organizationID, complaintID string
+		if err := rows.Scan(&organizationID, &complaintID); err != nil {
+			rows.Close()
+			return 0, fmt.Errorf("scan auto-closed complaint: %w", err)
+		}
+		if err := s.addEvent(ctx, tx, organizationID, complaintID, nil, "auto_closed", map[string]string{
+			"status": "closed",
+			"reason": "reporter_confirmation_timeout",
+		}); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO audit_logs (organization_id, actor_user_id, action, entity_type, entity_id)
+			VALUES ($1, NULL, 'complaint.auto_close', 'complaint', $2)`,
+			organizationID, complaintID,
+		); err != nil {
+			rows.Close()
+			return 0, fmt.Errorf("audit complaint auto-close: %w", err)
+		}
+		count++
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		return 0, fmt.Errorf("iterate auto-closed complaints: %w", err)
+	}
+	rows.Close()
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, fmt.Errorf("commit complaint auto-close: %w", err)
+	}
+	return count, nil
+}
+
 func (s *Service) isManager(principal *auth.Principal) bool {
 	return principal.HasPermission("complaint.assign") || principal.HasPermission("complaint.update_status")
 }
@@ -640,7 +901,8 @@ func (s *Service) ListComplaintCategories(ctx context.Context, principal *auth.P
 		return nil, ErrForbidden
 	}
 	rows, err := s.db.Query(ctx, `
-		SELECT id, code, name, status, created_at, updated_at
+		SELECT id, code, name, status, target_response_hours, target_resolution_hours,
+		       target_reporter_confirmation_hours, created_at, updated_at
 		FROM complaint_categories
 		WHERE organization_id = $1
 		  AND (NOT $2 OR status = 'active')
@@ -655,7 +917,11 @@ func (s *Service) ListComplaintCategories(ctx context.Context, principal *auth.P
 	items := make([]ComplaintCategory, 0)
 	for rows.Next() {
 		var item ComplaintCategory
-		if err := rows.Scan(&item.ID, &item.Code, &item.Name, &item.Status, &item.CreatedAt, &item.UpdatedAt); err != nil {
+		if err := rows.Scan(
+			&item.ID, &item.Code, &item.Name, &item.Status,
+			&item.TargetResponseHours, &item.TargetResolutionHours,
+			&item.TargetReporterConfirmationHours, &item.CreatedAt, &item.UpdatedAt,
+		); err != nil {
 			return nil, fmt.Errorf("scan complaint category: %w", err)
 		}
 		items = append(items, item)
@@ -669,11 +935,16 @@ func (s *Service) GetComplaintCategory(ctx context.Context, principal *auth.Prin
 	}
 	var item ComplaintCategory
 	err := s.db.QueryRow(ctx, `
-		SELECT id, code, name, status, created_at, updated_at
+		SELECT id, code, name, status, target_response_hours, target_resolution_hours,
+		       target_reporter_confirmation_hours, created_at, updated_at
 		FROM complaint_categories
 		WHERE organization_id = $1 AND id = $2`,
 		principal.OrganizationID, id,
-	).Scan(&item.ID, &item.Code, &item.Name, &item.Status, &item.CreatedAt, &item.UpdatedAt)
+	).Scan(
+		&item.ID, &item.Code, &item.Name, &item.Status,
+		&item.TargetResponseHours, &item.TargetResolutionHours,
+		&item.TargetReporterConfirmationHours, &item.CreatedAt, &item.UpdatedAt,
+	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return ComplaintCategory{}, ErrCategoryNotFound
 	}
@@ -698,9 +969,12 @@ func (s *Service) CreateComplaintCategory(ctx context.Context, principal *auth.P
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO complaint_categories (id, organization_id, code, name)
-		VALUES ($1, $2, $3, $4)`,
-		id, principal.OrganizationID, req.Code, req.Name,
+		INSERT INTO complaint_categories (
+			id, organization_id, code, name, target_response_hours, target_resolution_hours,
+			target_reporter_confirmation_hours
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		id, principal.OrganizationID, req.Code, req.Name, req.TargetResponseHours,
+		req.TargetResolutionHours, req.TargetReporterConfirmationHours,
 	); err != nil {
 		if isUniqueConstraintViolation(err) {
 			return ComplaintCategory{}, ErrConflict
@@ -731,9 +1005,14 @@ func (s *Service) UpdateComplaintCategory(ctx context.Context, principal *auth.P
 
 	tag, err := tx.Exec(ctx, `
 		UPDATE complaint_categories
-		SET name = $1, status = COALESCE(NULLIF($2, ''), status)
-		WHERE organization_id = $3 AND id = $4`,
-		req.Name, req.Status, principal.OrganizationID, id,
+		SET name = $1,
+		    status = COALESCE(NULLIF($2, ''), status),
+		    target_response_hours = COALESCE($3, target_response_hours),
+		    target_resolution_hours = COALESCE($4, target_resolution_hours),
+		    target_reporter_confirmation_hours = COALESCE($5, target_reporter_confirmation_hours)
+		WHERE organization_id = $6 AND id = $7`,
+		req.Name, req.Status, req.TargetResponseHours, req.TargetResolutionHours,
+		req.TargetReporterConfirmationHours, principal.OrganizationID, id,
 	)
 	if err != nil {
 		return ComplaintCategory{}, fmt.Errorf("update complaint category: %w", err)

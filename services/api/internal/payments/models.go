@@ -41,21 +41,60 @@ type Payment struct {
 	InvoiceStatus      string     `json:"invoice_status,omitempty"`
 }
 
+type PaymentAllocation struct {
+	ID              string    `json:"id,omitempty"`
+	InvoiceID       string    `json:"invoice_id"`
+	InvoiceNumber   string    `json:"invoice_number,omitempty"`
+	Amount          float64   `json:"amount"`
+	RemainingAmount float64   `json:"remaining_amount,omitempty"`
+	CreatedAt       time.Time `json:"created_at,omitempty"`
+}
+
+type PaymentQueueItem struct {
+	Payment
+	Allocations           []PaymentAllocation `json:"allocations"`
+	RelevantHistory       []Payment           `json:"relevant_history"`
+	StandardRejectReasons []string            `json:"standard_reject_reasons"`
+}
+
 type SubmitPaymentRequest struct {
-	InvoiceID   string    `json:"invoice_id"`
-	Method      string    `json:"method"`
-	Amount      float64   `json:"amount"`
-	PaidAt      time.Time `json:"paid_at"`
-	ProofFileID *string   `json:"proof_file_id"`
+	// InvoiceID is retained for existing single-invoice clients.
+	InvoiceID   string              `json:"invoice_id,omitempty"`
+	Allocations []PaymentAllocation `json:"allocations,omitempty"`
+	Method      string              `json:"method"`
+	Amount      float64             `json:"amount"`
+	PaidAt      time.Time           `json:"paid_at"`
+	ProofFileID *string             `json:"proof_file_id,omitempty"`
 }
 
 func (r SubmitPaymentRequest) Validate(now time.Time) error {
 	r.Method = strings.ToLower(strings.TrimSpace(r.Method))
-	if strings.TrimSpace(r.InvoiceID) == "" ||
-		r.Amount <= 0 ||
-		r.PaidAt.IsZero() ||
-		r.PaidAt.After(now.Add(24*time.Hour)) {
+	if r.Amount <= 0 || r.PaidAt.IsZero() || r.PaidAt.After(now.Add(24*time.Hour)) {
 		return ErrValidation
+	}
+	if strings.TrimSpace(r.InvoiceID) == "" && len(r.Allocations) == 0 {
+		return ErrValidation
+	}
+	if strings.TrimSpace(r.InvoiceID) != "" && len(r.Allocations) > 0 {
+		return ErrValidation
+	}
+	if len(r.Allocations) > 0 {
+		seen := make(map[string]struct{}, len(r.Allocations))
+		var total float64
+		for _, allocation := range r.Allocations {
+			invoiceID := strings.TrimSpace(allocation.InvoiceID)
+			if invoiceID == "" || allocation.Amount <= 0 {
+				return ErrValidation
+			}
+			if _, duplicate := seen[invoiceID]; duplicate {
+				return ErrValidation
+			}
+			seen[invoiceID] = struct{}{}
+			total += allocation.Amount
+		}
+		if total != r.Amount {
+			return ErrValidation
+		}
 	}
 
 	switch r.Method {
@@ -71,11 +110,12 @@ func (r SubmitPaymentRequest) Validate(now time.Time) error {
 }
 
 type SubmitPaymentResponse struct {
-	ID                 string    `json:"id"`
-	PaymentNumber      string    `json:"payment_number"`
-	VerificationStatus string    `json:"verification_status"`
-	InvoiceStatus      string    `json:"invoice_status"`
-	CreatedAt          time.Time `json:"created_at"`
+	ID                 string              `json:"id"`
+	PaymentNumber      string              `json:"payment_number"`
+	VerificationStatus string              `json:"verification_status"`
+	InvoiceStatus      string              `json:"invoice_status,omitempty"`
+	Allocations        []PaymentAllocation `json:"allocations,omitempty"`
+	CreatedAt          time.Time           `json:"created_at"`
 }
 
 type VerifyPaymentRequest struct {

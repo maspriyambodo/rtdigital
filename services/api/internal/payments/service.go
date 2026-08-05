@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -170,42 +171,61 @@ func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempot
 		return SubmitPaymentResponse{}, fmt.Errorf("find idempotent payment: %w", err)
 	}
 
-	var (
-		householdID, invoiceStatus string
-		invoiceAmount, paidAmount  float64
-	)
-	err = tx.QueryRow(ctx, `
-		SELECT household_id, status, amount, paid_amount
-		FROM invoices
-		WHERE id = $1
-		  AND organization_id = $2
-		FOR UPDATE`,
-		request.InvoiceID,
-		principal.OrganizationID,
-	).Scan(&householdID, &invoiceStatus, &invoiceAmount, &paidAmount)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return SubmitPaymentResponse{}, ErrInvoiceNotFound
+	allocations := request.Allocations
+	if len(allocations) == 0 {
+		allocations = []PaymentAllocation{{InvoiceID: strings.TrimSpace(request.InvoiceID), Amount: request.Amount}}
 	}
-	if err != nil {
-		return SubmitPaymentResponse{}, fmt.Errorf("lock invoice: %w", err)
-	}
-	if invoiceStatus == "paid" || invoiceStatus == "cancelled" {
-		return SubmitPaymentResponse{}, ErrInvalidInvoiceState
-	}
-	var pendingAmount float64
-	if err := tx.QueryRow(ctx, `
-		SELECT COALESCE(SUM(amount), 0)
-		FROM payments
-		WHERE organization_id = $1
-		  AND invoice_id = $2
-		  AND verification_status = 'pending'`,
-		principal.OrganizationID,
-		request.InvoiceID,
-	).Scan(&pendingAmount); err != nil {
-		return SubmitPaymentResponse{}, fmt.Errorf("sum pending payments: %w", err)
-	}
-	if request.Amount > invoiceAmount-paidAmount-pendingAmount {
-		return SubmitPaymentResponse{}, ErrConstraint
+
+	// Lock in stable order to avoid deadlocks between concurrent multi-invoice reports.
+	sort.Slice(allocations, func(i, j int) bool { return allocations[i].InvoiceID < allocations[j].InvoiceID })
+
+	var householdID string
+	for _, allocation := range allocations {
+		var invoiceHouseholdID, invoiceStatus string
+		var invoiceAmount, paidAmount, pendingAmount float64
+		err = tx.QueryRow(ctx, `
+			SELECT i.household_id, i.status, i.amount, i.paid_amount,
+			       COALESCE((
+			         SELECT SUM(CASE WHEN EXISTS (
+			           SELECT 1 FROM payment_allocations pa WHERE pa.payment_id = p.id
+			         ) THEN 0 ELSE p.amount END)
+			         FROM payments p
+			         WHERE p.organization_id = i.organization_id
+			           AND p.invoice_id = i.id
+			           AND p.verification_status = 'pending'
+			       ), 0)
+			       + COALESCE((
+			         SELECT SUM(pa.amount)
+			         FROM payment_allocations pa
+			         JOIN payments p
+			           ON p.organization_id = pa.organization_id
+			          AND p.id = pa.payment_id
+			         WHERE pa.organization_id = i.organization_id
+			           AND pa.invoice_id = i.id
+			           AND p.verification_status = 'pending'
+			       ), 0)
+			FROM invoices i
+			WHERE i.organization_id = $1 AND i.id = $2
+			FOR UPDATE`,
+			principal.OrganizationID, allocation.InvoiceID,
+		).Scan(&invoiceHouseholdID, &invoiceStatus, &invoiceAmount, &paidAmount, &pendingAmount)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return SubmitPaymentResponse{}, ErrInvoiceNotFound
+		}
+		if err != nil {
+			return SubmitPaymentResponse{}, fmt.Errorf("lock allocated invoice: %w", err)
+		}
+		if invoiceStatus == "paid" || invoiceStatus == "cancelled" {
+			return SubmitPaymentResponse{}, ErrInvalidInvoiceState
+		}
+		if allocation.Amount > invoiceAmount-paidAmount-pendingAmount {
+			return SubmitPaymentResponse{}, ErrConstraint
+		}
+		if householdID == "" {
+			householdID = invoiceHouseholdID
+		} else if householdID != invoiceHouseholdID {
+			return SubmitPaymentResponse{}, ErrForbidden
+		}
 	}
 
 	var belongsToHousehold bool
@@ -221,11 +241,9 @@ func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempot
 			  AND hm.is_active
 			  AND u.id = $3
 		)`,
-		principal.OrganizationID,
-		householdID,
-		principal.UserID,
+		principal.OrganizationID, householdID, principal.UserID,
 	).Scan(&belongsToHousehold); err != nil {
-		return SubmitPaymentResponse{}, fmt.Errorf("authorize invoice household: %w", err)
+		return SubmitPaymentResponse{}, fmt.Errorf("authorize payment household: %w", err)
 	}
 	if !belongsToHousehold {
 		return SubmitPaymentResponse{}, ErrForbidden
@@ -255,24 +273,26 @@ func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempot
 
 	paymentID := newUUID()
 	paymentNumber := fmt.Sprintf("PAY-%s-%s", now.Format("0601"), paymentID[:8])
+	primaryInvoiceID := allocations[0].InvoiceID
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO payments (
 			id, organization_id, invoice_id, payment_number, method, amount, paid_at,
 			proof_file_id, verification_status, idempotency_key, created_by, created_at, updated_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9, $10, $11, $11)`,
-		paymentID,
-		principal.OrganizationID,
-		request.InvoiceID,
-		paymentNumber,
-		request.Method,
-		request.Amount,
-		request.PaidAt,
-		request.ProofFileID,
-		idempotencyKey,
-		principal.UserID,
-		now,
+		paymentID, principal.OrganizationID, primaryInvoiceID, paymentNumber, request.Method,
+		request.Amount, request.PaidAt, request.ProofFileID, idempotencyKey, principal.UserID, now,
 	); err != nil {
 		return SubmitPaymentResponse{}, mapDatabaseError(err, "insert payment")
+	}
+	for index, allocation := range allocations {
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO payment_allocations (id, organization_id, payment_id, invoice_id, amount)
+			VALUES ($1, $2, $3, $4, $5)`,
+			newUUID(), principal.OrganizationID, paymentID, allocation.InvoiceID, allocation.Amount,
+		); err != nil {
+			return SubmitPaymentResponse{}, mapDatabaseError(err, "insert payment allocation")
+		}
+		allocations[index].ID = ""
 	}
 
 	if request.ProofFileID != nil {
@@ -289,9 +309,15 @@ func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempot
 		}
 	}
 
-	invoiceStatus, err = s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, request.InvoiceID)
-	if err != nil {
-		return SubmitPaymentResponse{}, err
+	invoiceStatus := ""
+	for _, allocation := range allocations {
+		status, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, allocation.InvoiceID)
+		if err != nil {
+			return SubmitPaymentResponse{}, err
+		}
+		if allocation.InvoiceID == primaryInvoiceID {
+			invoiceStatus = status
+		}
 	}
 	if err := s.audit(ctx, tx, principal, "payment.submit", paymentID); err != nil {
 		return SubmitPaymentResponse{}, err
@@ -312,6 +338,7 @@ func (s *Service) Submit(ctx context.Context, principal *auth.Principal, idempot
 		PaymentNumber:      paymentNumber,
 		VerificationStatus: "pending",
 		InvoiceStatus:      invoiceStatus,
+		Allocations:        allocations,
 		CreatedAt:          now,
 	}, nil
 }
@@ -377,22 +404,32 @@ func (s *Service) Cancel(ctx context.Context, principal *auth.Principal, payment
 	); err != nil {
 		return PaymentActionResponse{}, fmt.Errorf("cancel payment: %w", err)
 	}
+	allocations, err := s.paymentAllocations(ctx, tx, principal.OrganizationID, paymentID, invoiceID, amount)
+	if err != nil {
+		return PaymentActionResponse{}, err
+	}
 	if status == "verified" {
-		if _, err := tx.Exec(ctx, `
-			UPDATE invoices
-			SET paid_amount = paid_amount - $1
-			WHERE id = $2 AND organization_id = $3`,
-			amount,
-			invoiceID,
-			principal.OrganizationID,
-		); err != nil {
-			return PaymentActionResponse{}, fmt.Errorf("reverse invoice payment: %w", err)
+		for _, allocation := range allocations {
+			if _, err := tx.Exec(ctx, `
+				UPDATE invoices
+				SET paid_amount = paid_amount - $1
+				WHERE id = $2 AND organization_id = $3`,
+				allocation.Amount, allocation.InvoiceID, principal.OrganizationID,
+			); err != nil {
+				return PaymentActionResponse{}, fmt.Errorf("reverse allocated invoice payment: %w", err)
+			}
 		}
 	}
 
-	invoiceStatus, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, invoiceID)
-	if err != nil {
-		return PaymentActionResponse{}, err
+	invoiceStatus := ""
+	for _, allocation := range allocations {
+		status, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, allocation.InvoiceID)
+		if err != nil {
+			return PaymentActionResponse{}, err
+		}
+		if allocation.InvoiceID == invoiceID {
+			invoiceStatus = status
+		}
 	}
 	if err := s.audit(ctx, tx, principal, "payment.cancel", paymentID); err != nil {
 		return PaymentActionResponse{}, err
@@ -439,27 +476,28 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 	}
 
 	now := s.now()
+	allocations, err := s.paymentAllocations(ctx, tx, principal.OrganizationID, paymentID, invoiceID, amount)
+	if err != nil {
+		return PaymentActionResponse{}, err
+	}
 	if outcome == "verified" {
 		if _, err := tx.Exec(ctx, `
 			UPDATE payments
 			SET verification_status = 'verified', verified_by = $1, verified_at = $2
 			WHERE id = $3 AND organization_id = $4`,
-			principal.UserID,
-			now,
-			paymentID,
-			principal.OrganizationID,
+			principal.UserID, now, paymentID, principal.OrganizationID,
 		); err != nil {
 			return PaymentActionResponse{}, fmt.Errorf("verify payment: %w", err)
 		}
-		if _, err := tx.Exec(ctx, `
-			UPDATE invoices
-			SET paid_amount = paid_amount + $1
-			WHERE id = $2 AND organization_id = $3`,
-			amount,
-			invoiceID,
-			principal.OrganizationID,
-		); err != nil {
-			return PaymentActionResponse{}, fmt.Errorf("update paid invoice amount: %w", err)
+		for _, allocation := range allocations {
+			if _, err := tx.Exec(ctx, `
+				UPDATE invoices
+				SET paid_amount = paid_amount + $1
+				WHERE id = $2 AND organization_id = $3`,
+				allocation.Amount, allocation.InvoiceID, principal.OrganizationID,
+			); err != nil {
+				return PaymentActionResponse{}, fmt.Errorf("update allocated invoice amount: %w", err)
+			}
 		}
 		if s.cash == nil {
 			return PaymentActionResponse{}, fmt.Errorf("cash service is required")
@@ -485,9 +523,15 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 		}
 	}
 
-	invoiceStatus, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, invoiceID)
-	if err != nil {
-		return PaymentActionResponse{}, err
+	invoiceStatus := ""
+	for _, allocation := range allocations {
+		status, err := s.syncInvoiceStatus(ctx, tx, principal.OrganizationID, allocation.InvoiceID)
+		if err != nil {
+			return PaymentActionResponse{}, err
+		}
+		if allocation.InvoiceID == invoiceID {
+			invoiceStatus = status
+		}
 	}
 	action := "payment.verify"
 	if outcome == "rejected" {
@@ -506,13 +550,13 @@ func (s *Service) resolve(ctx context.Context, principal *auth.Principal, paymen
 		body = fmt.Sprintf("Pembayaran %s ditolak: %s", paymentNumber, reason)
 	}
 	s.dispatchNotification(notifications.DispatchJob{
-		OrganizationID: principal.OrganizationID,
+		OrganizationID:  principal.OrganizationID,
 		RecipientUserID: createdBy,
-		Type:           "payment_"+outcome,
-		Title:          title,
-		Body:           body,
-		ReferenceType:  "payment",
-		ReferenceID:    paymentID,
+		Type:            "payment_" + outcome,
+		Title:           title,
+		Body:            body,
+		ReferenceType:   "payment",
+		ReferenceID:     paymentID,
 	})
 
 	return PaymentActionResponse{
@@ -557,6 +601,49 @@ func (s *Service) dispatchNotification(job notifications.DispatchJob) {
 	}
 }
 
+func (s *Service) paymentAllocations(
+	ctx context.Context,
+	db interface {
+		Query(context.Context, string, ...any) (pgx.Rows, error)
+	},
+	organizationID, paymentID, legacyInvoiceID string,
+	legacyAmount float64,
+) ([]PaymentAllocation, error) {
+	rows, err := db.Query(ctx, `
+		SELECT pa.id, pa.invoice_id, i.invoice_number, pa.amount, pa.created_at
+		FROM payment_allocations pa
+		JOIN invoices i
+		  ON i.organization_id = pa.organization_id
+		 AND i.id = pa.invoice_id
+		WHERE pa.organization_id = $1 AND pa.payment_id = $2
+		ORDER BY pa.invoice_id`,
+		organizationID, paymentID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list payment allocations: %w", err)
+	}
+	defer rows.Close()
+
+	allocations := []PaymentAllocation{}
+	for rows.Next() {
+		var allocation PaymentAllocation
+		if err := rows.Scan(
+			&allocation.ID, &allocation.InvoiceID, &allocation.InvoiceNumber,
+			&allocation.Amount, &allocation.CreatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan payment allocation: %w", err)
+		}
+		allocations = append(allocations, allocation)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate payment allocations: %w", err)
+	}
+	if len(allocations) == 0 {
+		return []PaymentAllocation{{InvoiceID: legacyInvoiceID, Amount: legacyAmount}}, nil
+	}
+	return allocations, nil
+}
+
 func (s *Service) syncInvoiceStatus(ctx context.Context, tx pgx.Tx, organizationID, invoiceID string) (string, error) {
 	var (
 		currentStatus string
@@ -582,13 +669,24 @@ func (s *Service) syncInvoiceStatus(ctx context.Context, tx pgx.Tx, organization
 	if err := tx.QueryRow(ctx, `
 		SELECT EXISTS (
 			SELECT 1
-			FROM payments
-			WHERE organization_id = $1
-			  AND invoice_id = $2
-			  AND verification_status = 'pending'
+			FROM payments p
+			WHERE p.organization_id = $1
+			  AND p.verification_status = 'pending'
+			  AND (
+			    (p.invoice_id = $2 AND NOT EXISTS (
+			      SELECT 1 FROM payment_allocations pa
+			      WHERE pa.organization_id = p.organization_id
+			        AND pa.payment_id = p.id
+			    ))
+			    OR EXISTS (
+			      SELECT 1 FROM payment_allocations pa
+			      WHERE pa.organization_id = p.organization_id
+			        AND pa.payment_id = p.id
+			        AND pa.invoice_id = $2
+			    )
+			  )
 		)`,
-		organizationID,
-		invoiceID,
+		organizationID, invoiceID,
 	).Scan(&pending); err != nil {
 		return "", fmt.Errorf("check pending payments: %w", err)
 	}

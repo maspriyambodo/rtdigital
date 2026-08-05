@@ -37,7 +37,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /letter-requests/{id}/approve", h.require("letter_request.approve", h.approveLetterRequest))
 	mux.Handle("POST /letter-requests/{id}/reject", h.require("letter_request.process", h.rejectLetterRequest))
 	mux.Handle("POST /letter-requests/{id}/issue", h.require("letter_request.issue", h.issueLetter))
+	mux.Handle("POST /letter-requests/{id}/cancel", h.require("letter_request.issue", h.cancelLetterRequest))
 	mux.Handle("GET /letter-requests/{id}/download", h.require("letter_request.download", h.downloadLetter))
+	mux.Handle("GET /letters/verify/{code}", http.HandlerFunc(h.verifyPublic))
 }
 
 func (h *Handler) require(permission string, next http.HandlerFunc) http.Handler {
@@ -190,6 +192,24 @@ func (h *Handler) issueLetter(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"data": item})
 }
 
+func (h *Handler) cancelLetterRequest(w http.ResponseWriter, r *http.Request) {
+	var request CancelLetterRequest
+	if !decodeJSON(w, r, &request) {
+		return
+	}
+	item, err := h.service.CancelLetterRequest(
+		r.Context(),
+		auth.PrincipalFromContext(r.Context()),
+		r.PathValue("id"),
+		request,
+	)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
 func (h *Handler) downloadLetter(w http.ResponseWriter, r *http.Request) {
 	item, err := h.service.GetLetterRequest(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"))
 	if err != nil {
@@ -206,6 +226,15 @@ func (h *Handler) downloadLetter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"data": response})
+}
+
+func (h *Handler) verifyPublic(w http.ResponseWriter, r *http.Request) {
+	item, err := h.service.VerifyPublicLetter(r.Context(), r.PathValue("code"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "LETTER_NOT_FOUND", "Surat tidak ditemukan atau kode verifikasi tidak valid.")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
 }
 
 func (h *Handler) writeServiceError(w http.ResponseWriter, err error) {

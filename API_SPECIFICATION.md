@@ -130,6 +130,9 @@ Status HTTP minimum:
 | `GET` | `/roles` | Daftar peran tersedia | `role.assign` |
 | `POST` | `/users/{id}/roles` | Tambahkan peran pengguna | `role.assign` |
 | `DELETE` | `/users/{id}/roles/{role_id}` | Cabut peran pengguna | `role.revoke` |
+| `POST` | `/office-handovers` | Inisialisasi serah-terima jabatan | `role.assign` |
+| `GET` | `/office-handovers/{id}` | Detail serah-terima jabatan | `role.assign` |
+| `POST` | `/office-handovers/{id}/complete` | Selesaikan serah-terima; transfer peran, cabut sesi pengurus lama | `role.assign` |
 
 **Aturan:** Ketua RT tidak dapat menaikkan hak akses dirinya sendiri atau menetapkan peran Super Admin.
 
@@ -144,6 +147,7 @@ Status HTTP minimum:
 | `POST` | `/house-units/{id}/deactivate` | Nonaktifkan rumah/unit | `house_unit.deactivate` |
 | `GET` | `/households` | Daftar keluarga | `household.read` |
 | `POST` | `/households` | Tambah keluarga | `household.create` |
+| `GET` | `/households/health-scores` | Daftar kerja kualitas data keluarga | `resident.read` |
 | `GET` | `/households/{id}` | Detail keluarga dan anggota | `household.read` + scope |
 | `PATCH` | `/households/{id}` | Ubah keluarga | `household.update` + scope |
 | `POST` | `/households/{id}/verify` | Verifikasi keluarga | `household.verify` |
@@ -238,6 +242,7 @@ Status HTTP minimum:
 | `POST` | `/letter-requests/{id}/reject` | Tolak pengajuan; alasan wajib | `letter_request.process` |
 | `POST` | `/letter-requests/{id}/issue` | Terbitkan nomor dan PDF surat | `letter_request.issue` |
 | `GET` | `/letter-requests/{id}/download` | URL download PDF surat | `letter_request.download` + scope |
+| `GET` | `/letters/verify/{code}` | Verifikasi publik nomor, jenis, tanggal terbit, status surat; tanpa data pribadi | Publik |
 
 ## 2.7 Aduan
 

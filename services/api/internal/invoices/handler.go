@@ -28,6 +28,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /invoices", h.require("invoice.read", h.listInvoices))
 	mux.Handle("POST /invoices", h.require("invoice.create", h.createInvoice))
 	mux.Handle("POST /invoices/generate", h.require("invoice.create", h.generateInvoices))
+	mux.Handle("GET /invoice-generation-runs", h.require("invoice.read", h.listInvoiceGenerationRuns))
+	mux.Handle("POST /invoice-generation-runs", h.require("invoice.create", h.createInvoiceGenerationRun))
+	mux.Handle("GET /invoice-generation-runs/{id}", h.require("invoice.read", h.getInvoiceGenerationRun))
 	mux.Handle("GET /invoices/{id}", h.require("invoice.read", h.getInvoice))
 	mux.Handle("PATCH /invoices/{id}", h.require("invoice.update", h.updateInvoice))
 	mux.Handle("POST /invoices/{id}/cancel", h.require("invoice.cancel", h.cancelInvoice))
@@ -135,6 +138,48 @@ func (h *Handler) generateInvoices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"data": result})
+}
+
+func (h *Handler) listInvoiceGenerationRuns(w http.ResponseWriter, r *http.Request) {
+	items, err := h.service.ListInvoiceGenerationRuns(r.Context(), auth.PrincipalFromContext(r.Context()))
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
+}
+
+func (h *Handler) createInvoiceGenerationRun(w http.ResponseWriter, r *http.Request) {
+	runKey := r.Header.Get("Idempotency-Key")
+	if runKey == "" {
+		writeError(w, http.StatusBadRequest, "IDEMPOTENCY_KEY_REQUIRED", "Header Idempotency-Key wajib disertakan.")
+		return
+	}
+
+	var request CreateInvoiceGenerationRunRequest
+	if !decodeJSON(w, r, &request) {
+		return
+	}
+	item, err := h.service.CreateInvoiceGenerationRun(
+		r.Context(),
+		auth.PrincipalFromContext(r.Context()),
+		runKey,
+		request,
+	)
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"data": item})
+}
+
+func (h *Handler) getInvoiceGenerationRun(w http.ResponseWriter, r *http.Request) {
+	item, err := h.service.GetInvoiceGenerationRun(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"))
+	if err != nil {
+		h.writeServiceError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
 }
 
 func (h *Handler) getInvoice(w http.ResponseWriter, r *http.Request) {

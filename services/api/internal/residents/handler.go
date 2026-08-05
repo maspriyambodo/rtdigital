@@ -27,8 +27,10 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 
 	mux.Handle("GET /households", h.require("household.read", h.listHouseholds))
 	mux.Handle("POST /households", h.require("household.create", h.createHousehold))
+	mux.Handle("GET /households/health-scores", h.require("resident.read", h.listHouseholdHealthScores))
 	mux.Handle("GET /households/{id}", h.require("household.read", h.getHousehold))
 	mux.Handle("POST /households/{id}/members", h.require("household.update", h.addHouseholdMember))
+	mux.Handle("POST /households/{id}/confirm-domicile", h.require("household.update", h.confirmDomicile))
 
 	mux.Handle("GET /residents", h.require("resident.read", h.listResidents))
 	mux.Handle("POST /residents", h.require("resident.create", h.createResident))
@@ -140,6 +142,24 @@ func (h *Handler) addHouseholdMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) confirmDomicile(w http.ResponseWriter, r *http.Request) {
+	item, err := h.service.ConfirmDomicile(r.Context(), auth.PrincipalFromContext(r.Context()), r.PathValue("id"))
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": item})
+}
+
+func (h *Handler) listHouseholdHealthScores(w http.ResponseWriter, r *http.Request) {
+	items, err := h.service.ListHouseholdHealthScores(r.Context(), auth.PrincipalFromContext(r.Context()))
+	if err != nil {
+		h.writeServiceError(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"data": items})
 }
 
 func (h *Handler) listResidents(w http.ResponseWriter, r *http.Request) {

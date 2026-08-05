@@ -167,10 +167,10 @@ func TestLettersWorkflowIntegration(t *testing.T) {
 	}
 
 	submitResponse := doRequest(http.MethodPost, "/api/v1/letter-requests", wargaToken, map[string]any{
-		"letter_type_id":       typePayload.Data.ID,
-		"resident_id":          residentID,
-		"form_data":            map[string]string{"keperluan": "KPR"},
-		"attachment_file_ids":  []string{},
+		"letter_type_id":      typePayload.Data.ID,
+		"resident_id":         residentID,
+		"form_data":           map[string]string{"keperluan": "KPR"},
+		"attachment_file_ids": []string{},
 	})
 	if submitResponse.Code != http.StatusCreated {
 		t.Fatalf("submit = %d: %s", submitResponse.Code, submitResponse.Body.String())
