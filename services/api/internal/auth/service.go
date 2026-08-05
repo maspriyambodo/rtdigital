@@ -122,6 +122,7 @@ func (s *Service) Login(ctx context.Context, identifier, password, userAgent, ip
 	if mandatoryMFA && (user.MFAEnabledAt == nil || user.MFASecretEncrypted == nil) {
 		return LoginResult{}, ErrMFAEnrollmentRequired
 	}
+	mfaRequired := user.MFAEnabledAt != nil && user.MFASecretEncrypted != nil
 
 	sessionID := newUUID()
 	rawRefresh, refreshHash, err := GenerateOpaqueToken()
@@ -143,9 +144,11 @@ func (s *Service) Login(ctx context.Context, identifier, password, userAgent, ip
 		return LoginResult{}, fmt.Errorf("record login: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO sessions (id, user_id, organization_id, refresh_token_hash, user_agent, ip_address, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-		sessionID, user.ID, user.OrganizationID, refreshHash, userAgent, validIP(ipAddress), refreshExpires,
+		INSERT INTO sessions (
+			id, user_id, organization_id, refresh_token_hash, user_agent, ip_address, expires_at, mfa_verified
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+		sessionID, user.ID, user.OrganizationID, refreshHash, userAgent, validIP(ipAddress), refreshExpires, !mfaRequired,
 	); err != nil {
 		return LoginResult{}, fmt.Errorf("create session: %w", err)
 	}
@@ -163,7 +166,6 @@ func (s *Service) Login(ctx context.Context, identifier, password, userAgent, ip
 		return LoginResult{}, fmt.Errorf("commit login: %w", err)
 	}
 
-	mfaRequired := user.MFAEnabledAt != nil && user.MFASecretEncrypted != nil
 	accessToken, err := s.tokens.IssueAccessToken(TokenClaims{
 		UserID: user.ID, OrganizationID: user.OrganizationID, SessionID: sessionID, MFA: !mfaRequired,
 	})
@@ -190,7 +192,7 @@ func (s *Service) Refresh(ctx context.Context, rawToken, userAgent, ipAddress st
 	var status string
 	var mfaEnabledAt *time.Time
 	err = tx.QueryRow(ctx, `
-		SELECT s.id, s.user_id, s.organization_id, s.refresh_token_hash, s.expires_at, s.revoked_at,
+		SELECT s.id, s.user_id, s.organization_id, s.refresh_token_hash, s.expires_at, s.revoked_at, s.mfa_verified,
 		       u.status, u.mfa_enabled_at
 		FROM sessions s
 		JOIN users u ON u.id = s.user_id
@@ -198,7 +200,7 @@ func (s *Service) Refresh(ctx context.Context, rawToken, userAgent, ipAddress st
 		FOR UPDATE`, HashOpaqueToken(rawToken),
 	).Scan(
 		&session.ID, &session.UserID, &session.OrganizationID, &session.RefreshHash, &session.ExpiresAt, &session.RevokedAt,
-		&status, &mfaEnabledAt,
+		&session.MFAVerified, &status, &mfaEnabledAt,
 	)
 	if errors.Is(err, pgx.ErrNoRows) || session.RevokedAt != nil || !session.ExpiresAt.After(now) || status != "active" {
 		return LoginResult{}, ErrSessionExpired
@@ -218,9 +220,12 @@ func (s *Service) Refresh(ctx context.Context, rawToken, userAgent, ipAddress st
 	}
 	refreshExpires := now.Add(s.tokens.RefreshExpiry())
 	if _, err := tx.Exec(ctx, `
-		INSERT INTO sessions (id, user_id, organization_id, refresh_token_hash, user_agent, ip_address, expires_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+		INSERT INTO sessions (
+			id, user_id, organization_id, refresh_token_hash, user_agent, ip_address, expires_at, mfa_verified
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
 		newSessionID, session.UserID, session.OrganizationID, refreshHash, userAgent, validIP(ipAddress), refreshExpires,
+		session.MFAVerified,
 	); err != nil {
 		return LoginResult{}, fmt.Errorf("create rotated session: %w", err)
 	}
@@ -228,9 +233,10 @@ func (s *Service) Refresh(ctx context.Context, rawToken, userAgent, ipAddress st
 		return LoginResult{}, fmt.Errorf("commit token rotation: %w", err)
 	}
 
-	mfaRequired := mfaEnabledAt != nil
+	mfaVerified := mfaEnabledAt == nil || session.MFAVerified
+	mfaRequired := !mfaVerified
 	accessToken, err := s.tokens.IssueAccessToken(TokenClaims{
-		UserID: session.UserID, OrganizationID: session.OrganizationID, SessionID: newSessionID, MFA: !mfaRequired,
+		UserID: session.UserID, OrganizationID: session.OrganizationID, SessionID: newSessionID, MFA: mfaVerified,
 	})
 	if err != nil {
 		return LoginResult{}, err
@@ -356,6 +362,18 @@ func (s *Service) VerifyMFA(ctx context.Context, claims *TokenClaims, code strin
 	ok, err := VerifyTOTP(code, decrypted, s.now())
 	if err != nil || !ok {
 		return LoginResult{}, ErrInvalidTOTPCode
+	}
+	if _, err := s.db.Exec(ctx, `
+		UPDATE sessions
+		SET mfa_verified = TRUE
+		WHERE id = $1
+		  AND user_id = $2
+		  AND organization_id = $3
+		  AND revoked_at IS NULL
+		  AND expires_at > now()`,
+		claims.SessionID, claims.UserID, claims.OrganizationID,
+	); err != nil {
+		return LoginResult{}, fmt.Errorf("persist MFA verification: %w", err)
 	}
 	accessToken, err := s.tokens.IssueAccessToken(TokenClaims{
 		UserID: claims.UserID, OrganizationID: claims.OrganizationID, SessionID: claims.SessionID, MFA: true,

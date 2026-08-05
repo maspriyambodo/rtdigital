@@ -60,3 +60,6 @@ Thumbs.db
 
 # Local Docker overrides
 docker-compose.override.yml
+
+# Temporary files
+amp

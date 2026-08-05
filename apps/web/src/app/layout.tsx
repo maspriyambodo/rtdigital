@@ -11,6 +11,9 @@ export const metadata: Metadata = {
     template: "%s | RT Digital",
   },
   description: "Aplikasi layanan warga dan pengurus RT.",
+  icons: {
+    icon: "/favicon.svg",
+  },
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

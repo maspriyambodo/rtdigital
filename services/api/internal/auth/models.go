@@ -22,6 +22,7 @@ type Session struct {
 	RefreshHash    string
 	ExpiresAt      time.Time
 	RevokedAt      *time.Time
+	MFAVerified    bool
 }
 
 type LoginResult struct {

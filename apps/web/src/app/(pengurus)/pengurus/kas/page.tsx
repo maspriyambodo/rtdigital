@@ -69,13 +69,13 @@ export default function BukuKasPengurusPage() {
       if (!token) throw new Error("Sesi telah berakhir. Silakan masuk kembali.");
 
       const [cashBook, cashCategories] = await Promise.all([
-        getCashBook({
+        getCashBook(token, {
           startDate: filters.startDate || undefined,
           endDate: filters.endDate || undefined,
           type: filters.type || undefined,
           categoryId: filters.categoryId || undefined,
         }),
-        getCashCategories(),
+        getCashCategories(token),
       ]);
       setBook(cashBook);
       setCategories(cashCategories);
@@ -97,7 +97,9 @@ export default function BukuKasPengurusPage() {
     setError("");
     setMessage("");
     try {
-      await createCashCategory({ name: categoryName.trim(), type: categoryType });
+      const token = await getAccessToken();
+      if (!token) throw new Error("Sesi berakhir.");
+      await createCashCategory(token, { name: categoryName.trim(), type: categoryType });
       setCategoryName("");
       setMessage("Kategori kas ditambahkan.");
       await load();
@@ -112,7 +114,9 @@ export default function BukuKasPengurusPage() {
     setSaving(true);
     setError("");
     try {
-      await updateCashCategory(category.id, {
+      const token = await getAccessToken();
+      if (!token) throw new Error("Sesi berakhir.");
+      await updateCashCategory(token, category.id, {
         status: category.status === "active" ? "inactive" : "active",
       });
       setMessage(`Kategori ${category.status === "active" ? "dinonaktifkan" : "diaktifkan"}.`);
@@ -130,7 +134,9 @@ export default function BukuKasPengurusPage() {
     setError("");
     setMessage("");
     try {
-      await recordCashTransaction({
+      const token = await getAccessToken();
+      if (!token) throw new Error("Sesi berakhir.");
+      await recordCashTransaction(token, {
         type: transaction.type,
         categoryId: transaction.categoryId,
         amount: Number(transaction.amount),
@@ -161,7 +167,9 @@ export default function BukuKasPengurusPage() {
     setSaving(true);
     setError("");
     try {
-      await reverseCashTransaction(reversalId, reversalReason.trim());
+      const token = await getAccessToken();
+      if (!token) throw new Error("Sesi berakhir.");
+      await reverseCashTransaction(token, reversalId, reversalReason.trim());
       setReversalId(undefined);
       setReversalReason("");
       setMessage("Transaksi pembalik berhasil dibuat.");

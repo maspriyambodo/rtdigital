@@ -28,8 +28,16 @@ export class ApiException extends Error {
 
 const apiBase = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(/\/+$/, "");
 
-export async function apiFetch<T>(path: string, options: RequestInit = {}, unwrapData = true): Promise<T> {
+export async function apiFetch<T>(
+  path: string,
+  options: RequestInit = {},
+  unwrapData = true,
+  accessToken?: string,
+): Promise<T> {
   const headers = new Headers(options.headers);
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
   if (options.body && typeof options.body === "string" && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }

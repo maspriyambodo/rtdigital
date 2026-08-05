@@ -58,7 +58,7 @@ func canReadAdminDashboard(principal *auth.Principal) bool {
 	}
 	for _, role := range principal.RoleCodes {
 		switch role {
-		case "ketua_rt", "sekretaris", "bendahara":
+		case "super_admin", "ketua_rt", "sekretaris", "bendahara":
 			return true
 		}
 	}
