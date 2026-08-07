@@ -85,7 +85,7 @@ flowchart TD
 | CDN/edge cache | Menyajikan aset statis Next.js: JavaScript, CSS, font, gambar publik. |
 | WAF dan rate limiting | Melindungi endpoint publik, login, reset kata sandi, dan unggah. |
 | Cloudflare Workers | Menjalankan Next.js App Router melalui OpenNext. |
-| Next.js | UI mobile-first, routing, Server Components, PWA manifest, validasi UX, dan komunikasi API. |
+| Next.js | UI responsive desktop-first, routing, Server Components, PWA manifest, validasi UX, dan komunikasi API. |
 
 **Domain:**
 

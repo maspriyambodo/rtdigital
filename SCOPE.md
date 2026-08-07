@@ -9,7 +9,7 @@ Dokumen ini melengkapi `PRD.md`. Bila terjadi perbedaan, keputusan ruang lingkup
 
 ## 1. Sasaran MVP
 
-Menyediakan aplikasi web mobile-first untuk satu RT agar warga dapat:
+Menyediakan aplikasi web responsive desktop-first untuk satu RT agar warga dapat:
 
 1. Mengakses informasi RT.
 2. Melihat tagihan serta mengirim bukti pembayaran manual.
@@ -173,7 +173,7 @@ Fitur berikut tidak menjadi bagian produk RT Digital:
 MVP memasuki *feature freeze* saat seluruh fitur bagian 2 telah memiliki:
 
 - Kriteria penerimaan.
-- Desain mobile-first.
+- Desain responsive desktop-first.
 - Hak akses yang ditentukan.
 - Pengujian relevan.
 - Status rilis atau keputusan eksplisit untuk dipindahkan ke pasca-MVP.

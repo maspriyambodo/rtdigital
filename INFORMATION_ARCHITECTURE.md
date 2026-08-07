@@ -6,7 +6,7 @@
 
 Aplikasi memiliki dua pengalaman utama:
 
-- **Warga:** mobile-first, navigasi bawah maksimal lima tujuan utama.
+- **Warga:** responsive desktop-first, navigasi bawah maksimal lima tujuan utama.
 - **Pengurus:** sidebar modular untuk desktop/tablet; tetap responsif saat dibuka dari telepon seluler.
 
 Menu, halaman, tombol aksi, dan data yang terlihat wajib mengikuti RBAC serta scope data pengguna.

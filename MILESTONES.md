@@ -8,7 +8,7 @@ Dokumen ini memetakan epic backlog menjadi enam milestone berurutan. Setiap mile
 
 ## Prinsip
 
-- Setiap milestone wajib memenuhi standar mobile-first, RBAC, isolasi `organization_id`, validasi backend, dan perlindungan data sensitif.
+- Setiap milestone wajib memenuhi standar responsive desktop-first, RBAC, isolasi `organization_id`, validasi backend, dan perlindungan data sensitif.
 - Deployment ke staging dilakukan sebelum validasi milestone.
 - Task audit log, test, dokumentasi API, serta error handling dikerjakan bersamaan dengan modul terkait; tidak ditunda hingga akhir.
 - Milestone berikutnya dimulai setelah kriteria selesai milestone sebelumnya dipenuhi.
@@ -33,7 +33,7 @@ Dokumen ini memetakan epic backlog menjadi enam milestone berurutan. Setiap mile
 - MFA aktif untuk peran pengurus.
 - RBAC membatasi menu, endpoint, serta data sesuai peran dan `organization_id`.
 - Super Admin dapat menyiapkan organisasi; Ketua RT dapat mengundang dan menetapkan peran pengurus.
-- Shell UI mobile-first, bottom navigation warga, sidebar/drawer pengurus, loading/error/empty state tersedia.
+- Shell UI responsive desktop-first, bottom navigation warga, sidebar/drawer pengurus, loading/error/empty state tersedia.
 - CI minimum berjalan: format, lint, type check, test, dan build.
 
 ### Kriteria Selesai

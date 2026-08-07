@@ -2,7 +2,7 @@
 
 **Status:** Draft untuk validasi  
 **Berlaku:** MVP RT Digital  
-**Prinsip:** Alur warga dirancang mobile-first. Status, pesan kesalahan, dan tindakan berikutnya harus selalu terlihat. Notifikasi dikirim melalui aplikasi; email digunakan untuk aktivitas penting bila tersedia.
+**Prinsip:** Alur warga dirancang responsive desktop-first. Status, pesan kesalahan, dan tindakan berikutnya harus selalu terlihat. Notifikasi dikirim melalui aplikasi; email digunakan untuk aktivitas penting bila tersedia.
 
 ---
 

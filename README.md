@@ -1,6 +1,6 @@
 # RT Digital
 
-Aplikasi web **mobile-first** untuk administrasi dan komunikasi Rukun Tetangga (RT). RT Digital membantu pengurus mengelola data warga, iuran, kas, surat, aduan, pengumuman, serta agenda secara terpusat, aman, dan terlacak.
+Aplikasi web **responsive desktop-first** untuk administrasi dan komunikasi Rukun Tetangga (RT). RT Digital membantu pengurus mengelola data warga, iuran, kas, surat, aduan, pengumuman, serta agenda secara terpusat, aman, dan terlacak.
 
 ## Status
 
@@ -16,7 +16,7 @@ Tahap perencanaan dan desain MVP. Repository ini saat ini berisi dokumentasi pro
 - Iuran, tagihan, pembayaran manual, bukti transfer, dan buku kas.
 - Pengajuan serta penerbitan surat PDF.
 - Aduan warga dan tindak lanjut pengurus.
-- PWA dasar dan UX mobile-first.
+- PWA dasar dan UX responsive desktop-first.
 
 ## Arsitektur Target
 

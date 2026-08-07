@@ -10,7 +10,7 @@
 | Status | Draft untuk validasi |
 | Tanggal | 8 Agustus 2026 |
 | Pemilik produk | Pengurus RT |
-| Target platform | Web responsif mobile-first / Progressive Web App (PWA) |
+| Target platform | Web responsif responsive desktop-first / Progressive Web App (PWA) |
 | Bahasa utama | Bahasa Indonesia |
 
 ---
@@ -21,7 +21,7 @@ RT Digital adalah aplikasi web untuk membantu pengurus RT mengelola administrasi
 
 Aplikasi akan menggantikan proses yang saat ini tersebar pada buku catatan, spreadsheet, grup percakapan, dokumen kertas, dan pencatatan pembayaran manual. Sistem menyediakan satu sumber data untuk informasi warga, keluarga, iuran, pengumuman, pengajuan surat, aduan, kegiatan, dokumen, dan laporan RT.
 
-Produk dirancang **mobile-first** karena mayoritas warga akan mengakses aplikasi melalui telepon seluler. Pengurus tetap memperoleh tampilan desktop yang nyaman untuk pekerjaan administrasi dan pelaporan.
+Produk dirancang **responsive desktop-first** karena mayoritas warga akan mengakses aplikasi melalui telepon seluler. Pengurus tetap memperoleh tampilan desktop yang nyaman untuk pekerjaan administrasi dan pelaporan.
 
 MVP ditujukan untuk digunakan oleh satu organisasi RT. Struktur data tetap menyiapkan `organization_id` agar sistem dapat dikembangkan menjadi multi-RT pada masa depan tanpa mendesain ulang seluruh basis data.
 
@@ -736,7 +736,7 @@ Sistem harus dapat meningkatkan kapasitas backend secara horizontal tanpa menyim
 
 ## 11.6 Aksesibilitas dan UX
 
-- Antarmuka mobile-first: desain dan pengujian dimulai dari layar seluler, kemudian ditingkatkan untuk tablet dan desktop.
+- Antarmuka responsive desktop-first: desain dan pengujian dimulai dari layar seluler, kemudian ditingkatkan untuk tablet dan desktop.
 - Ukuran area sentuh minimum 44 × 44 CSS pixel, dengan jarak antarelemen yang mencegah salah tekan.
 - Navigasi warga menggunakan bottom navigation dengan maksimal lima tujuan utama; tindakan utama mudah dijangkau ibu jari.
 - Tampilan data pada seluler menggunakan kartu atau daftar ringkas; tabel lebar hanya untuk desktop pengurus atau menyediakan kolom prioritas dan scroll horizontal yang jelas.
@@ -830,7 +830,7 @@ Amazon RDS for PostgreSQL 18.4
 - Server Components dan Client Components digunakan sesuai kebutuhan.
 - Cloudflare Workers menggunakan adapter OpenNext.
 - Cloudflare Pages hanya digunakan jika proyek diputuskan menjadi static export penuh; bukan pilihan default MVP.
-- UI responsif dan mobile-first.
+- UI responsif dan responsive desktop-first.
 - Komunikasi ke backend melalui REST API HTTPS.
 - Domain yang direkomendasikan:
   - `app.domain-rt.id` untuk frontend.
@@ -1788,7 +1788,7 @@ Jawaban atas pertanyaan ini dapat memperbarui ruang lingkup, aturan bisnis, biay
 Sebuah fitur dianggap selesai apabila:
 
 - Kebutuhan dan acceptance criteria dipenuhi.
-- UI mobile-first telah diuji pada viewport 320 px, 360 px, dan 390 px, lalu desktop.
+- UI responsive desktop-first telah diuji pada viewport 320 px, 360 px, dan 390 px, lalu desktop.
 - Alur warga inti dapat diselesaikan dengan satu tangan tanpa tabel lebar, salah tekan, atau kehilangan data saat koneksi terganggu.
 - Authorization telah diuji.
 - Unit atau integration test yang relevan tersedia.
@@ -1810,5 +1810,5 @@ Sebuah fitur dianggap selesai apabila:
 | 1.4 | 8 Agustus 2026 | Menambahkan Epic 16–19: aset, keamanan/kegiatan warga, sampah/UMKM/Posyandu, serta e-voting pengurus sebagai fitur pasca-MVP |
 | 1.3 | 8 Agustus 2026 | Menambahkan tabungan warga sebagai dana titipan non-kas dan master data jenis tabungan |
 | 1.2 | 8 Agustus 2026 | Menambahkan prioritas otomatisasi dan layanan operasional proaktif pasca-MVP |
-| 1.1 | 1 Agustus 2026 | Memperkuat kebutuhan mobile-first, PWA dasar, UX seluler, ketahanan koneksi, dan pengujian perangkat seluler |
+| 1.1 | 1 Agustus 2026 | Memperkuat kebutuhan responsive desktop-first, PWA dasar, UX seluler, ketahanan koneksi, dan pengujian perangkat seluler |
 | 1.0 | 1 Agustus 2026 | Draft awal PRD aplikasi manajemen RT digital |
