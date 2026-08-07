@@ -23,11 +23,22 @@ Dokumen ini mendefinisikan ruang lingkup, arsitektur teknis, arsitektur modul, d
 
 ---
 
-## 1. Arsitektur Modul Mobile
+## 2. Arsitektur Modul Mobile
 
 Aplikasi mobile RT Digital dibagi berdasarkan dua kelompok pengguna utama: **Warga** (akses mobile-first/layanan mandiri) dan **Pengurus/Petugas** (layanan operasional & persetujuan cepat).
 
-### 1.1 Modul Warga (Citizen Services)
+### 2.0 Kriteria Modul Wajib Masuk Mobile
+
+Tidak semua epic pada `DEVELOPMENT_BACKLOG.md` perlu dibawa ke mobile. Sebuah modul **wajib** masuk aplikasi mobile bila memenuhi minimal satu kriteria berikut:
+
+1. **Membutuhkan kapabilitas native**: kamera, GPS, biometrik, pemindai QR, push notification, kalender perangkat.
+2. **Bersifat mendesak/di lapangan**: aksi harus dilakukan saat kejadian berlangsung, bukan di depan desktop (panic button, absensi ronda, check-in tamu, disposisi aduan).
+3. **Layanan mandiri warga bervolume tinggi**: warga adalah pengguna mobile-first, sehingga seluruh alur warga pada MVP wajib tersedia di mobile.
+4. **Persetujuan yang memblokir alur**: approval pengurus yang menahan layanan warga bila tidak segera diproses.
+
+Modul yang **tidak wajib** masuk mobile (tetap dikerjakan di web pengurus): laporan analitis dan ekspor CSV/PDF (Epic 11 sisi pengurus), UI audit log (Task 12.3), master data administratif (Epic 13 sisi pengelolaan), konfigurasi RT dan operasional rilis (Epic 12), serta import CSV data warga (Task 3.7). Modul ini hanya ditampilkan dalam bentuk ringkasan baca-saja bila memang dibutuhkan.
+
+### 2.1 Modul Warga (Citizen Services)
 
 | Modul | Deskripsi | Fitur Utama |
 |---|---|---|
@@ -36,26 +47,34 @@ Aplikasi mobile RT Digital dibagi berdasarkan dua kelompok pengguna utama: **War
 | **Dues & Payments** | Pengelolaan pembayaran iuran warga. | - Rincian Tagihan Aktif & Tunggakan.<br>- Upload Bukti Pembayaran Manual (Kamera/Galeri).<br>- Transparansi Kas RT (Laporan ringkas kas). |
 | **E-Surat** | Pengajuan dokumen administrasi mandiri. | - Form Permohonan Surat Pengantar RT.<br>- Tracking Status Pengajuan Real-time.<br>- Viewer & Unduh Surat Digital (Format PDF + QR Code Validasi). |
 | **Aduan & Laporan** | Kanal pelaporan masalah lingkungan. | - Formulir Aduan (Upload foto kamera langsung, koordinat GPS).<br>- Tracking Timeline Penanganan (Tiket aduan). |
-| **Keamanan** | Fitur sosial & proteksi lingkungan. | - Panic Button (Kirim alert bahaya + GPS ke petugas ronda).<br>- Jadwal Ronda Malam & Absensi Siskamling. |
+| **Notifikasi** | Pusat pemberitahuan personal. | - Inbox notifikasi in-app (indikator belum dibaca, tandai dibaca).<br>- Deep link push ke detail tagihan/surat/aduan. |
+| **Keamanan & Ronda** | Fitur proteksi lingkungan & siskamling. | - Panic Button (alert bahaya + GPS, dengan konfirmasi kirim).<br>- Jadwal ronda pribadi, tukar jadwal, absensi via QR pos.<br>- Laporan kejadian patroli.<br>- Undangan tamu berbasis QR berumur pendek. |
+| **Kegiatan Warga** | Partisipasi kerja bakti & kegiatan RT. | - Jadwal kerja bakti & status kehadiran.<br>- Absensi kegiatan per KK. |
+| **Tabungan** | Dana titipan terarah (mis. Qurban). | - Saldo & mutasi tabungan keluarga.<br>- Lapor setoran + bukti foto.<br>- Pengajuan penarikan sesuai aturan produk. |
+| **Aset** | Peminjaman fasilitas milik RT. | - Katalog aset yang dapat dipinjam & ketersediaan.<br>- Pengajuan pinjam, status, dan riwayat sendiri. |
+| **Layanan Lingkungan** | Layanan rutin & ekonomi lokal. | - Kalender jadwal pengangkutan sampah + pengingat.<br>- Direktori UMKM warga & pengajuan profil usaha.<br>- Jadwal/pengingat Posyandu (non-medis). |
+| **E-Voting** | Partisipasi pemilihan pengurus RT. | - Informasi pemilihan & profil calon.<br>- Voting rahasia satu suara per KK + tanda terima.<br>- Hasil agregat setelah pengesahan. |
 
-### 1.2 Modul Pengurus & Petugas (Field Administration)
+### 2.2 Modul Pengurus & Petugas (Field Administration)
 
 | Modul | Deskripsi | Fitur Utama |
 |---|---|---|
-| **Mobile Approvals** | Persetujuan dokumen & tindak lanjut aduan. | - Approval Surat Pengantar RT sekali ketuk (One-click approve).<br>- Tindak Lanjut Aduan (Update status tiket lapangan, upload foto). |
-| **Field Verification** | Validasi data fisik di lapangan. | - Pemindai QR Code (Validasi fisik surat warga).<br>- Cek Pembayaran Tunai & Upload Bukti Setoran di tempat. |
-| **Emergency** | Diseminasi informasi darurat cepat. | - Kirim Notifikasi Darurat (Broadcast push notification massal).<br>- Penerima Isyarat Panic Button Warga. |
+| **Mobile Approvals** | Persetujuan dokumen & tindak lanjut aduan. | - Approval Surat Pengantar RT sekali ketuk (One-click approve).<br>- Tindak Lanjut Aduan (Update status tiket lapangan, upload foto).<br>- Indikator SLA jatuh tempo/terlambat. |
+| **Field Verification** | Validasi data fisik di lapangan. | - Pemindai QR Code (validasi surat warga, check-in tamu, absensi pos ronda).<br>- Cek Pembayaran Tunai & Upload Bukti Setoran di tempat.<br>- Verifikasi setoran/penarikan tabungan warga. |
+| **Emergency** | Diseminasi informasi darurat cepat. | - Kirim Notifikasi Darurat (Broadcast push notification massal).<br>- Penerima Isyarat Panic Button Warga + acknowledgement dan penutupan. |
+| **Aset & Inventaris** | Pengelolaan aset fisik di lapangan. | - Serah-terima & pengembalian pinjaman aset beserta kondisi fisik.<br>- Pencatatan pemeliharaan langsung di lokasi. |
+| **Tata Kelola** | Peralihan wewenang pengurus. | - Checklist serah-terima jabatan & konfirmasi penurunan/penambahan akses. |
 
 ---
 
-## 2. Peta Jalan & Backlog Pengembangan (Mobile App Backlog)
+## 3. Peta Jalan & Backlog Pengembangan (Mobile App Backlog)
 
 ### Epic M0: Fondasi & Arsitektur Mobile App
 Tujuan: Menyiapkan framework, routing, push engine, storage offline, dan design token.
-- [ ] **Task M0.1:** Inisialisasi Mobile App Project (React Native / Flutter / PWA Hybrid) dengan TypeScript strict.
+- [ ] **Task M0.1:** Inisialisasi Mobile App Project Flutter dengan struktur feature-first.
 - [ ] **Task M0.2:** Setup Push Notification Service (Firebase Cloud Messaging / APNs).
-- [ ] **Task M0.3:** Implementasi SQLite/WatermelonDB/React Query untuk local offline cache (skema *offline-first* terbatas).
-- [ ] **Task M0.4:** Integrasi API Perangkat (Permissions manager, Kamera, Galeri, Geolocation/GPS).
+- [ ] **Task M0.3:** Implementasi `drift` (SQLite) untuk cache data terstruktur dan antrean sinkronisasi terbatas.
+- [ ] **Task M0.4:** Integrasi API Perangkat (Permissions manager, Kamera, Galeri, Geolocation/GPS, Biometrik, Kalender).
 - [ ] **Task M0.5:** Setup Shell UI: Bottom navigation warga (maksimal 5 item), Sidebar pengurus, Design Token (Dark/Light mode).
 
 ### Epic M1: Autentikasi & Profil Pengguna
