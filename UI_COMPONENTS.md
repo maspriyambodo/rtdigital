@@ -3,9 +3,9 @@
 **Status:** Draft untuk validasi  
 **Cakupan:** MVP RT Digital  
 **Referensi:** `DESIGN_SYSTEM.md`, `INFORMATION_ARCHITECTURE.md`  
-**Platform:** Next.js / React
+**Platform:** Next.js / React, shadcn/ui, Tailwind CSS
 
-Komponen dibangun mobile-first, aksesibel, dan mengikuti design token dalam `DESIGN_SYSTEM.md`. Gunakan elemen HTML native sebagai dasar. Jangan menambah library UI hanya untuk komponen sederhana.
+Komponen dirancang **desktop dan tablet-first**, responsif, aksesibel sesuai WCAG 2.2 AA, dan mengikuti design token semantik dalam `DESIGN_SYSTEM.md`. Gunakan `@/components/ui/*` dari shadcn/ui sebagai foundation; mobile web hanya fallback responsif, bukan target desain utama.
 
 ---
 
@@ -13,14 +13,16 @@ Komponen dibangun mobile-first, aksesibel, dan mengikuti design token dalam `DES
 
 1. Komponen interaktif memakai `"use client"` hanya bila membutuhkan state, event browser, atau API browser.
 2. Komponen presentasional tetap Server Component bila memungkinkan.
-3. Tombol, input, select, dialog, dan kontrol navigasi harus mendukung keyboard serta `focus-visible`.
-4. Area interaktif minimum **44 × 44 CSS pixel**.
-5. Input teks minimum **16 px** untuk mencegah auto-zoom Safari iOS.
-6. Semua status memakai teks; warna bukan satu-satunya penanda.
-7. Props native relevan diteruskan ke elemen dasar melalui `...props`.
-8. Input, select, date picker, dan tombol memakai `forwardRef`.
-9. State `loading`, `disabled`, `error`, dan `empty` wajib tersedia bila relevan.
-10. Data privat tidak disimpan oleh komponen UI ke `localStorage`.
+3. Bangun di atas komponen shadcn/ui; jangan membuat ulang pola standar tanpa alasan jelas.
+4. Tombol, input, select, dialog, dan kontrol navigasi harus mendukung keyboard serta `focus-visible` dengan token `ring-ring`.
+5. Area klik kontrol minimal **40 px**, idealnya **44 px** untuk aksi penting.
+6. Gunakan utility token (`bg-background`, `text-foreground`, `border-border`); jangan hard-code warna.
+7. Semua status memakai teks; warna dan ikon hanya penanda pendukung.
+8. Props native relevan diteruskan ke elemen dasar melalui `...props`.
+9. Input, select, date picker, dan tombol memakai `forwardRef` sesuai pola shadcn/ui.
+10. State `loading`, `disabled`, `error`, dan `empty` wajib tersedia bila relevan.
+11. Semua komponen wajib diuji pada light dan dark mode.
+12. Data privat tidak disimpan oleh komponen UI ke `localStorage`.
 
 ---
 
@@ -28,25 +30,24 @@ Komponen dibangun mobile-first, aksesibel, dan mengikuti design token dalam `DES
 
 ## 2.1 `Button`
 
-Tombol untuk aksi utama, sekunder, atau destruktif.
+Tombol aksi berbasis `Button` shadcn/ui.
 
 ```ts
 type ButtonProps = {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
-  size?: "sm" | "md" | "lg";
+  variant?: "default" | "secondary" | "outline" | "ghost" | "link" | "destructive";
+  size?: "default" | "sm" | "lg" | "icon";
   isLoading?: boolean;
-  fullWidth?: boolean;
-  leftIcon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
+  asChild?: boolean;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 ```
 
 **Aturan:**
 
-- Tinggi minimum 44 px pada ukuran `md` dan `lg`.
-- `isLoading` menampilkan indikator, menonaktifkan klik ganda, serta mempertahankan label tombol.
-- Hanya satu aksi `primary` dominan per section atau dialog.
-- Tombol icon-only wajib memiliki `aria-label`.
+- Ukuran mengikuti default shadcn/ui; kontrol yang sering dipakai memiliki area klik minimal 40 px, idealnya 44 px untuk aksi penting.
+- `isLoading` menampilkan spinner, mencegah klik ganda, serta mempertahankan label dan lebar tombol.
+- Hanya satu aksi `default` (primary) dominan per section atau dialog.
+- Gunakan `destructive` hanya untuk aksi berisiko, dipasangkan dengan `AlertDialog`.
+- Tombol icon-only (`size="icon"`) wajib memiliki `aria-label` dan `Tooltip`.
 
 ---
 
