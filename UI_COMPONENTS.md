@@ -360,7 +360,8 @@ type ConfirmationDialogProps = {
 
 - Fokus berpindah ke dialog saat terbuka dan kembali ke pemicu saat tertutup.
 - Fokus tidak boleh keluar dari dialog saat aktif.
-- `Escape` menutup dialog hanya bila tidak sedang memproses aksi.
+- `Escape` menutup dialog hanya bila tidak sedang memproses aksi (`isLoading === false`).
+- Saat `isLoading === true`, tombol konfirmasi dinonaktifkan agar `onConfirm` tidak terpicu dua kali; klik pada overlay juga tidak menutup dialog.
 - Tombol **Batal** selalu tersedia dan tidak diberi gaya destruktif.
 - Latar belakang tidak dapat di-scroll selama dialog terbuka.
 - Tindakan berisiko menjelaskan dampak dan ketidakdapatbalikan.

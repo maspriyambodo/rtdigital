@@ -36,6 +36,8 @@ Tidak semua epic pada `DEVELOPMENT_BACKLOG.md` perlu dibawa ke mobile. Sebuah mo
 3. **Layanan mandiri warga bervolume tinggi**: warga adalah pengguna mobile-first, sehingga seluruh alur warga pada MVP wajib tersedia di mobile.
 4. **Persetujuan yang memblokir alur**: approval pengurus yang menahan layanan warga bila tidak segera diproses.
 
+Aturan interaksi wajib untuk seluruh modul mobile: setiap pemicu aksi mutasi (kirim, bayar, unggah bukti, setuju, tolak, absensi QR, panic button) masuk ke loading state pada ketukan pertama dan tidak dapat diketuk ulang sampai request selesai, gagal, atau timeout. Layar dengan koneksi lemah adalah kondisi paling rawan ketukan berulang, sehingga label tombol tetap terlihat selama proses dan hasil akhir dikonfirmasi eksplisit.
+
 Modul yang **tidak wajib** masuk mobile (tetap dikerjakan di web pengurus): laporan analitis dan ekspor CSV/PDF (Epic 11 sisi pengurus), UI audit log (Task 12.3), master data administratif (Epic 13 sisi pengelolaan), konfigurasi RT dan operasional rilis (Epic 12), serta import CSV data warga (Task 3.7). Modul ini hanya ditampilkan dalam bentuk ringkasan baca-saja bila memang dibutuhkan.
 
 ### 2.1 Modul Warga (Citizen Services)

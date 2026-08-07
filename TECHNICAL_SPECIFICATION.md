@@ -179,6 +179,8 @@ apps/web/
 - Halaman privat tidak dicache: `Cache-Control: private, no-store`.
 - Data awal halaman privat dapat diambil Server Component bila autentikasi server-side tersedia; bila token hanya ada di memory browser, gunakan client fetch setelah halaman shell dirender.
 - Mutasi selalu memakai `fetch` wrapper tipis, loading state, error terstruktur, dan idempotency key bila diperlukan.
+- Loading state mutasi wajib menonaktifkan pemicu aksi selama request berjalan sehingga klik ganda tidak menghasilkan request kedua. Guard berada di state, bukan hanya pada atribut `disabled`, agar Enter ganda dan submit lewat keyboard juga tercegah.
+- Pencegahan klik ganda di UI bersifat pengalaman pengguna, bukan jaminan konsistensi data. Endpoint yang tidak boleh tercatat ganda tetap wajib memakai `Idempotency-Key` sesuai `API_SPECIFICATION.md`.
 - Jangan membuat API publik kedua di Next.js untuk meneruskan seluruh request ke Go API.
 - Next.js Route Handler hanya digunakan untuk kebutuhan frontend internal yang tidak dapat dilakukan browser secara aman.
 - Form panjang boleh menyimpan draft non-sensitif secara lokal. Jangan simpan access token, refresh token, NIK, nomor KK, dokumen, atau signed URL di `localStorage`.

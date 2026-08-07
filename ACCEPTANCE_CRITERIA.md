@@ -16,6 +16,7 @@ Seluruh fitur harus memenuhi:
 - **Privasi:** NIK, nomor KK, kata sandi, token, serta data sensitif tidak muncul di log, cache publik, URL, atau respons API yang tidak membutuhkan data tersebut.
 - **Ketahanan:** kegagalan jaringan atau API tidak membuat aplikasi crash maupun menghilangkan isian formulir yang belum berhasil dikirim.
 - **Data penting:** operasi mutasi memakai transaksi database; operasi yang dapat dikirim ulang memakai idempotency key bila relevan.
+- **Pencegahan klik ganda:** setiap pemicu aksi mutasi masuk ke loading state dan tidak dapat dipicu ulang sampai request selesai, gagal, atau timeout; klik ganda serta submit ganda melalui Enter tidak menghasilkan request kedua. Guard UI ini tidak menggantikan idempotency key di backend.
 - **Audit:** tindakan penting mencatat aktor, peran aktif, tindakan, entitas, waktu, request ID, serta ringkasan perubahan bila relevan.
 - **Error:** API mengembalikan `code`, `message`, `details`, dan `request_id`; UI tidak menampilkan stack trace.
 - **Pengujian:** test unit, integration, authorization, responsive, atau E2E relevan lulus sebelum fitur diterima.

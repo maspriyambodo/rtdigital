@@ -23,6 +23,7 @@ Menu, halaman, tombol aksi, dan data yang terlihat wajib mengikuti RBAC serta sc
 6. Tabel pengurus beradaptasi menjadi daftar/kartu pada layar kecil; tidak memaksa tabel lebar.
 7. Formulir panjang menggunakan langkah bertahap, autosave lokal aman, serta konfirmasi sebelum meninggalkan isian belum terkirim.
 8. Status, kesalahan, loading, kondisi kosong, dan tindakan berikutnya selalu jelas.
+9. Setiap aksi mutasi (buat, ubah, hapus, kirim, unggah, verifikasi) masuk ke loading state saat dipicu dan tidak dapat dipicu ulang sampai request selesai.
 
 ---
 
@@ -269,7 +270,8 @@ Sidebar hanya menampilkan modul yang diizinkan bagi peran aktif. Pengurus yang m
 
 | Kondisi | Perilaku |
 |---|---|
-| Loading | Skeleton loading; hindari layar kosong. |
+| Loading (data) | Skeleton loading; hindari layar kosong. |
+| Loading (aksi mutasi) | Pemicu aksi menampilkan spinner, tetap menampilkan label, dan nonaktif sampai request selesai agar klik ganda tidak mengirim request kedua. |
 | Kosong | Jelaskan kondisi dan tampilkan tindakan berikutnya. |
 | Error | Pesan jelas, opsi coba lagi, tampilkan `request_id` bila perlu. |
 | Offline/jaringan lemah | Indikator koneksi, retry aman, dan jangan hilangkan isian belum dikirim. |

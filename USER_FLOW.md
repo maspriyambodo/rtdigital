@@ -2,7 +2,7 @@
 
 **Status:** Draft untuk validasi  
 **Berlaku:** MVP RT Digital  
-**Prinsip:** Alur warga dirancang responsive desktop-first. Status, pesan kesalahan, dan tindakan berikutnya harus selalu terlihat. Notifikasi dikirim melalui aplikasi; email digunakan untuk aktivitas penting bila tersedia.
+**Prinsip:** Alur warga dirancang responsive desktop-first. Status, pesan kesalahan, dan tindakan berikutnya harus selalu terlihat. Setiap langkah yang memicu mutasi memakai loading state pada pemicunya sehingga klik ganda tidak menghasilkan pengajuan, pembayaran, atau persetujuan ganda. Notifikasi dikirim melalui aplikasi; email digunakan untuk aktivitas penting bila tersedia.
 
 ---
 
