@@ -1,6 +1,25 @@
-# Dokumentasi Pengembangan Aplikasi Mobile RT Digital
+# Dokumentasi Pengembangan Aplikasi Mobile RT Digital (Flutter Cross-Platform)
 
-Dokumen ini mendefinisikan ruang lingkup, arsitektur modul, dan development backlog untuk aplikasi RT Digital versi mobile (Native Android/iOS atau PWA Native Hybrid).
+Dokumen ini mendefinisikan ruang lingkup, arsitektur teknis, arsitektur modul, dan development backlog aplikasi RT Digital berbasis **Flutter** untuk satu codebase **Android dan iOS**.
+
+---
+
+## 1. Stack Teknologi & Prinsip Arsitektur
+
+| Area | Standar Flutter | Tujuan |
+|---|---|---|
+| Framework | Flutter dan Dart | UI lintas platform Android/iOS dari satu codebase. |
+| Struktur aplikasi | Feature-first dengan lapisan presentation, application, domain, dan data | Memisahkan UI, aturan bisnis, dan akses API/storage agar mudah diuji. |
+| State management & DI | `flutter_riverpod` | State async, dependency injection, serta state yang mudah diuji. |
+| Routing | `go_router` | Deep link, redirect/auth guard, dan shell navigation. |
+| API | `dio` | Interceptor autentikasi, refresh token terkoordinasi, retry terkontrol, dan multipart upload. |
+| Penyimpanan aman | `flutter_secure_storage` | Menyimpan token di Android Keystore dan iOS Keychain. |
+| Data offline | `drift` (SQLite) | Cache data terstruktur dan antrean sinkronisasi terbatas saat koneksi kembali. |
+| Notifikasi | `firebase_messaging` + `flutter_local_notifications` | FCM untuk Android dan APNs melalui FCM untuk iOS; tampilan notifikasi saat aplikasi aktif. |
+| Tema & UI | Material 3 `ThemeData` | Design token, mode terang/gelap, serta komponen UI konsisten. |
+| Integrasi perangkat | `permission_handler`, `local_auth`, `image_picker`/`camera`, `geolocator`, `mobile_scanner` | Izin perangkat, biometrik, media, lokasi, dan QR code. |
+
+**Ketentuan keamanan:** access token dan refresh token tidak disimpan di shared preferences/cache biasa; NIK dan nomor KK wajib dimasking di UI serta tidak dicatat pada log; izin kamera, foto, lokasi, biometrik, notifikasi, dan kalender diminta hanya saat fitur dipakai. Konfigurasi `Info.plist`, Android manifest, APNs, serta Firebase wajib diuji pada perangkat fisik Android dan iOS.
 
 ---
 
