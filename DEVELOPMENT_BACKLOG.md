@@ -251,6 +251,7 @@ Tujuan: memfasilitasi tabungan terarah warga, misalnya Qurban/Idul Adha, tanpa m
 - [x] **Task 15.7:** Implementasi koreksi melalui mutasi pembalik; larang `UPDATE` nominal dan penghapusan mutasi historis.
 - [x] **Task 15.10:** Tambahkan laporan dana titipan per produk/per keluarga dan rekonsiliasi saldo sistem dengan kas fisik atau rekening penampungan khusus; pisahkan dari laporan kas operasional.
 - [x] **Task 15.11:** Tambahkan integration test perhitungan saldo dari mutasi, idempotensi setoran, pencegahan saldo negatif, otorisasi debit, append-only, rekonsiliasi, dan isolasi tenant.
+- [x] **Task 15.12:** Implementasi Flutter Riverpod `savingsProvider`, layar Tabungan Warga, serta mutasi/status pada aplikasi mobile.
 
 ---
 
