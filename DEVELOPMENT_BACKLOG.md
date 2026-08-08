@@ -243,14 +243,14 @@ Tujuan: mengubah data dan transaksi menjadi pengingat, antrean kerja, kepastian 
 Tujuan: memfasilitasi tabungan terarah warga, misalnya Qurban/Idul Adha, tanpa mencampurkan dana titipan dengan kas operasional RT.
 
 - [ ] **Task 15.1:** Buat migration `savings_products`, `savings_accounts`, dan `savings_transactions` dengan index tenant, FK komposit, constraint saldo, serta mutasi append-only.
-- [ ] **Task 15.2:** Implementasi API CRUD `savings_products` sebagai master jenis tabungan per organisasi: kode, periode, sasaran, setoran minimum, aturan penarikan, tujuan alokasi, dan status; penonaktifan tanpa penghapusan.
+- [x] **Task 15.2:** Implementasi API CRUD `savings_products` sebagai master jenis tabungan per organisasi: kode, periode, sasaran, setoran minimum, aturan penarikan, tujuan alokasi, dan status; penonaktifan tanpa penghapusan.
 - [ ] **Task 15.3:** Implementasi pembukaan/penutupan akun tabungan per keluarga pada produk aktif; satu akun aktif per keluarga dan produk.
 - [ ] **Task 15.4:** Implementasi setoran: laporan setoran, unggah bukti, idempotensi, verifikasi bendahara, dan mutasi kredit setelah verifikasi.
-- [ ] **Task 15.5:** Implementasi penarikan atau pengembalian: permintaan, persetujuan pemilik saldo, verifikasi bendahara, bukti, batas saldo, mutasi debit, dan audit log.
+- [x] **Task 15.5:** Implementasi penarikan atau pengembalian: permintaan, persetujuan pemilik saldo, verifikasi bendahara, bukti, batas saldo, mutasi debit, dan audit log.
 - [ ] **Task 15.6:** Implementasi alokasi dana untuk tujuan produk, misalnya pembelian hewan qurban, dengan persetujuan kebijakan yang jelas dan jejak mutasi; tidak menjadi pendapatan/pengeluaran kas operasional RT.
-- [ ] **Task 15.7:** Implementasi koreksi melalui mutasi pembalik; larang `UPDATE` nominal dan penghapusan mutasi historis.
+- [x] **Task 15.7:** Implementasi koreksi melalui mutasi pembalik; larang `UPDATE` nominal dan penghapusan mutasi historis.
 - [ ] **Task 15.10:** Tambahkan laporan dana titipan per produk/per keluarga dan rekonsiliasi saldo sistem dengan kas fisik atau rekening penampungan khusus; pisahkan dari laporan kas operasional.
-- [ ] **Task 15.11:** Tambahkan integration test perhitungan saldo dari mutasi, idempotensi setoran, pencegahan saldo negatif, otorisasi debit, append-only, rekonsiliasi, dan isolasi tenant.
+- [x] **Task 15.11:** Tambahkan integration test perhitungan saldo dari mutasi, idempotensi setoran, pencegahan saldo negatif, otorisasi debit, append-only, rekonsiliasi, dan isolasi tenant.
 
 ---
 
