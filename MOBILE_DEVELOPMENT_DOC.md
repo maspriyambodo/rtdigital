@@ -23,6 +23,138 @@ Dokumen ini mendefinisikan ruang lingkup, arsitektur teknis, arsitektur modul, d
 
 ---
 
+## 1.1 Standar UX/UI Mobile dan Design System
+
+### Prinsip Desain
+
+1. **Mobile-first dan satu tujuan utama per layar:** setiap layar memiliki satu aksi utama yang paling jelas. Hindari kartu, tombol, atau informasi administratif yang terlalu padat dalam satu layar.
+2. **Utamakan kebutuhan warga:** gunakan Bahasa Indonesia sederhana dan berorientasi aksi, misalnya “Ajukan Surat”, “Lihat Tagihan”, dan “Kirim Aduan”, bukan istilah teknis internal.
+3. **Konsisten, bukan sekadar dekoratif:** warna, ukuran teks, radius, ikon, spacing, status, dan posisi tombol harus konsisten di seluruh fitur. Komponen yang sama wajib memakai widget dan design token yang sama.
+4. **Informasi penting terlihat lebih dahulu:** status pengajuan, nominal tagihan, tenggat waktu, aksi darurat, dan CTA utama ditampilkan pada area awal layar bila relevan.
+5. **Aman terhadap salah ketuk dan koneksi lambat:** aksi berisiko harus memiliki konfirmasi sesuai tingkat risiko, loading state, hasil eksplisit, serta pencegahan ketukan berulang.
+6. **Aksesibel untuk semua warga:** UI harus terbaca oleh pengguna lansia, pengguna dengan gangguan penglihatan, perangkat kecil, serta perangkat dengan ukuran font besar.
+
+### Grid, Spacing, dan Ukuran Sentuh
+
+| Elemen | Standar |
+|---|---|
+| Sistem spacing | Gunakan kelipatan 4 dp: 4, 8, 12, 16, 20, 24, dan 32 dp. |
+| Padding horizontal layar | 16 dp pada layar umum; dapat 20–24 dp pada tablet. |
+| Jarak antar section | 24 dp. |
+| Jarak antar komponen | 8–16 dp. |
+| Target sentuh minimum | 48 × 48 dp untuk tombol, icon button, item daftar, dan kontrol interaktif. |
+| Radius komponen | Gunakan token konsisten, misalnya 12 dp untuk card/input dan 999 dp untuk chip. |
+| Bottom sheet | Gunakan untuk aksi kontekstual; jangan menjadi pengganti halaman form panjang. |
+| Safe area | Konten, CTA bawah, dan bottom navigation wajib menghormati safe area perangkat. |
+
+### Tipografi
+
+Gunakan font bawaan platform atau satu keluarga font yang mendukung Bahasa Indonesia dengan baik. Jangan gunakan lebih dari dua ketebalan font dalam satu area kecil.
+
+| Peran | Ukuran minimum | Ketebalan | Penggunaan |
+|---|---:|---|---|
+| Display / angka penting | 28 sp | Bold | Nominal tagihan dan ringkasan penting. |
+| Judul halaman | 22–24 sp | Semi-bold/Bold | App bar dan judul layar. |
+| Judul section/card | 16–18 sp | Semi-bold | Judul informasi. |
+| Body utama | 14–16 sp | Regular | Deskripsi, detail, dan isi feed. |
+| Label/meta | 12–14 sp | Regular/Medium | Tanggal, kategori, dan status pendukung. |
+| Tombol | 14–16 sp | Semi-bold | Label aksi. |
+
+- Jangan gunakan teks di bawah 12 sp untuk informasi penting.
+- UI wajib tetap layak saat ukuran font sistem dinaikkan hingga 200%.
+- Jangan gunakan warna sebagai satu-satunya pembeda status.
+- Hindari paragraf panjang; pecah informasi menjadi section, ringkasan, atau detail yang dapat diperluas.
+
+### Warna dan Status
+
+Warna wajib didefinisikan melalui Material 3 `ColorScheme` dan semantic token; warna tidak boleh ditulis hardcode langsung di widget.
+
+| Token status | Makna | Ketentuan |
+|---|---|---|
+| Primary | Aksi utama dan navigasi aktif | Maksimal satu CTA utama per tampilan utama. |
+| Success | Berhasil, lunas, selesai | Selalu sertakan ikon atau teks seperti “Berhasil” dan “Lunas”. |
+| Warning | Menunggu, tenggat dekat, perlu perhatian | Jangan dipakai untuk error final. |
+| Error | Gagal, ditolak, terlambat, aksi destruktif | Sertakan alasan dan langkah perbaikan bila tersedia. |
+| Info | Informasi netral atau proses berlangsung | Gunakan untuk status “Sedang diproses”. |
+| Surface | Latar dan card | Jaga kontras teks sesuai WCAG AA. |
+
+- Teks normal memiliki rasio kontras minimal 4.5:1 terhadap latar; teks besar minimal 3:1.
+- Status merah/hijau wajib disertai ikon dan label teks.
+
+### Navigasi
+
+- Bottom navigation warga maksimal 5 item. Rekomendasi: **Beranda**, **Layanan**, **Aktivitas**, **Notifikasi**, dan **Profil**.
+- Fitur yang jarang dipakai ditempatkan dalam halaman **Layanan**, bukan menjadi tab baru.
+- Pengurus memakai `NavigationRail` atau sidebar pada tablet/layar lebar; pada ponsel gunakan daftar menu atau bottom navigation sesuai prioritas tugas.
+- Tombol kembali wajib mengikuti pola platform dan tidak boleh menghilangkan data form tanpa peringatan.
+- Deep link dari push notification harus membuka detail yang tepat dan memiliki fallback saat data sudah tidak tersedia atau akses pengguna berubah.
+
+### Pola Komponen Wajib
+
+| Komponen | Standar |
+|---|---|
+| App bar | Judul jelas, maksimal 1–2 aksi penting; hindari deretan ikon tanpa label. |
+| Primary button | `FilledButton`, lebar penuh pada form/aksi akhir, tinggi minimum 48 dp. |
+| Secondary button | `OutlinedButton` atau `FilledButton.tonal` untuk aksi pendukung. |
+| Destructive button | Gunakan gaya error hanya untuk tindakan yang sulit dibatalkan. |
+| Card | Untuk mengelompokkan informasi; jangan membungkus setiap elemen kecil dalam card. |
+| Status chip | Berisi ikon atau label eksplisit, misalnya “Menunggu verifikasi”. |
+| Form field | Label selalu terlihat; helper dan error text berada di bawah field. Placeholder bukan pengganti label. |
+| Empty state | Ilustrasi ringan, judul, penjelasan singkat, dan CTA bila pengguna dapat bertindak. |
+| Error state | Jelaskan masalah dengan bahasa manusiawi dan sediakan tombol “Coba lagi”. |
+| Skeleton loading | Gunakan pada daftar/detail agar layout tidak meloncat ketika data masuk. |
+| Snackbar | Hanya untuk feedback singkat yang tidak kritis; bukan satu-satunya bukti pengiriman atau pembayaran. |
+| Dialog konfirmasi | Wajib untuk aksi destruktif, pembayaran, pengiriman panic alert, dan pengajuan akhir. |
+
+### Standar Form dan Aksi Mutasi
+
+1. Validasi dilakukan saat pengguna berpindah field dan saat submit; jangan tampilkan error ketika form baru dibuka.
+2. Field wajib memiliki penanda yang konsisten. Nominal memakai format Rupiah, tanggal memakai pemilih tanggal lokal, dan nomor telepon memakai keypad numerik.
+3. Simpan draft lokal untuk form panjang, terutama aduan dan pengajuan surat.
+4. Label tombol submit harus spesifik, seperti “Kirim Aduan” atau “Ajukan Surat”, bukan “Submit”.
+5. Saat request berjalan, label tombol tetap terlihat, progress indicator tampil, aksi yang sama dinonaktifkan, dan request duplikat dicegah dengan idempotency key pada API.
+6. Setelah berhasil, tampilkan hasil eksplisit, nomor referensi bila tersedia, dan langkah berikutnya.
+7. Setelah gagal, data form tidak boleh hilang kecuali pengguna memilih menghapusnya.
+
+### Pola Layar Modul Prioritas
+
+| Modul | Hierarki layar |
+|---|---|
+| Beranda | Salam singkat, alert penting, tagihan/status yang perlu aksi, quick action, lalu feed ringkas. |
+| Tagihan | Nominal dan jatuh tempo di bagian atas, status pembayaran jelas, CTA bayar/upload bukti, lalu riwayat. |
+| Pengajuan Surat | Pilih jenis surat, isi form bertahap, review data, kirim, lalu halaman tracking. |
+| Aduan | Kategori, deskripsi, foto, lokasi, review, kirim; timeline ada pada detail tiket. |
+| Panic Button | Tombol besar tetapi tidak mudah terpicu, konfirmasi singkat, status pengiriman GPS, dan bukti alert terkirim. |
+| Approval Pengurus | Informasi inti, dokumen pendukung, SLA, lalu CTA setujui, minta revisi, atau tolak dengan alasan. |
+
+### Dark Mode dan Responsivitas
+
+- Seluruh warna memakai `ColorScheme` dan semantic token; gambar, QR code, grafik, serta status chip wajib diuji pada tema terang dan gelap.
+- Tema mengikuti sistem secara default dan dapat dioverride pengguna di pengaturan.
+- Target minimum lebar layar adalah 320 dp; target umum ponsel 360–430 dp.
+- Layout tablet mulai beradaptasi sekitar 600 dp, misalnya dengan dua kolom bila meningkatkan keterbacaan.
+- Jangan mengunci tinggi komponen berisi teks dinamis dan hindari horizontal scroll untuk data utama.
+- Uji notch, layar kecil, landscape, keyboard terbuka, dan text scale besar.
+
+### Checklist Quality Gate UI Sebelum Merge
+
+- [ ] Tidak ada teks penting terpotong pada lebar 320 dp.
+- [ ] Seluruh kontrol interaktif memiliki target sentuh minimal 48 dp.
+- [ ] Setiap layar data memiliki loading, empty, error, dan success state yang relevan.
+- [ ] Aksi mutasi tahan terhadap ketukan berulang dan memiliki hasil eksplisit.
+- [ ] Kontras memenuhi WCAG AA; status tidak hanya dibedakan melalui warna.
+- [ ] Seluruh form dapat digunakan saat keyboard terbuka.
+- [ ] Tampilan diuji pada light mode, dark mode, dan text scale besar.
+- [ ] NIK serta nomor KK tetap termasking pada seluruh state, termasuk error dan notifikasi.
+- [ ] Copywriting memakai Bahasa Indonesia singkat, jelas, dan non-teknis.
+- [ ] Screenshot desain/implementasi direview pada ponsel kecil dan ponsel standar.
+
+### Deliverable Epic M0 untuk Design System
+
+Sebelum fitur bisnis dibuat, siapkan design token dan widget bersama: `AppSpacing`, `AppRadius`, semantic color, text style, `AppButton`, `AppTextField`, `StatusChip`, `AppEmptyState`, dan `AsyncStateView`. Semua fitur wajib menggunakan komponen ini agar tampilan, state async, dan aksesibilitas konsisten.
+
+---
+
 ## 2. Arsitektur Modul Mobile
 
 Aplikasi mobile RT Digital dibagi berdasarkan dua kelompok pengguna utama: **Warga** (akses mobile-first/layanan mandiri) dan **Pengurus/Petugas** (layanan operasional & persetujuan cepat).
