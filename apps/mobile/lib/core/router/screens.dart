@@ -242,6 +242,24 @@ class WargaLayananScreen extends StatelessWidget {
           ),
           Card(
             child: ListTile(
+              leading: const Icon(Icons.note_add_outlined, color: Color(0xFF1B5E20)),
+              title: const Text('Pengajuan Surat Pengantar'),
+              subtitle: const Text('Buat permohonan surat keterangan RT'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/warga/surat/baru'),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.track_changes_outlined, color: Color(0xFF1B5E20)),
+              title: const Text('Tracking Status Surat'),
+              subtitle: const Text('Pantau riwayat & persetujuan surat'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/warga/surat/tracking'),
+            ),
+          ),
+          Card(
+            child: ListTile(
               leading: const Icon(Icons.account_balance_outlined, color: Color(0xFF1B5E20)),
               title: const Text('Transparansi Kas RT', style: TextStyle(fontWeight: FontWeight.bold)),
               subtitle: const Text('Laporan saldo kas & grafik pengeluaran'),

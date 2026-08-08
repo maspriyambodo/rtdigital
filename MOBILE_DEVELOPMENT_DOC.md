@@ -234,10 +234,10 @@ Tujuan: Memfasilitasi warga membayar iuran lewat mobile secara transparan.
 
 ### Epic M4: Pengajuan Surat & Approval
 Tujuan: Mempercepat layanan surat pengantar RT lewat handphone.
-- [ ] **Task M4.1:** Form Pengajuan Surat Pengantar RT dengan validasi kelengkapan dokumen pendukung.
-- [ ] **Task M4.2:** Screen Status Tracking pengajuan surat.
-- [ ] **Task M4.3:** Viewer Surat Digital (PDF) dengan QR Code verifikasi.
-- [ ] **Task M4.4:** *(Khusus Pengurus)* Screen Approval Surat: Ketua RT menyetujui atau meminta revisi pengajuan surat warga.
+- [x] **Task M4.1:** Form Pengajuan Surat Pengantar RT dengan validasi kelengkapan dokumen pendukung.
+- [x] **Task M4.2:** Screen Status Tracking pengajuan surat.
+- [x] **Task M4.3:** Viewer Surat Digital (PDF) dengan QR Code verifikasi.
+- [x] **Task M4.4:** *(Khusus Pengurus)* Screen Approval Surat: Ketua RT menyetujui atau meminta revisi pengajuan surat warga.
 
 ### Epic M5: Pelaporan Aduan & Penanganan Lapangan
 Tujuan: Melaporkan kejadian dan mengelola tindak lanjut lapangan.
@@ -251,4 +251,3 @@ Tujuan: Menunjang keamanan lingkungan yang responsif menggunakan kapabilitas nat
 - [ ] **Task M6.1:** Tombol Panic Button (Widget/Shortcut layar utama) untuk mengirim pesan darurat & GPS.
 - [ ] **Task M6.2:** Dashboard Penerima Alert Panic Button (Untuk Petugas Ronda/Pengurus).
 - [ ] **Task M6.3:** Modul Ronda: QRCode check-in di pos/ronda malam & rekap absensi.
-

@@ -4,6 +4,7 @@ import 'screens.dart';
 import '../contribution_screens.dart';
 import 'attachment_viewer_screen.dart';
 import 'login_screen.dart';
+import '../letter_screens.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -31,6 +32,26 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/warga/kas-rt',
       builder: (context, state) => const WargaKasRtScreen(),
+    ),
+    GoRoute(
+      path: '/warga/surat/baru',
+      builder: (context, state) => const WargaLetterFormScreen(),
+    ),
+    GoRoute(
+      path: '/warga/surat/tracking',
+      builder: (context, state) => const WargaLetterTrackingScreen(),
+    ),
+    GoRoute(
+      path: '/warga/surat/viewer',
+      builder: (context, state) {
+        final id = state.uri.queryParameters['id'] ?? '';
+        final number = state.uri.queryParameters['number'] ?? '001';
+        return WargaLetterPdfViewerScreen(requestId: id, letterNumber: number);
+      },
+    ),
+    GoRoute(
+      path: '/pengurus/surat/approval',
+      builder: (context, state) => const PengurusApprovalScreen(),
     ),
 
     ShellRoute(
@@ -181,6 +202,14 @@ class PengurusShell extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 context.go('/pengurus/verifikasi');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.assignment_turned_in),
+              title: const Text('Approval Surat Warga'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/pengurus/surat/approval');
               },
             ),
           ],
