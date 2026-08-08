@@ -47,13 +47,16 @@ class ApiClient {
         data: {'refreshToken': refreshToken},
       );
       if (response.statusCode == 200) {
-        final newAccessToken = response.data['accessToken'];
-        final newRefreshToken = response.data['refreshToken'];
-        await storageService.saveTokens(
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-        );
-        return true;
+        final data = response.data['data'] ?? response.data;
+        final newAccessToken = data['access_token'] ?? data['accessToken'];
+        final newRefreshToken = data['refresh_token'] ?? data['refreshToken'];
+        if (newAccessToken != null && newRefreshToken != null) {
+          await storageService.saveTokens(
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+          );
+          return true;
+        }
       }
     } catch (_) {
       await storageService.clearTokens();
@@ -61,3 +64,4 @@ class ApiClient {
     return false;
   }
 }
+

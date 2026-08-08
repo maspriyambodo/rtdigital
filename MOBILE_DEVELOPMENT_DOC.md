@@ -213,9 +213,10 @@ Tujuan: Menyiapkan framework, routing, push engine, storage offline, dan design 
 
 ### Epic M1: Autentikasi & Profil Pengguna
 Tujuan: Mengamankan session di perangkat mobile dan melacak data warga.
-- [ ] **Task M1.1:** Screen Login, Integrasi Refresh Token Rotation (HttpOnly/Secure Storage), & logout multi-device.
-- [ ] **Task M1.2:** Setup Biometric Login (Face ID/Fingerprint) & fallback PIN.
-- [ ] **Task M1.3:** Screen Profil Keluarga, Masking NIK/No KK di UI, dan Form Pengisian Usulan Koreksi Data.
+- [x] **Task M1.1:** Screen Login, Integrasi Refresh Token Rotation (HttpOnly/Secure Storage), & logout multi-device.
+- [x] **Task M1.2:** Setup Biometric Login (Face ID/Fingerprint) & fallback PIN.
+- [x] **Task M1.3:** Screen Profil Keluarga, Masking NIK/No KK di UI, dan Form Pengisian Usulan Koreksi Data.
+
 
 ### Epic M2: Informasi & Agenda RT
 Tujuan: Menyediakan feed berita dan pengumuman real-time ke warga.

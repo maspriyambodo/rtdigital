@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'screens.dart';
+import 'login_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -8,6 +9,10 @@ final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/warga/beranda',
   routes: [
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
     ShellRoute(
       builder: (context, state, child) => WargaShell(child: child),
       routes: [
@@ -48,6 +53,7 @@ final appRouter = GoRouter(
     ),
   ],
 );
+
 
 class WargaShell extends StatelessWidget {
   final Widget child;

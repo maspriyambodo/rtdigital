@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../auth_provider.dart';
 import '../widgets/ui_components.dart';
 
 class WargaHomeScreen extends StatelessWidget {
@@ -34,23 +36,29 @@ class WargaHomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    CircleAvatar(child: Icon(Icons.person)),
-                    SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            Consumer(
+              builder: (context, ref, child) {
+                final authState = ref.watch(authProvider);
+                final userName = authState.user?.name ?? 'Warga';
+                return Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
                       children: [
-                        Text('Selamat Datang, Warga', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('RT 05 / RW 02 - Penggilingan', style: TextStyle(color: Colors.grey)),
+                        const CircleAvatar(child: Icon(Icons.person)),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Selamat Datang, $userName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            const Text('RT 05 / RW 02 - Penggilingan', style: TextStyle(color: Colors.grey)),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
             const Row(
@@ -113,6 +121,7 @@ class WargaNotifikasiScreen extends StatelessWidget {
     );
   }
 }
+
 
 class WargaProfilScreen extends StatelessWidget {
   const WargaProfilScreen({super.key});
