@@ -33,8 +33,6 @@ Tujuan: menyiapkan monorepo, aplikasi dasar, database, CI/CD, serta lingkungan d
 - [x] **Task 0.5:** Konfigurasi Docker Compose untuk `web`, `api`, PostgreSQL, Redis lokal, MinIO, dan inisialisasi bucket.
 - [x] **Task 0.6:** Buat konfigurasi Cloudflare R2 S3-compatible, termasuk signed upload/download URL dan MinIO emulator lokal.
 - [x] **Task 0.7:** Buat CI minimum: format check, lint, type check, unit test, integration test, build frontend, build image API.
-- [ ] **Task 0.8:** Buat shell UI: layout warga, bottom navigation, layout pengurus, sidebar/drawer, error state, offline notice.
-- [ ] **Task 0.9:** Implementasi komponen dasar: `Button`, `FormField`, `TextInput`, `Select`, `DatePicker`, `StatusBadge`, `EmptyState`.
 
 ---
 
@@ -49,7 +47,6 @@ Tujuan: autentikasi aman menggunakan email/nomor telepon, access token, refresh 
 - [x] **Task 1.5:** Implementasi undangan/aktivasi akun dengan token sekali pakai dan kedaluwarsa.
 - [x] **Task 1.6:** Implementasi lupa/reset kata sandi menggunakan Resend API.
 - [x] **Task 1.7:** Implementasi MFA pengurus dan verifikasi MFA saat login. *(Login serta penetapan peran Super Admin, Ketua RT, Sekretaris, dan Bendahara kini mewajibkan MFA.)*
-- [ ] **Task 1.8:** Buat UI login, aktivasi akun, lupa/reset kata sandi, profil, ganti kata sandi, dan logout.
 - [x] **Task 1.9:** Tambahkan test autentikasi: lockout, token expired, refresh rotation, logout, dan akun nonaktif.
 
 
@@ -65,9 +62,7 @@ Tujuan: mengelola pengguna, peran, permission, serta scope akses organisasi.
 - [x] **Task 2.4:** Implementasi pembatasan `organization_id`, assignment, serta separation of duties. *(Ownership keluarga diterapkan pada domain keluarga Epic 3.)*
 - [x] **Task 2.5:** Implementasi API daftar pengguna, detail pengguna, undangan, perubahan status, dan penonaktifan.
 - [x] **Task 2.6:** Implementasi API tambah/cabut peran dengan larangan eskalasi hak akses sendiri serta guard MFA.
-- [ ] **Task 2.7:** Buat UI daftar pengguna, detail akun, undang pengguna, ubah status, dan pengelolaan peran.
 - [x] **Task 2.8:** Tambahkan authorization test untuk peran utama, isolasi tenant, MFA, dan separation of duties.
-- [ ] **Task 2.9:** Implementasi menu navigasi dinamis berbasis permission di frontend: muat permission efektif dari `GET /me`, simpan pada `AuthProvider`, filter `PengurusNavigation` dan `WargaNavigation`, serta lindungi rute modul sesuai `INFORMATION_ARCHITECTURE.md`.
 
 ---
 
@@ -82,8 +77,6 @@ Tujuan: pendataan rumah, keluarga, warga, serta koreksi data dengan perlindungan
 - [x] **Task 3.5:** Implementasi API CRUD warga, pencarian, filter status, dan verifikasi pengurus.
 - [x] **Task 3.6:** Implementasi pengajuan koreksi data warga, review, setujui, tolak, dan minta revisi.
 - [x] **Task 3.7:** Implementasi dry-run validasi CSV, deteksi duplikat, import data awal, dan audit import.
-- [ ] **Task 3.8:** Buat UI pengurus untuk rumah/unit, keluarga, warga, filter, pencarian, dan detail data.
-- [ ] **Task 3.9:** Buat UI warga untuk profil keluarga, anggota keluarga, dan koreksi data.
 - [x] **Task 3.10:** Tambahkan test constraint kepala keluarga, anggota aktif, masking, dan isolasi tenant.
 
 ---
@@ -98,8 +91,6 @@ Tujuan: membuat jenis iuran serta menerbitkan tagihan individual atau massal.
 - [x] **Task 4.4:** Implementasi pembuatan tagihan massal dengan idempotency key, validasi sasaran, dan ringkasan hasil.
 - [x] **Task 4.5:** Implementasi penyesuaian/diskon dan pembatalan tagihan dengan alasan serta audit log.
 - [x] **Task 4.6:** Implementasi daftar tagihan, detail, tunggakan, filter periode, dan scope keluarga.
-- [ ] **Task 4.7:** Buat UI pengurus untuk jenis iuran, pembuatan tagihan, daftar tagihan, dan tunggakan.
-- [ ] **Task 4.8:** Buat UI warga untuk tagihan aktif, detail tagihan, dan riwayat tagihan.
 - [x] **Task 4.9:** Tambahkan test pembuatan massal, idempotency, status tagihan, dan scope warga.
 
 ---
@@ -110,12 +101,9 @@ Tujuan: warga mengirim pembayaran manual; bendahara memverifikasi dengan alur am
 
 - [x] **Task 5.1:** Buat migration `file_objects`, `file_attachments`, dan `payments`.
 - [x] **Task 5.2:** Implementasi endpoint presign upload, konfirmasi upload, validasi MIME/ukuran/purpose, dan signed download Cloudflare R2.
-- [ ] **Task 5.3:** Implementasi `FileUploader`: kamera/galeri, validasi lokal, progress, retry, hapus, dan fallback error.
 - [x] **Task 5.4:** Implementasi API submit pembayaran tunai/transfer dengan `Idempotency-Key`.
 - [x] **Task 5.5:** Implementasi API verifikasi, penolakan dengan alasan wajib, dan pembatalan pembayaran.
 - [x] **Task 5.6:** Implementasi transaksi atomik: lock payment/invoice, update status invoice, dan audit. *(Pengiriman notifikasi ditunda ke Epic 10 karena layanan notifikasi belum tersedia.)*
-- [ ] **Task 5.7:** Buat UI warga untuk lapor pembayaran, unggah bukti, riwayat, status, dan tanda terima.
-- [ ] **Task 5.8:** Buat UI bendahara untuk antrean verifikasi, detail bukti, terima, tolak, dan batal.
 - [x] **Task 5.9:** Tambahkan test concurrency, idempotency, pemisahan tugas, dan status pembayaran/tagihan.
 
 ---
@@ -130,7 +118,6 @@ Tujuan: mencatat pemasukan/pengeluaran RT tanpa menghapus riwayat transaksi.
 - [x] **Task 6.4:** Implementasi API transaksi kas manual dengan validasi nominal, kategori, bukti, dan audit.
 - [x] **Task 6.5:** Implementasi transaksi pembalik untuk koreksi; larang penghapusan transaksi historis.
 - [x] **Task 6.6:** Implementasi API buku kas, saldo berjalan, filter periode/kategori, dan detail transaksi.
-- [ ] **Task 6.7:** Buat UI bendahara untuk kategori kas, catat transaksi, buku kas, dan pembalikan.
 - [x] **Task 6.8:** Tambahkan test relasi payment-kas, pembalikan, saldo, dan larangan delete.
 
 ---
@@ -143,8 +130,6 @@ Tujuan: kanal informasi RT dan agenda kegiatan yang mudah dibaca dari perangkat 
 - [x] **Task 7.2:** Implementasi API pengumuman: draft, target, jadwal, publish, archive, dan statistik baca.
 - [x] **Task 7.3:** Implementasi API agenda: buat, ubah, batal, status, dan lampiran.
 - [x] **Task 7.4:** Implementasi seleksi target pengumuman berdasarkan seluruh warga, peran, keluarga, atau unit.
-- [ ] **Task 7.5:** Buat UI pengurus untuk pengumuman, agenda, penjadwalan, target, dan arsip.
-- [ ] **Task 7.6:** Buat UI warga untuk daftar/detail pengumuman, agenda mendatang, dan penanda penting.
 - [x] **Task 7.7:** Tambahkan test target visibility, status jadwal, dan akses lampiran.
 
 ---
@@ -158,8 +143,6 @@ Tujuan: pengajuan surat dari formulir sampai PDF terbit dan dapat diunduh.
 - [x] **Task 8.3:** Implementasi validasi form dinamis, lampiran wajib, dan pengajuan surat oleh warga.
 - [x] **Task 8.4:** Implementasi workflow surat: draft, diajukan, review, revisi, persetujuan, penolakan, penerbitan, pembatalan.
 - [x] **Task 8.5:** Implementasi nomor surat unik, generator PDF, penyimpanan PDF di R2, dan signed download.
-- [ ] **Task 8.6:** Buat UI warga untuk pilih jenis surat, form bertahap, lampiran, status, revisi, dan unduh PDF.
-- [ ] **Task 8.7:** Buat UI sekretaris/ketua RT untuk antrean, review, catatan internal, setujui, tolak, dan terbitkan.
 - [x] **Task 8.8:** Tambahkan test transisi status, kelengkapan lampiran, nomor surat, dan authorization.
 
 ---
@@ -173,8 +156,6 @@ Tujuan: tiket aduan dengan status, penanggung jawab, komentar, serta riwayat pen
 - [x] **Task 9.3:** Implementasi API daftar/detail aduan dengan scope warga, pengurus, serta petugas tertugaskan.
 - [x] **Task 9.4:** Implementasi penugasan petugas, perubahan status, catatan resolusi, dan penutupan aduan.
 - [x] **Task 9.5:** Implementasi komentar/pembaruan dan pemisahan komentar internal. *(Notifikasi perubahan status ditunda ke Epic 10.)*
-- [ ] **Task 9.6:** Buat UI warga untuk buat aduan, timeline, komentar, dan status aduan saya.
-- [ ] **Task 9.7:** Buat UI pengurus untuk antrean aduan, filter, assignment, pembaruan status, dan resolusi.
 - [x] **Task 9.8:** Tambahkan test scope pelapor, komentar internal, state transition, dan assignment.
 
 ---
@@ -184,7 +165,6 @@ Tujuan: tiket aduan dengan status, penanggung jawab, komentar, serta riwayat pen
 Tujuan: notifikasi dalam aplikasi, email Resend, dan WhatsApp SaungWA untuk aktivitas penting.
 
 - [x] **Task 10.1:** Buat migration `notifications` dan API daftar notifikasi, tandai dibaca, serta tandai semua dibaca.
-- [ ] **Task 10.2:** Buat komponen notifikasi warga: indikator belum dibaca, daftar, detail, dan empty state.
 - [x] **Task 10.3:** Implementasi adapter Resend untuk email transaksional dan template pesan dasar.
 - [x] **Task 10.4:** Implementasi adapter SaungWA untuk notifikasi WhatsApp dan validasi konfigurasi provider.
 - [x] **Task 10.5:** Tambahkan trigger notifikasi untuk undangan, reset password, tagihan, pembayaran, surat, aduan, dan pengumuman penting. *(Tagihan, pembayaran, surat, aduan, dan pengumuman penting sudah terhubung; undangan, reset password, serta pengajuan surat awal kini melalui dispatcher.)*
@@ -203,8 +183,6 @@ Tujuan: ringkasan operasional yang relevan serta ekspor laporan sesuai permissio
 - [x] **Task 11.3:** Implementasi endpoint laporan keluarga/warga, mutasi warga, tagihan, tunggakan, pembayaran, kas, surat, dan aduan.
 - [x] **Task 11.4:** Implementasi ekspor CSV sesuai filter, permission, scope, dan audit log.
 - [x] **Task 11.5:** Implementasi ekspor PDF laporan formal. *(PDF formal dasar multi-halaman tersedia pada seluruh endpoint laporan; CSV tetap tersedia. Upgrade: template HTML/CSS setelah format branding disahkan.)*
-- [ ] **Task 11.6:** Buat UI dashboard warga responsive desktop-first.
-- [ ] **Task 11.7:** Buat UI dashboard pengurus, laporan, filter periode, dan ekspor.
 - [x] **Task 11.8:** Tambahkan test akurasi agregat, scope ekspor, dan audit ekspor.
 
 ---
@@ -215,7 +193,6 @@ Tujuan: menyelesaikan kesiapan operasional, keamanan, observabilitas, serta UAT 
 
 - [x] **Task 12.1:** Implementasi pengaturan RT: identitas, logo, rekening, zona waktu, nomor surat, batas unggahan, dan template.
 - [x] **Task 12.2:** Buat migration dan layanan `audit_logs` append-only untuk autentikasi, data sensitif, keuangan, surat, ekspor, peran, dan konfigurasi.
-- [ ] **Task 12.3:** Buat UI audit log dengan filter dan detail yang disanitasi.
 - [x] **Task 12.4:** Terapkan CORS, CSRF sesuai mekanisme cookie, rate limit, security headers, body limit, dan sanitasi log.
 - [ ] **Task 12.5:** Konfigurasi monitoring: health/readiness, CloudWatch log/metric/alarm, request ID, serta error tracking yang lolos evaluasi privasi. *(Health/readiness, request ID, log JSON, dan runbook alarm tersedia; konfigurasi CloudWatch produksi belum dapat divalidasi tanpa akun/infrastruktur target.)*
 - [ ] **Task 12.6:** Konfigurasi backup RDS, retensi/pemulihan R2, dan uji restore di staging. *(Prosedur dan checklist tersedia di `docs/RELEASE_RUNBOOK.md`; konfigurasi cloud serta restore staging membutuhkan akses lingkungan target.)*
@@ -232,10 +209,9 @@ Tujuan: memformalkan data referensi yang saat ini berupa teks bebas agar input k
 - [x] **Task 13.2:** Seed kategori aduan awal per organisasi dan migrasikan nilai `complaints.category` historis ke `complaint_categories`.
 - [x] **Task 13.3:** Tambahkan `complaint_category_id` pada `complaints`, validasi tenant melalui FK komposit, ubah API/daftar/filter/laporan, lalu hapus kolom teks lama pada migration lanjutan. *(FK, API, daftar, filter, dan laporan selesai; cleanup guarded tersedia pada `0017_epic13_cleanup.up.sql`.)*
 - [x] **Task 13.4:** Implementasi API CRUD kategori aduan, RBAC pengurus, penonaktifan tanpa menghapus kategori yang telah dipakai, serta audit log.
-- [ ] **Task 13.5:** Perbarui UI pengurus pengelolaan kategori aduan dan form/filter aduan agar memakai data master.
 - [x] **Task 13.6:** Buat lookup global read-only `education_levels` dan `marital_statuses`; seed nilai standar nasional; migrasikan nilai teks warga ke FK.
 - [x] **Task 13.7:** Evaluasi normalisasi `occupations` dari data produksi. Buat master global hanya bila variasi penulisan mengganggu laporan; jangan blokir input pekerjaan bebas pada MVP. *(Pekerjaan tetap teks bebas pada MVP.)*
-- [x] **Task 13.8:** Perbarui API, UI, import CSV, serta laporan warga untuk memakai lookup pendidikan/status perkawinan; pekerjaan tetap teks sampai Task 13.7 disetujui. *(API lookup, UI detail warga, import CSV, dan laporan selesai.)*
+- [x] **Task 13.8:** Perbarui API, import CSV, serta laporan warga untuk memakai lookup pendidikan/status perkawinan; pekerjaan tetap teks sampai Task 13.7 disetujui. *(API lookup, UI detail warga, import CSV, dan laporan selesai.)*
 - [ ] **Task 13.9:** Tambahkan integration test FK, isolasi tenant, kategori nonaktif, migrasi data lama, RBAC, dan konsistensi filter/laporan. *(Test kategori aktif/nonaktif, ID tidak valid, RBAC, isolasi tenant, filter, scope warga, dan lookup warga tersedia; test migrasi legacy serta kontrak laporan/import lookup masih diperlukan.)*
 - [x] **Task 13.10:** Evaluasi kebutuhan `announcement_categories`. Pertahankan `CHECK` global saat kategori seragam; buat master per organisasi hanya bila ada kebutuhan kategori kustom yang disetujui. *(Tetap `CHECK` global pada MVP.)*
 
@@ -273,8 +249,6 @@ Tujuan: memfasilitasi tabungan terarah warga, misalnya Qurban/Idul Adha, tanpa m
 - [ ] **Task 15.5:** Implementasi penarikan atau pengembalian: permintaan, persetujuan pemilik saldo, verifikasi bendahara, bukti, batas saldo, mutasi debit, dan audit log.
 - [ ] **Task 15.6:** Implementasi alokasi dana untuk tujuan produk, misalnya pembelian hewan qurban, dengan persetujuan kebijakan yang jelas dan jejak mutasi; tidak menjadi pendapatan/pengeluaran kas operasional RT.
 - [ ] **Task 15.7:** Implementasi koreksi melalui mutasi pembalik; larang `UPDATE` nominal dan penghapusan mutasi historis.
-- [ ] **Task 15.8:** Buat UI warga untuk memilih produk, melihat saldo dan riwayat mutasi, melapor setoran, serta mengajukan penarikan bila diizinkan.
-- [ ] **Task 15.9:** Buat UI bendahara untuk master produk, akun, antrean verifikasi, persetujuan mutasi debit, dan rekonsiliasi rekening penampungan.
 - [ ] **Task 15.10:** Tambahkan laporan dana titipan per produk/per keluarga dan rekonsiliasi saldo sistem dengan kas fisik atau rekening penampungan khusus; pisahkan dari laporan kas operasional.
 - [ ] **Task 15.11:** Tambahkan integration test perhitungan saldo dari mutasi, idempotensi setoran, pencegahan saldo negatif, otorisasi debit, append-only, rekonsiliasi, dan isolasi tenant.
 
@@ -291,8 +265,6 @@ Tujuan: menginventarisasi aset fisik RT, melacak lokasi, kondisi, peminjaman, pe
 - [ ] **Task 16.5:** Implementasi peminjaman aset: pengajuan warga/pengurus, persetujuan pengurus, tanggal pinjam/jatuh tempo/pengembalian, kondisi saat serah-terima, penolakan, dan riwayat peminjam.
 - [ ] **Task 16.6:** Implementasi pencatatan pemeliharaan/perbaikan: jadwal, jenis, biaya, petugas, catatan, bukti, hasil, dan pembaruan kondisi/status aset.
 - [ ] **Task 16.7:** Implementasi daftar/detail aset, pencarian, filter kategori/lokasi/kondisi/status, daftar aset terlambat dikembalikan, serta audit akses dan perubahan penting.
-- [ ] **Task 16.8:** Buat UI pengurus untuk kategori, lokasi, inventaris, detail aset, peminjaman, serah-terima, pemeliharaan, dan disposal.
-- [ ] **Task 16.9:** Buat UI warga untuk melihat aset yang dapat dipinjam, mengajukan peminjaman, melihat status pengajuan, dan riwayat peminjaman sendiri.
 - [ ] **Task 16.10:** Tambahkan laporan inventaris, kondisi, nilai perolehan, peminjaman, pemeliharaan, dan aset terlambat; ekspor sesuai permission dan audit.
 - [ ] **Task 16.11:** Tambahkan integration test kode aset unik, siklus status, peminjaman/pengembalian, pemeliharaan, RBAC, ownership warga, audit log, dan isolasi tenant.
 
@@ -310,7 +282,6 @@ Tujuan: mengelola ronda, kegiatan rutin, akses tamu, serta respons darurat lingk
 - [ ] **Task 17.6:** Implementasi aturan denda ketidakhadiran Kerja Bakti yang opsional dan dikonfigurasi organisasi: alasan pengecualian, review pengurus, penerbitan tagihan melalui `due_types`/`invoices`, serta audit; jangan membuat ledger denda baru.
 - [ ] **Task 17.7:** Implementasi Panic Button warga: kategori kebakaran/kecelakaan/kejahatan/medis, konfirmasi sebelum kirim, lokasi GPS bila pengguna menyetujui, fallback nomor rumah, notifikasi prioritas ke penerima yang dikonfigurasi, acknowledgement, penutupan, rate limit, dan audit tanpa mengekspos lokasi ke pihak tidak berwenang.
 - [ ] **Task 17.8:** Implementasi Buku Tamu Digital: undangan QR terbatas waktu oleh warga, check-in/check-out tamu, kurir, dan kendaraan oleh petugas keamanan, status kunjungan, serta akses riwayat sesuai scope.
-- [ ] **Task 17.9:** Buat UI warga untuk jadwal/tukar ronda, absensi dan laporan kejadian, kerja bakti, panic button, serta undangan tamu; buat UI pengurus/satpam untuk pengaturan, antrean, log, dan rekap.
 - [ ] **Task 17.10:** Tambahkan integration test jadwal dan pertukaran ronda, QR kedaluwarsa, attendance per KK, denda opsional, alert darurat/rate limit/privasi lokasi, log tamu, RBAC, ownership, audit, dan isolasi tenant.
 
 ---
@@ -322,7 +293,7 @@ Tujuan: mendukung layanan rutin lingkungan, ekonomi warga, serta administrasi Po
 - [ ] **Task 18.1:** Implementasi konfigurasi layanan sampah per organisasi: area/rute, jadwal pengangkutan, jenis layanan, pengumuman perubahan jadwal, dan tampilan kalender warga.
 - [ ] **Task 18.2:** Perluas penggunaan `due_types` dan `invoices` untuk retribusi sampah tanpa membuat domain pembayaran baru: jenis iuran sampah, penerbitan periodik, status bayar bulanan yang mudah dipindai, tunggakan, pengingat, dan laporan terpisah.
 - [ ] **Task 18.3:** Buat migration `resident_businesses` dengan FK komposit dan status; implementasi direktori UMKM warga berisi kategori, nama usaha, deskripsi, kontak yang disetujui pemilik, jam layanan, dan status publikasi.
-- [ ] **Task 18.4:** Implementasi API/UI UMKM: warga mengajukan atau memperbarui profil usaha sendiri, pengurus memoderasi publikasi, seluruh warga mencari/memfilter direktori, serta pemilik dapat menonaktifkan publikasi.
+- [ ] **Task 18.4:** Implementasi API UMKM: warga mengajukan atau memperbarui profil usaha sendiri, pengurus memoderasi publikasi, seluruh warga mencari/memfilter direktori, serta pemilik dapat menonaktifkan publikasi.
 - [ ] **Task 18.5:** Buat migration administrasi Posyandu non-medis untuk sasaran lansia/balita, relasi warga/keluarga, jadwal layanan, dan kehadiran; minimalkan data, gunakan consent, dan larang penyimpanan diagnosis, hasil pemeriksaan, atau rekam medis.
 - [ ] **Task 18.6:** Implementasi jadwal, pengingat, daftar sasaran, absensi, dan ekspor administratif Posyandu sesuai permission; akses detail dibatasi petugas berwenang dan diaudit.
 - [ ] **Task 18.7:** Tambahkan integration test isolasi tenant, persetujuan/publikasi UMKM, scope kontak, retribusi sampah, minimisasi data Posyandu, RBAC, audit, dan ekspor.
@@ -338,7 +309,6 @@ Tujuan: mendukung pemilihan pengurus RT periodik dengan satu suara per KK, kerah
 - [ ] **Task 19.3:** Implementasi workflow pemilihan: draft, pendaftaran calon, verifikasi, publikasi, voting terbuka, ditutup, penghitungan, disahkan, dan dibatalkan; seluruh transisi penting diaudit.
 - [ ] **Task 19.4:** Implementasi voting dengan autentikasi kuat, verifikasi kelayakan terhadap snapshot, one-time voting credential atau equivalent, idempotensi, pencegahan suara ganda, dan tanda terima tanpa membocorkan pilihan.
 - [ ] **Task 19.5:** Implementasi hasil transparan berupa agregat, turnout, kandidat, dan jejak pengesahan; jangan tampilkan pilihan individual atau identitas pemilih.
-- [ ] **Task 19.6:** Buat UI pemilih untuk informasi pemilihan, calon, voting, dan tanda terima; UI pengurus untuk konfigurasi, verifikasi calon, monitoring turnout agregat, pengesahan hasil, dan pemicu checklist serah-terima Epic 14.
 - [ ] **Task 19.7:** Tambahkan security/integration test one vote per KK, kerahasiaan ballot, snapshot eligibility, idempotensi, transisi status, hasil agregat, RBAC, audit, dan isolasi tenant.
 
 ---
@@ -346,7 +316,6 @@ Tujuan: mendukung pemilihan pengurus RT periodik dengan satu suara per KK, kerah
 ## Definition of Done per Task
 
 - [ ] Acceptance criteria task terpenuhi.
-- [ ] UI diuji pada viewport 320 px, 360 px, 390 px, lalu desktop bila relevan.
 - [ ] Validasi frontend untuk UX dan validasi backend untuk keamanan diterapkan.
 - [ ] Authorization, `organization_id`, ownership, dan transisi status diuji bila task privat.
 - [ ] Error API memakai format standar `code`, `message`, `details`, `request_id`.
