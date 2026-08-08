@@ -13,6 +13,7 @@ Dokumen ini menetapkan standar implementasi frontend Next.js dan Go API. Backend
 | Area | Keputusan |
 |---|---|
 | Frontend | Next.js App Router, TypeScript strict, Cloudflare Workers melalui OpenNext |
+| Mobile App | Flutter untuk iOS dan Android |
 | Backend | Go modular monolith di Amazon ECS Fargate |
 | HTTP Go | `net/http` dan `ServeMux` standar Go |
 | Database | PostgreSQL melalui `pgx`/`pgxpool`; SQL eksplisit dengan parameter binding |
@@ -443,7 +444,7 @@ LIMIT $4;
 
 1. Browser memilih file.
 2. Frontend memvalidasi tipe, ekstensi, ukuran, dan jumlah file untuk UX.
-3. Frontend meminta `POST /files/presign-upload`.
+3. Web/Mobile Client meminta `POST /files/presign-upload`.
 4. Backend memeriksa authentication, permission, ownership `entity_id`, `entity_type`, purpose, MIME allowlist, dan ukuran.
 5. Backend membuat record upload sementara dan pre-signed `PUT` URL S3-compatible untuk R2 berumur maksimal 5 menit.
 6. Browser mengunggah langsung ke Cloudflare R2.
@@ -482,7 +483,7 @@ Wajib untuk:
 
 Aturan:
 
-1. Frontend membuat UUID baru sekali untuk satu aksi pengguna.
+1. Web/Mobile Client membuat UUID baru sekali untuk satu aksi pengguna.
 2. Client mengirim `Idempotency-Key`.
 3. Backend menyimpan key bersama `organization_id`, user, request hash, status, serta response aman.
 4. Request ulang dengan key dan payload sama mengembalikan response awal.
@@ -523,7 +524,7 @@ Pengiriman email melalui Resend dan notifikasi WhatsApp melalui SaungWA terjadi 
 - Go memakai `time.Time` UTC untuk event bertimestamp.
 - API mengirim ISO 8601 UTC: `2026-08-01T10:00:00Z`.
 - Tanggal bisnis tanpa jam memakai PostgreSQL `DATE`.
-- Frontend menampilkan waktu dalam `organization.timezone`, default `Asia/Jakarta`.
+- Web/Mobile Client menampilkan waktu dalam `organization.timezone`, default `Asia/Jakarta`.
 - Batas periode tagihan, laporan, dan kas dihitung menggunakan zona waktu organisasi sebelum dikonversi ke UTC bila dibutuhkan.
 
 ---
