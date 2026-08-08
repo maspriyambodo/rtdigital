@@ -227,10 +227,29 @@ class WargaLayananScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Layanan Mandiri')),
-      body: const AppEmptyState(
-        title: 'Katalog Layanan RT',
-        description: 'Seluruh permohonan surat, aduan, dan pembayaran dapat diakses melalui menu ini.',
+      appBar: AppBar(title: const Text('Layanan Mandiri Warga')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.payments_outlined, color: Color(0xFF1B5E20)),
+              title: const Text('Pembayaran & Iuran Warga', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Cek tagihan berjalan, riwayat bayar & QRIS'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/warga/iuran'),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.account_balance_outlined, color: Color(0xFF1B5E20)),
+              title: const Text('Transparansi Kas RT', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Laporan saldo kas & grafik pengeluaran'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/warga/kas-rt'),
+            ),
+          ),
+        ],
       ),
     );
   }

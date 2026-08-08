@@ -2,6 +2,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class DeviceServices {
   final LocalAuthentication _localAuth;

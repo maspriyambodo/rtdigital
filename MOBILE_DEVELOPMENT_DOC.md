@@ -227,10 +227,10 @@ Tujuan: Menyediakan feed berita dan pengumuman real-time ke warga.
 
 ### Epic M3: Pembayaran & Manajemen Iuran
 Tujuan: Memfasilitasi warga membayar iuran lewat mobile secara transparan.
-- [ ] **Task M3.1:** Screen Rincian Iuran Warga (Riwayat bayar, Tagihan berjalan, Total tunggakan).
-- [ ] **Task M3.2:** Integrasi Kamera untuk Capture Bukti Transfer fisik / Screen Capture.
-- [ ] **Task M3.3:** Screen Laporan Transparansi Kas RT (Grafik ringkas, data teragregasi).
-- [ ] **Task M3.4:** *(Khusus Pengurus)* Quick Action Verifikasi Bayar: Upload foto setoran tunai & verifikasi bukti transfer.
+- [x] **Task M3.1:** Screen Rincian Iuran Warga (Riwayat bayar, Tagihan berjalan, Total tunggakan).
+- [x] **Task M3.2:** Integrasi Kamera untuk Capture Bukti Transfer fisik / Screen Capture.
+- [x] **Task M3.3:** Screen Laporan Transparansi Kas RT (Grafik ringkas, data teragregasi).
+- [x] **Task M3.4:** *(Khusus Pengurus)* Quick Action Verifikasi Bayar: Upload foto setoran tunai & verifikasi bukti transfer.
 
 ### Epic M4: Pengajuan Surat & Approval
 Tujuan: Mempercepat layanan surat pengantar RT lewat handphone.

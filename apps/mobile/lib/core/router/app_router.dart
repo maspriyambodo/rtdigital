@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'screens.dart';
+import '../contribution_screens.dart';
 import 'attachment_viewer_screen.dart';
 import 'login_screen.dart';
 
@@ -22,6 +23,14 @@ final appRouter = GoRouter(
         final type = state.uri.queryParameters['type'] ?? 'image';
         return AttachmentViewerScreen(url: url, title: title, type: type);
       },
+    ),
+    GoRoute(
+      path: '/warga/iuran',
+      builder: (context, state) => const WargaIuranScreen(),
+    ),
+    GoRoute(
+      path: '/warga/kas-rt',
+      builder: (context, state) => const WargaKasRtScreen(),
     ),
 
     ShellRoute(
