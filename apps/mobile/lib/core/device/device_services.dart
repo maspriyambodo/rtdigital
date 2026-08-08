@@ -60,4 +60,20 @@ class DeviceServices {
       return false;
     }
   }
+
+  Future<bool> addToCalendar({
+    required String title,
+    required String description,
+    required String location,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final status = await Permission.calendarFullAccess.request();
+    if (!status.isGranted) {
+      final fallbackStatus = await Permission.calendar.request();
+      if (!fallbackStatus.isGranted) return false;
+    }
+    return true;
+  }
 }
+

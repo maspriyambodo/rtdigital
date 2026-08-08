@@ -1,11 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../information_provider.dart';
 import '../auth_provider.dart';
 import '../widgets/ui_components.dart';
 
-class WargaHomeScreen extends StatelessWidget {
+class WargaHomeScreen extends ConsumerStatefulWidget {
   const WargaHomeScreen({super.key});
+
+  @override
+  ConsumerState<WargaHomeScreen> createState() => _WargaHomeScreenState();
+}
+
+class _WargaHomeScreenState extends ConsumerState<WargaHomeScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      ref.read(informationProvider.notifier).fetchAnnouncements();
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -31,49 +59,163 @@ class WargaHomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Consumer(
-              builder: (context, ref, child) {
-                final authState = ref.watch(authProvider);
-                final userName = authState.user?.name ?? 'Warga';
-                return Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(child: Icon(Icons.person)),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Selamat Datang, $userName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            const Text('RT 05 / RW 02 - Penggilingan', style: TextStyle(color: Colors.grey)),
-                          ],
-                        ),
-                      ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(informationProvider.notifier).fetchAnnouncements(refresh: true);
+          await ref.read(informationProvider.notifier).fetchEvents();
+        },
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              Consumer(
+                builder: (context, ref, child) {
+                  final authState = ref.watch(authProvider);
+                  final userName = authState.user?.name ?? 'Warga';
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(child: Icon(Icons.person)),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Selamat Datang, $userName', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              const Text('RT 05 / RW 02 - Penggilingan', style: TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            const Row(
-              children: [
-                StatusChip(label: 'Iuran Lunas', type: StatusType.success),
-                SizedBox(width: 8),
-                StatusChip(label: '1 Aduan Diproses', type: StatusType.warning),
-              ],
-            ),
-            const SizedBox(height: 24),
-            AppButton(
-              label: 'Buka Pengajuan Surat',
-              onPressed: () {},
-            ),
-          ],
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Consumer(
+                builder: (context, ref, child) {
+                  final infoState = ref.watch(informationProvider);
+                  if (infoState.events.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Agenda RT Mendatang', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                          const StatusChip(label: 'Mendatang', type: StatusType.info),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ...infoState.events.map((evt) => Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.event_available, color: Colors.green),
+                              title: Text(evt.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              subtitle: Text('${evt.location} • ${evt.startsAt.split('T').first}'),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.calendar_month),
+                                tooltip: 'Simpan ke Kalender HP',
+                                onPressed: () async {
+                                  final ok = await ref.read(informationProvider.notifier).saveEventToCalendar(evt);
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(ok ? 'Izin kalender disetujui, agenda disimpan' : 'Gagal menyimpan ke kalender')),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                          )),
+                      const SizedBox(height: 16),
+                    ],
+                  );
+                },
+              ),
+              Text('Feed Pengumuman RT', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Consumer(
+                builder: (context, ref, child) {
+                  final infoState = ref.watch(informationProvider);
+                  final categories = ['Semua', 'Kegiatan', 'Keuangan', 'Keamanan', 'Umum'];
+                  return Column(
+                    children: [
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: categories.map((cat) {
+                            final selected = infoState.categoryFilter == cat || (infoState.categoryFilter == null && cat == 'Semua');
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(cat),
+                                selected: selected,
+                                onSelected: (val) {
+                                  if (val) {
+                                    ref.read(informationProvider.notifier).filterCategory(cat == 'Semua' ? null : cat);
+                                  }
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (infoState.announcements.isEmpty && !infoState.isLoading)
+                        const AppEmptyState(
+                          title: 'Belum Ada Pengumuman',
+                          description: 'Tidak ada pengumuman terbaru untuk kategori ini.',
+                        )
+                      else
+                        ...infoState.announcements.map((ann) => Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        StatusChip(label: ann.category, type: StatusType.info),
+                                        Text(ann.publishedAt.split('T').first, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(ann.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                    const SizedBox(height: 6),
+                                    Text(ann.content, style: const TextStyle(fontSize: 14)),
+                                    if (ann.attachmentUrl != null) ...[
+                                      const SizedBox(height: 12),
+                                      OutlinedButton.icon(
+                                        icon: Icon(ann.attachmentType == 'pdf' ? Icons.picture_as_pdf : Icons.image),
+                                        label: Text('Buka Lampiran (${ann.attachmentType?.toUpperCase()})'),
+                                        onPressed: () {
+                                          context.push(
+                                            '/attachment-viewer?url=${Uri.encodeComponent(ann.attachmentUrl!)}&title=${Uri.encodeComponent(ann.title)}&type=${ann.attachmentType}',
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            )),
+                      if (infoState.isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

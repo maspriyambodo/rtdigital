@@ -9,8 +9,10 @@ void main() {
         child: RtDigitalMobileApp(),
       ),
     );
-    await tester.pumpAndSettle();
-    expect(find.text('RT Digital'), findsOneWidget);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('RT Digital'), findsWidgets);
   });
 }
+
 

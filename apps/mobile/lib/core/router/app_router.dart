@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'screens.dart';
+import 'attachment_viewer_screen.dart';
 import 'login_screen.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -13,6 +14,16 @@ final appRouter = GoRouter(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
     ),
+    GoRoute(
+      path: '/attachment-viewer',
+      builder: (context, state) {
+        final url = state.uri.queryParameters['url'] ?? '';
+        final title = state.uri.queryParameters['title'] ?? 'Lampiran';
+        final type = state.uri.queryParameters['type'] ?? 'image';
+        return AttachmentViewerScreen(url: url, title: title, type: type);
+      },
+    ),
+
     ShellRoute(
       builder: (context, state, child) => WargaShell(child: child),
       routes: [
