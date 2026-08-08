@@ -248,6 +248,6 @@ Tujuan: Melaporkan kejadian dan mengelola tindak lanjut lapangan.
 
 ### Epic M6: Fitur Keamanan Eksklusif Mobile (Pasca-MVP)
 Tujuan: Menunjang keamanan lingkungan yang responsif menggunakan kapabilitas native handphone.
-- [ ] **Task M6.1:** Tombol Panic Button (Widget/Shortcut layar utama) untuk mengirim pesan darurat & GPS.
-- [ ] **Task M6.2:** Dashboard Penerima Alert Panic Button (Untuk Petugas Ronda/Pengurus).
-- [ ] **Task M6.3:** Modul Ronda: QRCode check-in di pos/ronda malam & rekap absensi.
+- [x] **Task M6.1:** Tombol Panic Button (Widget/Shortcut layar utama) untuk mengirim pesan darurat & GPS.
+- [x] **Task M6.2:** Dashboard Penerima Alert Panic Button (Untuk Petugas Ronda/Pengurus).
+- [x] **Task M6.3:** Modul Ronda: QRCode check-in di pos/ronda malam & rekap absensi.

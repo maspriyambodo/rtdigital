@@ -268,6 +268,16 @@ class WargaLayananScreen extends StatelessWidget {
             ),
           ),
           Card(
+            color: Colors.red.shade50,
+            child: ListTile(
+              leading: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+              title: const Text('Tombol Darurat (Panic Button)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+              subtitle: const Text('Kirim sinyal darurat & lokasi GPS ke petugas siskamling'),
+              trailing: const Icon(Icons.chevron_right, color: Colors.red),
+              onTap: () => context.push('/warga/panic'),
+            ),
+          ),
+          Card(
             child: ListTile(
               leading: const Icon(Icons.account_balance_outlined, color: Color(0xFF1B5E20)),
               title: const Text('Transparansi Kas RT', style: TextStyle(fontWeight: FontWeight.bold)),

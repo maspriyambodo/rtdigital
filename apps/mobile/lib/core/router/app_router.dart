@@ -6,6 +6,7 @@ import 'attachment_viewer_screen.dart';
 import 'login_screen.dart';
 import '../letter_screens.dart';
 import '../complaint_screens.dart';
+import '../security_screens.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -66,12 +67,20 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/warga/panic',
+      builder: (context, state) => const PanicButtonScreen(),
+    ),
+    GoRoute(
       path: '/pengurus/surat/approval',
       builder: (context, state) => const PengurusApprovalScreen(),
     ),
     GoRoute(
       path: '/pengurus/aduan/dashboard',
       builder: (context, state) => const PengurusComplaintDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/pengurus/keamanan/dashboard',
+      builder: (context, state) => const SecurityDashboardAlertsScreen(),
     ),
 
     ShellRoute(
@@ -238,6 +247,14 @@ class PengurusShell extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 context.go('/pengurus/aduan/dashboard');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.security),
+              title: const Text('Dashboard Siskamling & Alert'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/pengurus/keamanan/dashboard');
               },
             ),
           ],
