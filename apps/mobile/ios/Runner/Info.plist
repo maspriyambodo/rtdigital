@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Aplikasi memerlukan lokasi GPS untuk menyertakan koordinat tempat kejadian saat mengirim aduan atau sinyal panic button darurat.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi memerlukan akses kamera untuk mengambil foto aduan lapangan dan memindai QR code pos ronda.</string>
 </dict>
 </plist>
