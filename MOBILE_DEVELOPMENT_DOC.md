@@ -220,10 +220,10 @@ Tujuan: Mengamankan session di perangkat mobile dan melacak data warga.
 
 ### Epic M2: Informasi & Agenda RT
 Tujuan: Menyediakan feed berita dan pengumuman real-time ke warga.
-- [ ] **Task M2.1:** Screen Feed Pengumuman RT (Infinite scroll, Pull-to-refresh).
-- [ ] **Task M2.2:** Viewer Dokumen Lampiran (Gambar & PDF viewer in-app).
-- [ ] **Task M2.3:** Integrasi Push Notification untuk pengumuman baru berdasarkan target sasaran.
-- [ ] **Task M2.4:** Screen Agenda RT & Integrasi "Simpan ke Kalender HP".
+- [x] **Task M2.1:** Screen Feed Pengumuman RT (Infinite scroll, Pull-to-refresh).
+- [x] **Task M2.2:** Viewer Dokumen Lampiran (Gambar & PDF viewer in-app).
+- [x] **Task M2.3:** Integrasi Push Notification untuk pengumuman baru berdasarkan target sasaran.
+- [x] **Task M2.4:** Screen Agenda RT & Integrasi "Simpan ke Kalender HP".
 
 ### Epic M3: Pembayaran & Manajemen Iuran
 Tujuan: Memfasilitasi warga membayar iuran lewat mobile secara transparan.
