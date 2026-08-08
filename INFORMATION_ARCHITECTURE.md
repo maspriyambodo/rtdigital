@@ -281,7 +281,7 @@ Sidebar hanya menampilkan modul yang diizinkan bagi peran aktif. Pengurus yang m
 
 ## 6. Aturan Akses Navigasi
 
-1. Frontend mengambil peran serta permission efektif dari `GET /me`; data ini menjadi sumber untuk visibilitas menu setelah autentikasi atau refresh sesi.
+1. Web/Mobile Client mengambil peran serta permission efektif dari `GET /me`; data ini menjadi sumber untuk visibilitas menu setelah autentikasi atau refresh sesi.
 2. Item navigasi dirender hanya bila pengguna memiliki sedikitnya satu permission pada daftar `anyOf` item tersebut. Item tanpa permission yang cocok tidak dirender.
 3. Permission dapat berubah tanpa token kedaluwarsa; frontend memuat ulang profil/permission saat inisialisasi sesi, setelah refresh sesi, serta setelah perubahan peran pada akun aktif.
 4. Backend tetap memvalidasi permission dan scope setiap request. Penyembunyian menu frontend bukan kontrol keamanan.

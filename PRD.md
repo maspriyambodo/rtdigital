@@ -823,7 +823,7 @@ Go API di Amazon ECS Fargate
 Amazon RDS for PostgreSQL 18.4
 ```
 
-## 12.3 Frontend
+## 12.3 Web & Mobile Client
 
 - Next.js App Router.
 - TypeScript strict mode.
@@ -1482,7 +1482,7 @@ Metrik produk:
 - Race test untuk modul yang memiliki concurrency.
 - Static analysis, lint, dan vulnerability scan.
 
-## 18.2 Frontend
+## 18.2 Web & Mobile Client
 
 - Unit test untuk utility dan komponen penting.
 - Component test untuk formulir utama.
@@ -1541,7 +1541,7 @@ Metrik produk:
 - Backup atau snapshot dilakukan sebelum migration berisiko.
 - Deployment backend menggunakan rolling atau blue/green sesuai kematangan.
 - Rollback procedure terdokumentasi.
-- Frontend dan backend memiliki versi rilis yang dapat dilacak.
+- Web App, Mobile App, dan backend memiliki versi rilis yang dapat dilacak.
 
 ---
 
