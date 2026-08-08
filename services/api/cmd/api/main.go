@@ -26,6 +26,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/platform"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/reports"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/savings"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/settings"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
@@ -110,6 +111,7 @@ func main() {
 	reportsService := reports.NewService(pool)
 	settingsService := settings.NewService(pool)
 	auditService := audit.NewService(pool)
+	savingsService := savings.NewService(pool)
 	dispatcher := notifications.NewDispatcher(pool, notificationsService, mailer, whatsapp, logger)
 	authService.SetNotificationDispatcher(dispatcher)
 	usersService.SetNotificationDispatcher(dispatcher)
@@ -123,7 +125,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    cfg.Address(),
-		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, dashboardService, reportsService, settingsService, auditService, storage),
+		Handler: httpapi.NewServer(logger, pool, tokens, authService, authz, usersService, residentsService, invoicesService, filesService, paymentsService, cashService, production, communicationService, lettersService, complaintsService, notificationsService, dashboardService, reportsService, settingsService, auditService, savingsService, storage),
 	}
 
 	schedulerCtx, cancelScheduler := context.WithCancel(context.Background())
