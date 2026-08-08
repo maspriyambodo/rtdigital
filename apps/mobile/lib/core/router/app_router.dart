@@ -8,6 +8,7 @@ import '../letter_screens.dart';
 import '../complaint_screens.dart';
 import '../security_screens.dart';
 import '../savings_screens.dart';
+import '../asset_screens.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -39,6 +40,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/warga/tabungan',
       builder: (context, state) => const SavingsScreen(),
+    ),
+    GoRoute(
+      path: '/warga/aset',
+      builder: (context, state) => const AssetsScreen(),
     ),
     GoRoute(
       path: '/warga/surat/baru',

@@ -11,6 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/maspriyambodo/rtdigital/services/api/internal/assets"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/audit"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/auth"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/cash"
@@ -45,6 +46,7 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	var settingsService *settings.Service
 	var auditService *audit.Service
 	var savingsService *savings.Service
+	var assetsService *assets.Service
 	var letterStorage letters.StorageClient
 	for _, service := range services {
 		switch value := service.(type) {
@@ -66,6 +68,8 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 			auditService = value
 		case *savings.Service:
 			savingsService = value
+		case *assets.Service:
+			assetsService = value
 		case letters.StorageClient:
 			letterStorage = value
 		}
@@ -115,6 +119,9 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	}
 	if savingsService != nil {
 		savings.NewHandler(savingsService, tokens, authz).RegisterRoutes(api)
+	}
+	if assetsService != nil {
+		assets.NewHandler(assetsService, tokens, authz).RegisterRoutes(api)
 	}
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 
