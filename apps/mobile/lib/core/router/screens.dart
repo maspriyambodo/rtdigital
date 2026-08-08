@@ -38,6 +38,13 @@ class _WargaHomeScreenState extends ConsumerState<WargaHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.red.shade700,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.warning_amber_rounded),
+        label: const Text('PANIC BUTTON', style: TextStyle(fontWeight: FontWeight.bold)),
+        onPressed: () => context.push('/warga/panic'),
+      ),
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -52,6 +59,11 @@ class _WargaHomeScreenState extends ConsumerState<WargaHomeScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.warning_amber_rounded, color: Colors.red),
+            tooltip: 'Panic Button Darurat',
+            onPressed: () => context.push('/warga/panic'),
+          ),
           IconButton(
             icon: const Icon(Icons.admin_panel_settings_outlined),
             tooltip: 'Mode Pengurus',
@@ -95,6 +107,31 @@ class _WargaHomeScreenState extends ConsumerState<WargaHomeScreen> {
                     ),
                   );
                 },
+              ),
+              const SizedBox(height: 16),
+              Card(
+                color: Colors.red.shade50,
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.red.shade200, width: 1.5),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.red.shade100,
+                    radius: 24,
+                    child: const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                  ),
+                  title: const Text('DARURAT / PANIC BUTTON', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red, fontSize: 16)),
+                  subtitle: const Text('Tekan untuk mengirim sinyal darurat & GPS ke pos ronda'),
+                  trailing: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                    onPressed: () => context.push('/warga/panic'),
+                    child: const Text('PANIC', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  onTap: () => context.push('/warga/panic'),
+                ),
               ),
               const SizedBox(height: 16),
               Consumer(
