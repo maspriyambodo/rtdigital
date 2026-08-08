@@ -17,7 +17,8 @@ Tidak menggunakan Turborepo, Nx, Bazel, ORM, atau package shared tambahan pada a
 ```text
 /
 ├── apps/
-│   └── web/                         # Next.js frontend
+│   ├── web/                         # Next.js frontend (Web App)
+│   └── mobile/                      # Flutter app (Mobile App)
 ├── services/
 │   └── api/                         # Go modular monolith API
 ├── packages/
@@ -96,7 +97,24 @@ Aturan:
 
 ---
 
-## 3. Backend: `services/api`
+## 3. Mobile App: `apps/mobile`
+
+```text
+apps/mobile/
+├── android/                         # Konfigurasi native Android
+├── ios/                             # Konfigurasi native iOS
+├── lib/
+│   ├── core/                        # Konfigurasi aplikasi, utilitas global, dan library abstrak
+│   ├── features/                    # Modul bisnis/fitur aplikasi (Auth, Warga, Keuangan, dll)
+│   ├── shared/                      # Widget UI global, tema, komponen design system
+│   └── main.dart                    # Entry point aplikasi
+├── assets/                          # Gambar, ikon, dll
+├── pubspec.yaml                     # Dependencies Dart/Flutter
+└── README.md                        # Dokumentasi singkat Mobile
+```
+
+
+## 4. Backend: `services/api`
 
 ```text
 services/api/
@@ -294,6 +312,7 @@ lint:
 | Perubahan | CI minimum | Deploy |
 |---|---|---|
 | `apps/web/**` | Lint, type check, test, build OpenNext | Cloudflare Workers |
+| `apps/mobile/**` | Lint, format, test, build APK/IPA | App Distribution |
 | `services/api/**` | `gofmt` check, `go vet`, test, build image, image scan | ECR lalu ECS Fargate |
 | `services/api/migrations/**` | Migration rehearsal | ECS migration task sebelum deploy API |
 | `infrastructure/**` | Validasi IaC | Manual approval staging/production |
@@ -320,7 +339,7 @@ lint:
 ## 10. Batas MVP
 
 - Tidak ada Turborepo/Nx/Bazel.
-- Tidak ada package UI terpisah; komponen berada di `apps/web`.
+- Tidak ada package UI terpisah untuk web; komponen berada di `apps/web`. Komponen UI mobile berada di `apps/mobile/lib/shared`.
 - Tidak ada Redis lokal.
 - Tidak ada microservice tambahan.
 - Tidak ada shared model database antara Go dan TypeScript.
