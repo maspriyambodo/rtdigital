@@ -260,6 +260,15 @@ class WargaLayananScreen extends StatelessWidget {
           ),
           Card(
             child: ListTile(
+              leading: const Icon(Icons.report_problem_outlined, color: Color(0xFF1B5E20)),
+              title: const Text('Pelaporan Aduan Lapangan', style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: const Text('Laporkan masalah fisik/keamanan & pantau tindak lanjut'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/warga/aduan/list'),
+            ),
+          ),
+          Card(
+            child: ListTile(
               leading: const Icon(Icons.account_balance_outlined, color: Color(0xFF1B5E20)),
               title: const Text('Transparansi Kas RT', style: TextStyle(fontWeight: FontWeight.bold)),
               subtitle: const Text('Laporan saldo kas & grafik pengeluaran'),

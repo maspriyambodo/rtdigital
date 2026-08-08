@@ -241,10 +241,10 @@ Tujuan: Mempercepat layanan surat pengantar RT lewat handphone.
 
 ### Epic M5: Pelaporan Aduan & Penanganan Lapangan
 Tujuan: Melaporkan kejadian dan mengelola tindak lanjut lapangan.
-- [ ] **Task M5.1:** Form Buat Aduan dengan upload foto langsung dari kamera + Geotagging otomatis.
-- [ ] **Task M5.2:** Timeline Status Penanganan Aduan (Tiket: Diajukan -> Diproses -> Selesai).
-- [ ] **Task M5.3:** Push notification saat ada pembaruan komentar/status aduan.
-- [ ] **Task M5.4:** *(Khusus Pengurus)* Dashboard Tiket Aduan Masuk & Tombol Disposisi Petugas.
+- [x] **Task M5.1:** Form Buat Aduan dengan upload foto langsung dari kamera + Geotagging otomatis.
+- [x] **Task M5.2:** Timeline Status Penanganan Aduan (Tiket: Diajukan -> Diproses -> Selesai).
+- [x] **Task M5.3:** Push notification saat ada pembaruan komentar/status aduan.
+- [x] **Task M5.4:** *(Khusus Pengurus)* Dashboard Tiket Aduan Masuk & Tombol Disposisi Petugas.
 
 ### Epic M6: Fitur Keamanan Eksklusif Mobile (Pasca-MVP)
 Tujuan: Menunjang keamanan lingkungan yang responsif menggunakan kapabilitas native handphone.

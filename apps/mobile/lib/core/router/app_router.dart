@@ -5,6 +5,7 @@ import '../contribution_screens.dart';
 import 'attachment_viewer_screen.dart';
 import 'login_screen.dart';
 import '../letter_screens.dart';
+import '../complaint_screens.dart';
 
 final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -50,8 +51,27 @@ final appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/warga/aduan/baru',
+      builder: (context, state) => const WargaComplaintFormScreen(),
+    ),
+    GoRoute(
+      path: '/warga/aduan/list',
+      builder: (context, state) => const WargaComplaintListScreen(),
+    ),
+    GoRoute(
+      path: '/warga/aduan/timeline',
+      builder: (context, state) {
+        final id = state.uri.queryParameters['id'] ?? '';
+        return WargaComplaintTimelineScreen(complaintId: id);
+      },
+    ),
+    GoRoute(
       path: '/pengurus/surat/approval',
       builder: (context, state) => const PengurusApprovalScreen(),
+    ),
+    GoRoute(
+      path: '/pengurus/aduan/dashboard',
+      builder: (context, state) => const PengurusComplaintDashboardScreen(),
     ),
 
     ShellRoute(
@@ -210,6 +230,14 @@ class PengurusShell extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 context.go('/pengurus/surat/approval');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.report_problem_outlined),
+              title: const Text('Dashboard Tiket Aduan'),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/pengurus/aduan/dashboard');
               },
             ),
           ],
