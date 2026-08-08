@@ -22,7 +22,8 @@ Tahap perencanaan dan desain MVP. Repository ini saat ini berisi dokumentasi pro
 
 | Area | Teknologi |
 |---|---|
-| Frontend | Next.js App Router, TypeScript, OpenNext, Cloudflare Workers |
+| Web Apps | Next.js App Router, TypeScript, OpenNext, Cloudflare Workers |
+| Mobile Apps | Flutter (Android & iOS) |
 | Backend | Go modular monolith, REST API |
 | Database | PostgreSQL 18.4, Amazon RDS |
 | File privat | Cloudflare R2 private bucket melalui API S3-compatible |
@@ -49,6 +50,7 @@ Tahap perencanaan dan desain MVP. Repository ini saat ini berisi dokumentasi pro
 - [Spesifikasi Teknis](TECHNICAL_SPECIFICATION.md)
 - [Struktur Repository](REPOSITORY_STRUCTURE.md)
 - [Desain Database](DATABASE_DESIGN.md)
+- [Dokumentasi Pengembangan Mobile](MOBILE_DEVELOPMENT_DOC.md)
 - [Spesifikasi API](API_SPECIFICATION.md)
 - [Peran dan Hak Akses](USER_ROLES_AND_PERMISSIONS.md)
 - [Panduan Docker](DOCKER_SETUP.md)
@@ -65,7 +67,7 @@ pnpm install
 docker compose up --build
 ```
 
-Frontend target: `http://localhost:3000`  
+Web target: `http://localhost:3000`  
 API target: `http://localhost:8080`
 
 ## Prinsip Utama
