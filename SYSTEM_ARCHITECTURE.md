@@ -24,17 +24,20 @@ Dokumen ini menjelaskan hubungan frontend Next.js di Cloudflare, Go API di AWS, 
 
 ```mermaid
 flowchart TD
-    User([Warga / Pengurus<br/>Browser mobile atau desktop]) -->|HTTPS| CF
+    User([Warga / Pengurus]) -->|HTTPS| CF
 
     subgraph Cloudflare["Cloudflare"]
         CF[DNS, TLS, CDN, WAF<br/>Rate Limiting]
-        WEB[Next.js App Router<br/>Cloudflare Workers + OpenNext]
+        WEB[Web App<br/>Next.js di Cloudflare Workers]
+        MOBILE[Mobile App<br/>Flutter iOS & Android]
         CACHE[Edge Cache<br/>aset statis dan respons publik]
         CF --> WEB
+        CF --> MOBILE
         WEB --> CACHE
     end
 
     WEB -->|HTTPS REST API<br/>api.domain-rt.id/api/v1| ALB
+    MOBILE -->|HTTPS REST API<br/>api.domain-rt.id/api/v1| ALB
 
     subgraph AWS["AWS"]
         ALB[Application Load Balancer]
@@ -204,7 +207,7 @@ Jika diperlukan, gunakan Amazon ElastiCache Redis di private subnet. Redis tidak
 1. Pengguna membuka `app.domain-rt.id`.
 2. Cloudflare menyajikan aset statis dari edge cache.
 3. Next.js Worker merender halaman dinamis bila diperlukan.
-4. Frontend meminta data privat ke `api.domain-rt.id`.
+4. Web/Mobile Client meminta data privat ke `api.domain-rt.id`.
 5. ALB meneruskan request HTTPS ke Go API ECS.
 6. API memeriksa session, RBAC, `organization_id`, scope data, lalu membaca/menulis PostgreSQL.
 7. API mengembalikan JSON ringkas dengan `request_id`.
@@ -261,7 +264,7 @@ minio     Emulator S3 untuk pengujian upload/download lokal
 
 ## 6. Lingkungan Deployment
 
-| Lingkungan | Frontend | Backend | Database | Tujuan |
+| Lingkungan | Web App | Backend | Database | Tujuan |
 |---|---|---|---|---|
 | Local | Docker Compose | Docker Compose | PostgreSQL container | Development |
 | Test | CI runner | CI container | PostgreSQL ephemeral | Unit/integration test |
@@ -380,11 +383,12 @@ flowchart LR
 
 | Keputusan | Pilihan |
 |---|---|
-| Frontend | Next.js App Router di Cloudflare Workers melalui OpenNext |
+| Web App | Next.js App Router di Cloudflare Workers melalui OpenNext |
 | Backend | Go modular monolith di Amazon ECS Fargate |
 | Database | Amazon RDS PostgreSQL di private subnet |
 | File | Cloudflare R2 private bucket melalui API S3-compatible |
 | Cache/session | PostgreSQL dan Cloudflare; tanpa Redis |
+| Mobile App | Flutter untuk Android (Play Store) dan iOS (App Store) |
 | Container lokal | Docker Compose |
 | CI/CD | GitHub Actions atau CI setara, ECR, ECS, Wrangler |
 | Backup | RDS automated backup/PITR serta kebijakan retensi dan pemulihan Cloudflare R2 |
