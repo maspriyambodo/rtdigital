@@ -258,15 +258,15 @@ Tujuan: memfasilitasi tabungan terarah warga, misalnya Qurban/Idul Adha, tanpa m
 
 Tujuan: menginventarisasi aset fisik RT, melacak lokasi, kondisi, peminjaman, pemeliharaan, dan penghapusan aset secara terkontrol.
 
-- [ ] **Task 16.1:** Buat migration `asset_categories`, `asset_locations`, `assets`, `asset_loans`, dan `asset_maintenance_logs` dengan index tenant, FK komposit, constraint status, serta riwayat append-only untuk mutasi penting.
-- [ ] **Task 16.2:** Implementasi API CRUD `asset_categories` dan `asset_locations` per organisasi: kode unik, nama, status; penonaktifan tanpa menghapus data yang telah dipakai.
-- [ ] **Task 16.3:** Implementasi API CRUD `assets`: kode/label unik, nama, deskripsi, kategori, lokasi, kondisi, status, tanggal/nilai perolehan, penanggung jawab, serta lampiran foto atau dokumen melalui `file_objects`.
-- [ ] **Task 16.4:** Implementasi perubahan lokasi, kondisi, dan status aset dengan alasan wajib, audit log, serta larangan penghapusan aset aktif; gunakan status nonaktif/dihapus untuk disposal.
-- [ ] **Task 16.5:** Implementasi peminjaman aset: pengajuan warga/pengurus, persetujuan pengurus, tanggal pinjam/jatuh tempo/pengembalian, kondisi saat serah-terima, penolakan, dan riwayat peminjam.
-- [ ] **Task 16.6:** Implementasi pencatatan pemeliharaan/perbaikan: jadwal, jenis, biaya, petugas, catatan, bukti, hasil, dan pembaruan kondisi/status aset.
-- [ ] **Task 16.7:** Implementasi daftar/detail aset, pencarian, filter kategori/lokasi/kondisi/status, daftar aset terlambat dikembalikan, serta audit akses dan perubahan penting.
-- [ ] **Task 16.10:** Tambahkan laporan inventaris, kondisi, nilai perolehan, peminjaman, pemeliharaan, dan aset terlambat; ekspor sesuai permission dan audit.
-- [ ] **Task 16.11:** Tambahkan integration test kode aset unik, siklus status, peminjaman/pengembalian, pemeliharaan, RBAC, ownership warga, audit log, dan isolasi tenant.
+- [x] **Task 16.1:** Buat migration `asset_categories`, `asset_locations`, `assets`, `asset_loans`, dan `asset_maintenance_logs` dengan index tenant, FK komposit, constraint status, serta riwayat append-only untuk mutasi penting.
+- [x] **Task 16.2:** Implementasi API CRUD `asset_categories` dan `asset_locations` per organisasi: kode unik, nama, status; penonaktifan tanpa menghapus data yang telah dipakai.
+- [x] **Task 16.3:** Implementasi API CRUD `assets`: kode/label unik, nama, deskripsi, kategori, lokasi, kondisi, status, tanggal/nilai perolehan, penanggung jawab, serta lampiran foto atau dokumen melalui `file_objects`.
+- [x] **Task 16.4:** Implementasi perubahan lokasi, kondisi, dan status aset dengan alasan wajib, audit log, serta larangan penghapusan aset aktif; gunakan status nonaktif/dihapus untuk disposal.
+- [x] **Task 16.5:** Implementasi peminjaman aset: pengajuan warga/pengurus, persetujuan pengurus, tanggal pinjam/jatuh tempo/pengembalian, kondisi saat serah-terima, penolakan, dan riwayat peminjam.
+- [x] **Task 16.6:** Implementasi pencatatan pemeliharaan/perbaikan: jadwal, jenis, biaya, petugas, catatan, bukti, hasil, dan pembaruan kondisi/status aset.
+- [x] **Task 16.7:** Implementasi daftar/detail aset, pencarian, filter kategori/lokasi/kondisi/status, daftar aset terlambat dikembalikan, serta audit akses dan perubahan penting.
+- [x] **Task 16.10:** Tambahkan laporan inventaris, kondisi, nilai perolehan, peminjaman, pemeliharaan, dan aset terlambat; ekspor sesuai permission dan audit.
+- [x] **Task 16.11:** Tambahkan integration test kode aset unik, siklus status, peminjaman/pengembalian, pemeliharaan, RBAC, ownership warga, audit log, dan isolasi tenant.
 
 ---
 
