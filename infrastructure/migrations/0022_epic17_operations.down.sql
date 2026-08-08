@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS emergency_alerts;
+DROP TABLE IF EXISTS visitor_logs;
+DROP TABLE IF EXISTS visitor_invites;
+DROP TABLE IF EXISTS activity_attendances;
+DROP TABLE IF EXISTS community_activities;
+DROP TABLE IF EXISTS patrol_incidents;
+DROP TABLE IF EXISTS patrol_attendances;
+DROP TABLE IF EXISTS patrol_assignments;
+DROP TABLE IF EXISTS patrol_schedules;
+DROP TABLE IF EXISTS patrol_posts;
