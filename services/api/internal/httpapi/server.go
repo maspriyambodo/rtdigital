@@ -26,6 +26,7 @@ import (
 	"github.com/maspriyambodo/rtdigital/services/api/internal/reports"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/residents"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/savings"
+	"github.com/maspriyambodo/rtdigital/services/api/internal/securityops"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/settings"
 	"github.com/maspriyambodo/rtdigital/services/api/internal/users"
 )
@@ -47,6 +48,7 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	var auditService *audit.Service
 	var savingsService *savings.Service
 	var assetsService *assets.Service
+	var securityOpsService *securityops.Service
 	var letterStorage letters.StorageClient
 	for _, service := range services {
 		switch value := service.(type) {
@@ -70,6 +72,8 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 			savingsService = value
 		case *assets.Service:
 			assetsService = value
+		case *securityops.Service:
+			securityOpsService = value
 		case letters.StorageClient:
 			letterStorage = value
 		}
@@ -122,6 +126,9 @@ func NewServer(logger *slog.Logger, db *pgxpool.Pool, tokens *auth.TokenManager,
 	}
 	if assetsService != nil {
 		assets.NewHandler(assetsService, tokens, authz).RegisterRoutes(api)
+	}
+	if securityOpsService != nil {
+		securityops.NewHandler(securityOpsService, tokens, authz).RegisterRoutes(api)
 	}
 	root.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 

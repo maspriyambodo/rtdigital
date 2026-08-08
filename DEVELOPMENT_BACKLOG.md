@@ -276,14 +276,14 @@ Tujuan: menginventarisasi aset fisik RT, melacak lokasi, kondisi, peminjaman, pe
 Tujuan: mengelola ronda, kegiatan rutin, akses tamu, serta respons darurat lingkungan dengan perlindungan privasi dan jejak audit.
 
 - [x] **Task 17.1:** Buat migration `patrol_posts`, `patrol_schedules`, `patrol_assignments`, `patrol_attendances`, `patrol_incidents`, `community_activities`, `activity_attendances`, `visitor_invites`, `visitor_logs`, dan `emergency_alerts` dengan index tenant, FK komposit, status, serta audit untuk tindakan penting.
-- [ ] **Task 17.2:** Implementasi Siskamling: jadwal per blok/pos, penugasan warga, status petugas pengganti, pengingat H-1, dan tampilan jadwal pribadi.
-- [ ] **Task 17.3:** Implementasi absensi ronda melalui QR pos yang berumur pendek atau kode petugas, timestamp server, validasi jadwal, catatan serah-terima, dan laporan kejadian; jangan jadikan GPS presisi sebagai syarat absensi MVP.
-- [ ] **Task 17.4:** Implementasi alur tukar jadwal ronda: permintaan, persetujuan warga pengganti, validasi kelayakan, pembaruan penugasan atomik, dan audit.
-- [ ] **Task 17.5:** Implementasi Kerja Bakti: jadwal, target lokasi/area, sasaran per KK, absensi, status kehadiran, catatan, dan rekap.
-- [ ] **Task 17.6:** Implementasi aturan denda ketidakhadiran Kerja Bakti yang opsional dan dikonfigurasi organisasi: alasan pengecualian, review pengurus, penerbitan tagihan melalui `due_types`/`invoices`, serta audit; jangan membuat ledger denda baru.
-- [ ] **Task 17.7:** Implementasi Panic Button warga: kategori kebakaran/kecelakaan/kejahatan/medis, konfirmasi sebelum kirim, lokasi GPS bila pengguna menyetujui, fallback nomor rumah, notifikasi prioritas ke penerima yang dikonfigurasi, acknowledgement, penutupan, rate limit, dan audit tanpa mengekspos lokasi ke pihak tidak berwenang.
-- [ ] **Task 17.8:** Implementasi Buku Tamu Digital: undangan QR terbatas waktu oleh warga, check-in/check-out tamu, kurir, dan kendaraan oleh petugas keamanan, status kunjungan, serta akses riwayat sesuai scope.
-- [ ] **Task 17.10:** Tambahkan integration test jadwal dan pertukaran ronda, QR kedaluwarsa, attendance per KK, denda opsional, alert darurat/rate limit/privasi lokasi, log tamu, RBAC, ownership, audit, dan isolasi tenant.
+- [x] **Task 17.2:** Implementasi Siskamling: jadwal per blok/pos, penugasan warga, status petugas pengganti, pengingat H-1, dan tampilan jadwal pribadi.
+- [x] **Task 17.3:** Implementasi absensi ronda melalui QR pos yang berumur pendek atau kode petugas, timestamp server, validasi jadwal, catatan serah-terima, dan laporan kejadian; jangan jadikan GPS presisi sebagai syarat absensi MVP.
+- [x] **Task 17.4:** Implementasi alur tukar jadwal ronda: permintaan, persetujuan warga pengganti, validasi kelayakan, pembaruan penugasan atomik, dan audit.
+- [x] **Task 17.5:** Implementasi Kerja Bakti: jadwal, target lokasi/area, sasaran per KK, absensi, status kehadiran, catatan, dan rekap.
+- [x] **Task 17.6:** Implementasi aturan denda ketidakhadiran Kerja Bakti yang opsional dan dikonfigurasi organisasi: alasan pengecualian, review pengurus, penerbitan tagihan melalui `due_types`/`invoices`, serta audit; jangan membuat ledger denda baru.
+- [x] **Task 17.7:** Implementasi Panic Button warga: kategori kebakaran/kecelakaan/kejahatan/medis, konfirmasi sebelum kirim, lokasi GPS bila pengguna menyetujui, fallback nomor rumah, notifikasi prioritas ke penerima yang dikonfigurasi, acknowledgement, penutupan, rate limit, dan audit tanpa mengekspos lokasi ke pihak tidak berwenang.
+- [x] **Task 17.8:** Implementasi Buku Tamu Digital: undangan QR terbatas waktu oleh warga, check-in/check-out tamu, kurir, dan kendaraan oleh petugas keamanan, status kunjungan, serta akses riwayat sesuai scope.
+- [x] **Task 17.10:** Tambahkan integration test jadwal dan pertukaran ronda, QR kedaluwarsa, attendance per KK, denda opsional, alert darurat/rate limit/privasi lokasi, log tamu, RBAC, ownership, audit, dan isolasi tenant.
 
 ---
 

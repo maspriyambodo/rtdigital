@@ -53,6 +53,15 @@ CREATE TABLE patrol_incidents (
     schedule_id UUID REFERENCES patrol_schedules(id),
     reporter_id UUID NOT NULL REFERENCES users(id),
     incident_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    severity VARCHAR(20) NOT NULL DEFAULT 'low' CHECK (severity IN ('low', 'medium', 'high', 'critical')),
+    status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved', 'closed')),
+    resolution_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE community_activities (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     organization_id UUID NOT NULL REFERENCES organizations(id),
@@ -145,12 +154,3 @@ CREATE TRIGGER update_activity_attendances_updated_at BEFORE UPDATE ON activity_
 CREATE TRIGGER update_visitor_invites_updated_at BEFORE UPDATE ON visitor_invites FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 CREATE TRIGGER update_visitor_logs_updated_at BEFORE UPDATE ON visitor_logs FOR EACH ROW EXECUTE FUNCTION update_modified_column();
 CREATE TRIGGER update_emergency_alerts_updated_at BEFORE UPDATE ON emergency_alerts FOR EACH ROW EXECUTE FUNCTION update_modified_column();
-
-    title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    severity VARCHAR(20) NOT NULL DEFAULT 'low' CHECK (severity IN ('low', 'medium', 'high', 'critical')),
-    status VARCHAR(20) NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved', 'closed')),
-    resolution_notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
