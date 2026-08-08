@@ -274,7 +274,7 @@ Tujuan: menginventarisasi aset fisik RT, melacak lokasi, kondisi, peminjaman, pe
 
 Tujuan: mengelola ronda, kegiatan rutin, akses tamu, serta respons darurat lingkungan dengan perlindungan privasi dan jejak audit.
 
-- [ ] **Task 17.1:** Buat migration `patrol_posts`, `patrol_schedules`, `patrol_assignments`, `patrol_attendances`, `patrol_incidents`, `community_activities`, `activity_attendances`, `visitor_invites`, `visitor_logs`, dan `emergency_alerts` dengan index tenant, FK komposit, status, serta audit untuk tindakan penting.
+- [x] **Task 17.1:** Buat migration `patrol_posts`, `patrol_schedules`, `patrol_assignments`, `patrol_attendances`, `patrol_incidents`, `community_activities`, `activity_attendances`, `visitor_invites`, `visitor_logs`, dan `emergency_alerts` dengan index tenant, FK komposit, status, serta audit untuk tindakan penting.
 - [ ] **Task 17.2:** Implementasi Siskamling: jadwal per blok/pos, penugasan warga, status petugas pengganti, pengingat H-1, dan tampilan jadwal pribadi.
 - [ ] **Task 17.3:** Implementasi absensi ronda melalui QR pos yang berumur pendek atau kode petugas, timestamp server, validasi jadwal, catatan serah-terima, dan laporan kejadian; jangan jadikan GPS presisi sebagai syarat absensi MVP.
 - [ ] **Task 17.4:** Implementasi alur tukar jadwal ronda: permintaan, persetujuan warga pengganti, validasi kelayakan, pembaruan penugasan atomik, dan audit.
