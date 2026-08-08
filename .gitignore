@@ -62,4 +62,26 @@ Thumbs.db
 docker-compose.override.yml
 
 # Temporary files
+
+# Flutter / Dart / Mobile
+.dart_tool/
+.pub-cache/
+.pub/
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/build/
+apps/mobile/ios/Flutter/App.framework
+apps/mobile/ios/Flutter/Flutter.framework
+apps/mobile/ios/Flutter/Flutter.podspec
+apps/mobile/ios/Flutter/Generated.xcconfig
+apps/mobile/ios/Flutter/app.fltparam
+apps/mobile/android/app/debug/
+apps/mobile/android/app/profile/
+apps/mobile/android/app/release/
+*.sqlite
+*.sqlite-journal
+*.db
+
 amp

@@ -205,11 +205,11 @@ Modul yang **tidak wajib** masuk mobile (tetap dikerjakan di web pengurus): lapo
 
 ### Epic M0: Fondasi & Arsitektur Mobile App
 Tujuan: Menyiapkan framework, routing, push engine, storage offline, dan design token.
-- [ ] **Task M0.1:** Inisialisasi Mobile App Project Flutter dengan struktur feature-first.
-- [ ] **Task M0.2:** Setup Push Notification Service (Firebase Cloud Messaging / APNs).
-- [ ] **Task M0.3:** Implementasi `drift` (SQLite) untuk cache data terstruktur dan antrean sinkronisasi terbatas.
-- [ ] **Task M0.4:** Integrasi API Perangkat (Permissions manager, Kamera, Galeri, Geolocation/GPS, Biometrik, Kalender).
-- [ ] **Task M0.5:** Setup Shell UI: Bottom navigation warga (maksimal 5 item), Sidebar pengurus, Design Token (Dark/Light mode).
+- [x] **Task M0.1:** Inisialisasi Mobile App Project Flutter dengan struktur feature-first.
+- [x] **Task M0.2:** Setup Push Notification Service (Firebase Cloud Messaging / APNs).
+- [x] **Task M0.3:** Implementasi `drift` (SQLite) untuk cache data terstruktur dan antrean sinkronisasi terbatas.
+- [x] **Task M0.4:** Integrasi API Perangkat (Permissions manager, Kamera, Galeri, Geolocation/GPS, Biometrik, Kalender).
+- [x] **Task M0.5:** Setup Shell UI: Bottom navigation warga (maksimal 5 item), Sidebar pengurus, Design Token (Dark/Light mode).
 
 ### Epic M1: Autentikasi & Profil Pengguna
 Tujuan: Mengamankan session di perangkat mobile dan melacak data warga.
