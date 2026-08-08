@@ -53,7 +53,7 @@ Dokumen ini menetapkan konfigurasi runtime. Jangan commit `.env`, API key, passw
 | `SAUNGWA_API_KEY` | Staging/production | Kosong | Kredensial SaungWA: `<appkey>:<authkey>`. |
 | `SAUNGWA_ENDPOINT` | Tidak | `https://app.saungwa.com/api/create-message` | Endpoint SaungWA pengiriman pesan WhatsApp. |
 
-## 4. Frontend: Next.js
+## 4. Web App: Next.js
 
 | Variabel | Wajib | Diekspos ke browser | Deskripsi |
 |---|---:|---:|---|

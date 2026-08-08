@@ -40,7 +40,7 @@ Akses layanan:
 
 | Layanan | URL / koneksi |
 |---|---|
-| Frontend | http://localhost:3000 |
+| Web App | http://localhost:3000 |
 | API | http://localhost:8080 |
 | API health | http://localhost:8080/healthz |
 | MinIO Console | http://localhost:9001 |
@@ -136,7 +136,7 @@ Lihat log API:
 docker compose logs -f api
 ```
 
-## 7. Menjalankan Frontend dari Host
+## 7. Menjalankan Web App dari Host
 
 Untuk HMR lebih cepat, jalankan dependency dan API dalam Docker, lalu Next.js dari host:
 
