@@ -12,7 +12,7 @@ final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/warga/beranda',
+  initialLocation: '/login',
   routes: [
     GoRoute(
       path: '/login',

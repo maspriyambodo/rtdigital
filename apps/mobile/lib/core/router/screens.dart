@@ -358,10 +358,12 @@ class WargaNotifikasiScreen extends StatelessWidget {
 }
 
 
-class WargaProfilScreen extends StatelessWidget {
+class WargaProfilScreen extends ConsumerWidget {
   const WargaProfilScreen({super.key});
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authNotifier = ref.read(authProvider.notifier);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Profil Keluarga')),
       body: Padding(
@@ -379,6 +381,17 @@ class WargaProfilScreen extends StatelessWidget {
               subtitle: Text('3175************'),
             ),
             const Spacer(),
+            AppButton(
+              label: 'Keluar (Logout)',
+              icon: Icons.logout,
+              onPressed: () async {
+                await authNotifier.logout();
+                if (context.mounted) {
+                  context.go('/login');
+                }
+              },
+            ),
+            const SizedBox(height: 12),
             AppButton(
               label: 'Kembali ke Beranda Warga',
               isSecondary: true,
