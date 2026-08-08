@@ -412,7 +412,7 @@ Response:
 
 ---
 
-## 4. Ketentuan Client (Web ## 4. Ketentuan Frontend Mobile)
+## 4. Ketentuan Client (Web & Mobile)
 
 1. Gunakan `fetch` native atau wrapper tipis. Jangan tambahkan library HTTP tanpa kebutuhan nyata.
 2. Saat menerima `401`, frontend boleh mencoba satu kali `POST /auth/refresh`; bila gagal, hapus state privat lalu arahkan ke login.
